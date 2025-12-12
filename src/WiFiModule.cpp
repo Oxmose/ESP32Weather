@@ -78,32 +78,44 @@
  ******************************************************************************/
 WiFiModule::WiFiModule(const std::string& krSSID, const std::string& krPassword)
 {
-  /* Setup the WiFi service as Access Point with the provided SSID and
-   * password
-   */
-  this->_isAP = true;
-  this->_ssid = krSSID;
-  this->_password = krPassword;
+    /* Setup the WiFi service as Access Point with the provided SSID and
+    * password
+    */
+    this->_isAP = true;
+    this->_ssid = krSSID;
+    this->_password = krPassword;
+
+    /* Set as not started */
+    this->_isStarted = false;
 }
 
 E_Return WiFiModule::Start(void) noexcept {
-  bool retVal;
+    bool retVal;
 
-  /* Check the AP Type */
-  if (this->_isAP) {
-    retVal = WiFi.softAP(
-      this->_ssid,
-      this->_password,
-      1,
-      0,
-      WIFI_MODULE_MAX_CONN,
-      false
-    );
+    /* Check the AP Type */
+    if (this->_isAP) {
+        /* Set AP */
+        retVal = WiFi.softAP(
+            this->_ssid.c_str(),
+            this->_password.c_str(),
+            1,
+            0,
+            WIFI_MODULE_MAX_CONN
+        );
+
+    /* On Success, get the IP address */
+    if (retVal) {
+        _ipAddress = WiFi.softAPIP().toString().c_str();
+    }
   }
 
-  if (!retVal) {
-    return E_Return::ERR_WIFI_CONN;
-  }
+    /* Return on error */
+    if (!retVal) {
+        return E_Return::ERR_WIFI_CONN;
+    }
 
-  return E_Return::NO_ERROR;
+    /* Success */
+    this->_isStarted = true;
+
+    return E_Return::NO_ERROR;
 }

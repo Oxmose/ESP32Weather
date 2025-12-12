@@ -92,6 +92,10 @@ class WiFiModule {
         std::string _ssid;
         /** @brief Stores the AP password */
         std::string _password;
+        /** @brief Stores the WiFi module IP address */
+        std::string _ipAddress;
+        /** @brief Stores the current state of the module */
+        bool _isStarted;
 };
 
 #endif /* #ifndef __WIFI_MODULE_H__ */
