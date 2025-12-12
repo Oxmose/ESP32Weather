@@ -26,6 +26,7 @@
 #include <WiFi.h>   /* WiFi services */
 #include <cstdint>  /* Standard integer definitions */
 #include <Errors.h> /* Error definitions */
+#include <Logger.h> /* Logger services */
 
 /* Header file */
 #include <WiFiModule.h>
@@ -92,6 +93,8 @@ WiFiModule::WiFiModule(const std::string& krSSID, const std::string& krPassword)
 E_Return WiFiModule::Start(void) noexcept {
     bool retVal;
 
+    retVal = false;
+
     /* Check the AP Type */
     if (this->_isAP) {
         /* Set AP */
@@ -103,11 +106,17 @@ E_Return WiFiModule::Start(void) noexcept {
             WIFI_MODULE_MAX_CONN
         );
 
-    /* On Success, get the IP address */
-    if (retVal) {
-        _ipAddress = WiFi.softAPIP().toString().c_str();
+        /* On Success, get the IP address */
+        if (retVal) {
+            this->_ipAddress = WiFi.softAPIP().toString().c_str();
+        }
+
+        LOG_INFO("Started the WiFi Module in AP mode\n");
+        LOG_INFO("    SSID: %s\n", this->_ssid.c_str());
+        LOG_INFO("    Password: %s\n", this->_password.c_str());
+        LOG_INFO("    IP Address: %s\n", this->_ipAddress.c_str());
+
     }
-  }
 
     /* Return on error */
     if (!retVal) {

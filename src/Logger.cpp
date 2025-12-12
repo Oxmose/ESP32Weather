@@ -100,18 +100,18 @@ void Logger::LogLevel(const E_LogLevel kLevel,
 
         /* Allocate buffer */
         pBuffer = new char[LOGGER_BUFFER_SIZE];
-        if (pBuffer == nullptr) {
+        if (nullptr == pBuffer) {
             return;
         }
 
         /* Print TAG */
-        if (kLevel == LOG_LEVEL_ERROR) {
+        if (LOG_LEVEL_ERROR == kLevel) {
             memcpy(pTag, "[ERROR - %16llu] %s:%d -\0", 26);
         }
-        else if (kLevel == LOG_LEVEL_INFO) {
+        else if (LOG_LEVEL_INFO == kLevel) {
             memcpy(pTag, "[INFO - %16llu]\0", 17);
         }
-        else if (kLevel == LOG_LEVEL_DEBUG) {
+        else if (LOG_LEVEL_DEBUG == kLevel) {
             memcpy(pTag, "[DBG -  %16llu] %s:%d -\0", 24);
         }
         else {
