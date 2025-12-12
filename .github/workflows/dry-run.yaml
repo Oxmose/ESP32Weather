@@ -1,9 +1,8 @@
 name: RTHR Weather Station Firmware Dry-Run
-
-on: [push]
-
+on:
+  push:
 jobs:
-  build:
+  rthr_dry_run:
     runs-on: ubuntu-latest
 
     steps:
