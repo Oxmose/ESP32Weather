@@ -6,6 +6,8 @@ exclude_paths:
   - "lib/**"
   - "test/**"
   - "README.md"
+  - "buildscript.py"
+  - "versioning"
 include_paths:
   - "src/**"
   - "include/**"
