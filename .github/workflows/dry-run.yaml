@@ -1,4 +1,4 @@
-name: PlatformIO CI
+name: RTHR Weather Station Firmware Dry-Run
 
 on: [push]
 
