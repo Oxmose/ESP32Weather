@@ -4,7 +4,7 @@ on:
     types: [opened, synchronize, reopened, closed]
   push:
 jobs:
-  build:
+  rthr_dry_run:
     runs-on: ubuntu-latest
 
     steps:
