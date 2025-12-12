@@ -1,0 +1,13 @@
+---
+exclude_paths:
+  - ".github/**"
+  - ".pio/**"
+  - "boards/**"
+  - "lib/**"
+  - "test/**"
+  - "README.md"
+  - "buildscript.py"
+  - "versioning"
+include_paths:
+  - "src/**"
+  - "include/**"

@@ -23,6 +23,7 @@
 
 /* Included headers */
 #include <Arduino.h> /* Arduino library */
+#include <Logger.h>  /* Firmware logger */
 
 /* Header file */
 #include <Entry.h>
@@ -66,13 +67,16 @@
  ******************************************************************************/
 
 void setup(void) {
-  Serial.begin(115200);
-  delay(500);
-  Serial.println("Starting");
+
+  /* Initialize logger */
+  INIT_LOGGER(LOG_LEVEL_DEBUG);
+  delayMicroseconds(100000);
+
+  LOG_INFO("RTHR Weather Station Booting...\n");
 }
 
 void loop(void) {
-  digitalWrite(RGB_BUILTIN, (millis() / 1000) % 2);
+
 }
 
 /*******************************************************************************
