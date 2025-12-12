@@ -1,0 +1,11 @@
+---
+exclude_paths:
+  - ".github/**"
+  - ".pio/**"
+  - "boards/**"
+  - "lib/**"
+  - "test/**"
+  - "README.md"
+include_paths:
+  - "src/**"
+  - "include/**"
