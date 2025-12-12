@@ -1,7 +1,5 @@
 name: RTHR Weather Station Firmware Dry-Run
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
   push:
 jobs:
   rthr_dry_run:
