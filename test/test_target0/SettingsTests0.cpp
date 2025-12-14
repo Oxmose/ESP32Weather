@@ -85,7 +85,6 @@ void test_clear(void) {
     result = pSettings->GetSettings("uint8_clear", &buffer);
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
     TEST_ASSERT_NOT_EQUAL(24, buffer);
-
 }
 
 void test_commit(void) {
@@ -111,7 +110,6 @@ void test_commit(void) {
     result = pSettings->GetSettings("uint8_val", &buffer);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(24, buffer);
-
 }
 
 void setup(void) {
