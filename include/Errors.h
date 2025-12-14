@@ -1,7 +1,5 @@
 /*******************************************************************************
- * @file Entry.cpp
- *
- * @see Entry.h
+ * @file Errors.h
  *
  * @author Alexy Torres Aurora Dugo
  *
@@ -9,47 +7,58 @@
  *
  * @version 1.0
  *
- * @brief Weather Station Main Module entry point.
+ * @brief Errors definitions.
  *
- * @details Weather Station Main Module entry point. This file contains the main
- * entry point and loop for the weather station firmware.
+ * @details Errors definitions. This file contains the list of errors used in
+ * the firmware.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
+#ifndef __ERRORS_H__
+#define __ERRORS_H__
+
 /*******************************************************************************
  * INCLUDES
- ******************************************************************************/
-
-/* Included headers */
-#include <Logger.h>   /* Firmware logger */
-#include <Errors.h>   /* Error codes */
-#include <Arduino.h>  /* Arduino library */
-#include <Settings.h> /* Settings manager */
-
-/* Header file */
-#include <Entry.h>
-
-
-/*******************************************************************************
- * CONSTANTS
  ******************************************************************************/
 /* None */
 
 /*******************************************************************************
- * STRUCTURES AND TYPES
+ * CONSTANTS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
- * STATIC FUNCTIONS DECLARATIONS
+ * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Defines the list of return values available */
+typedef enum {
+    /** @brief No error, the action succeeded. */
+    NO_ERROR,
+    /** @brief WiFi Connection Error */
+    ERR_WIFI_CONN,
+    /** @brief Error when initializing the settings. */
+    ERR_SETTING_INIT,
+    /** @brief Error when a setting is not found. */
+    ERR_SETTING_NOT_FOUND,
+    /** @brief Error when a setting lock timed out. */
+    ERR_SETTING_TIMEOUT,
+    /** @brief Invalid setting name. */
+    ERR_SETTING_INVALID,
+    /** @brief Failed to save settings. */
+    ERR_SETTING_COMMIT_FAILURE,
+    /** @brief A memory related error occured. */
+    ERR_MEMORY,
+    /** @brief Unknown error. */
+    ERR_UNKNOWN
+} E_Return;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -65,34 +74,19 @@
 /* None */
 
 /*******************************************************************************
- * FUNCTIONS
+ * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-#ifndef UNIT_TEST
-
-void setup(void) {
-    E_Return result;
-
-    /* Initialize logger */
-    INIT_LOGGER(LOG_LEVEL_DEBUG);
-    delayMicroseconds(100000);
-
-    LOG_INFO("RTHR Weather Station Booting...\n");
-
-    /* Initialize the setting manager */
-    result = Settings::InitInstance();
-    if (E_Return::NO_ERROR != result) {
-        /* TODO: Health Monitor Notify */
-    }
-}
-
-void loop(void) {
-
-}
-
-#endif /* #ifndef UNIT_TEST */
+/* None */
 
 /*******************************************************************************
- * CLASS METHODS
+ * FUNCTIONS
  ******************************************************************************/
 /* None */
+
+/*******************************************************************************
+ * CLASSES
+ ******************************************************************************/
+/* None */
+
+#endif /* #ifndef __ERRORS_H__ */
