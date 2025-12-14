@@ -94,7 +94,7 @@ void setup(void) {
         /* TODO: Health Monitor Notify */
     }
 
-    if (E_Return::NO_ERROR != spWifiModule->Start()) {
+    if (E_Return::NO_ERROR != spWifiModule->Start(true)) {
         LOG_ERROR("Failed to start the WiFi Module\n");
         /* TODO: Health Monitor Notify */
     }

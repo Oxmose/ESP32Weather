@@ -90,41 +90,66 @@ WiFiModule::WiFiModule(const std::string& krSSID, const std::string& krPassword)
     this->_isStarted = false;
 }
 
-E_Return WiFiModule::Start(void) noexcept {
-    bool retVal;
+E_Return WiFiModule::Start(const bool kStartAP) noexcept {
+    bool        retVal;
+    E_Return    error;
 
-    retVal = false;
+    error = E_Return::NO_ERROR;
 
-    /* Check the AP Type */
-    if (this->_isAP) {
-        /* Set AP */
-        retVal = WiFi.softAP(
-            this->_ssid.c_str(),
-            this->_password.c_str(),
-            1,
-            0,
-            WIFI_MODULE_MAX_CONN
-        );
+    if (!this->_isStarted) {
 
-        /* On Success, get the IP address */
-        if (retVal) {
-            this->_ipAddress = WiFi.softAPIP().toString().c_str();
+        this->_isAP = kStartAP;
+
+        /* Check the AP Type */
+        if (this->_isAP) {
+            /* Set AP */
+            retVal = WiFi.softAP(
+                this->_ssid.c_str(),
+                this->_password.c_str(),
+                1,
+                0,
+                WIFI_MODULE_MAX_CONN
+            );
+
+            /* On Success, get the IP address */
+            if (retVal) {
+                this->_ipAddress = WiFi.softAPIP().toString().c_str();
+
+                LOG_INFO("Started the WiFi Module in AP mode\n");
+                LOG_INFO("    SSID: %s\n", this->_ssid.c_str());
+                LOG_INFO("    Password: %s\n", this->_password.c_str());
+                LOG_INFO("    IP Address: %s\n", this->_ipAddress.c_str());
+
+                /* Success */
+                this->_isStarted = true;
+            }
+            else {
+                LOG_ERROR("Failed to create the Access Point\n");
+
+                error = E_Return::ERR_WIFI_CONN;
+            }
         }
+        else {
+            LOG_INFO("Connecting to network: %s.\n", this->_ssid.c_str());
 
-        LOG_INFO("Started the WiFi Module in AP mode\n");
-        LOG_INFO("    SSID: %s\n", this->_ssid.c_str());
-        LOG_INFO("    Password: %s\n", this->_password.c_str());
-        LOG_INFO("    IP Address: %s\n", this->_ipAddress.c_str());
+            /* Connect to existing network */
+            WiFi.begin(this->_ssid.c_str(), this->_password.c_str());
+            while (WL_CONNECTED != WiFi.status()) { // TODO: Add timeout
+                delay(500); // TODO: Add HAL dunction
+            }
 
+            if (WL_CONNECTED == WiFi.status()) {
+                this->_ipAddress = WiFi.localIP().toString().c_str();
+
+                LOG_INFO("Connected the WiFi Module to network\n");
+                LOG_INFO("    SSID: %s\n", this->_ssid.c_str());
+                LOG_INFO("    IP Address: %s\n", this->_ipAddress.c_str());
+            }
+
+            /* Success */
+            this->_isStarted = true;
+        }
     }
 
-    /* Return on error */
-    if (!retVal) {
-        return E_Return::ERR_WIFI_CONN;
-    }
-
-    /* Success */
-    this->_isStarted = true;
-
-    return E_Return::NO_ERROR;
+    return error;
 }
