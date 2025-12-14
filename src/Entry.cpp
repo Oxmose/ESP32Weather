@@ -22,16 +22,11 @@
  ******************************************************************************/
 
 /* Included headers */
-<<<<<<< HEAD
-#include <Arduino.h>    /* Arduino library */
 #include <Logger.h>     /* Firmware logger */
+#include <Errors.h>     /* Error codes */
+#include <Arduino.h>    /* Arduino library */
+#include <Settings.h>   /* Settings manager */
 #include <WiFiModule.h> /* WiFi services */
-=======
-#include <Logger.h>   /* Firmware logger */
-#include <Errors.h>   /* Error codes */
-#include <Arduino.h>  /* Arduino library */
-#include <Settings.h> /* Settings manager */
->>>>>>> feature/1-settings-loader
 
 /* Header file */
 #include <Entry.h>
@@ -83,6 +78,7 @@ void setup(void) {
     INIT_LOGGER(LOG_LEVEL_DEBUG);
     delayMicroseconds(500000); // TODO: Update with HAL when done
 
+
     LOG_INFO("RTHR Weather Station Booting...\n");
 
     /* Initialize the setting manager */
@@ -108,9 +104,7 @@ void loop(void) {
 
 }
 
-void idle(void) {
-    while(1);
-}
+#endif /* #ifndef UNIT_TEST */
 
 /*******************************************************************************
  * CLASS METHODS
