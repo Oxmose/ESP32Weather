@@ -56,6 +56,12 @@ typedef enum {
     ERR_SETTING_COMMIT_FAILURE,
     /** @brief A memory related error occured. */
     ERR_MEMORY,
+    /** @brief A specified ID was or item was not found. */
+    ERR_NO_SUCH_ID,
+    /** @brief Health Monitor action timed out. */
+    ERR_HM_TIMEOUT,
+    /** @brief Invalid parameter. */
+    ERR_INVALID_PARAM,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

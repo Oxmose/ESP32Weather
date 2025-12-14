@@ -36,8 +36,11 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
+/** @brief Defines the settings lock timeout in nanoseconds. */
+#define SETTINGS_LOCK_TIMEOUT_NS 20000000ULL
 /** @brief Defines the settings lock timeout in ticks. */
-#define SETTINGS_LOCK_TIMEOUT 10000
+#define SETTINGS_LOCK_TIMEOUT_TICKS \
+    (pdMS_TO_TICKS(SETTINGS_LOCK_TIMEOUT_NS / 1000000ULL))
 
 /*******************************************************************************
  * MACROS
@@ -135,7 +138,7 @@ class Settings
             std::map<std::string, S_SettingField>::const_iterator it;
             E_Return                                              error;
 
-            if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT)) {
+            if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
                 /* Get the setting */
                 it = this->_cache.find(krName);
 
@@ -176,7 +179,7 @@ class Settings
                     error = E_Return::ERR_SETTING_NOT_FOUND;
                 }
 
-                if (pdFALSE == xSemaphoreGive(this->_lock)) {
+                if (pdPASS != xSemaphoreGive(this->_lock)) {
                     /* TODO: Error Health Monitor */
                 }
             }
@@ -214,11 +217,14 @@ class Settings
                     setting.fieldSize = sizeof(T);
                     memcpy(setting.pValue, kpValue, sizeof(T));
 
-                    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT)) {
+                    if (xSemaphoreTake(
+                            this->_lock,
+                            SETTINGS_LOCK_TIMEOUT_TICKS)
+                        ) {
                         try {
                             /* Get the setting and remove it exists */
                             it = this->_cache.find(krName);
-                            if (it != this->_cache.end()) {
+                            if (this->_cache.end() != it) {
                                 /* Release memory and clear entry */
                                 delete[] it->second.pValue;
                                 this->_cache.erase(it);
@@ -239,7 +245,7 @@ class Settings
                             error = E_Return::ERR_MEMORY;
                         }
 
-                        if (pdFALSE == xSemaphoreGive(this->_lock)) {
+                        if (pdPASS != xSemaphoreGive(this->_lock)) {
                             /* TODO: Error Health Monitor */
                         }
                     }
@@ -310,10 +316,10 @@ class Settings
         /**
          * @brief Settings object constructor.
          *
-         * @details Settings object constructor. The function will initialize the
-         * preference and create the instance when successfull.
+         * @details Settings object constructor. The function will initialize
+         * the preference and create the instance when successfull.
          */
-        Settings(void);
+        Settings(void) noexcept;
 
         /** @brief Stores the current singleton instance. */
         static Settings* _SP_INSTANCE;
