@@ -44,6 +44,18 @@ typedef enum {
     NO_ERROR,
     /** @brief WiFi Connection Error */
     ERR_WIFI_CONN,
+    /** @brief Error when initializing the settings. */
+    ERR_SETTING_INIT,
+    /** @brief Error when a setting is not found. */
+    ERR_SETTING_NOT_FOUND,
+    /** @brief Error when a setting lock timed out. */
+    ERR_SETTING_TIMEOUT,
+    /** @brief Invalid setting name. */
+    ERR_SETTING_INVALID,
+    /** @brief Failed to save settings. */
+    ERR_SETTING_COMMIT_FAILURE,
+    /** @brief A memory related error occured. */
+    ERR_MEMORY,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

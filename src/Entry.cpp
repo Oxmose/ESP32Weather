@@ -22,9 +22,16 @@
  ******************************************************************************/
 
 /* Included headers */
+<<<<<<< HEAD
 #include <Arduino.h>    /* Arduino library */
 #include <Logger.h>     /* Firmware logger */
 #include <WiFiModule.h> /* WiFi services */
+=======
+#include <Logger.h>   /* Firmware logger */
+#include <Errors.h>   /* Error codes */
+#include <Arduino.h>  /* Arduino library */
+#include <Settings.h> /* Settings manager */
+>>>>>>> feature/1-settings-loader
 
 /* Header file */
 #include <Entry.h>
@@ -67,7 +74,10 @@ static WiFiModule* spWifiModule;
  * FUNCTIONS
  ******************************************************************************/
 
+#ifndef UNIT_TEST
+
 void setup(void) {
+    E_Return result;
 
     /* Initialize logger and wait */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
@@ -75,16 +85,22 @@ void setup(void) {
 
     LOG_INFO("RTHR Weather Station Booting...\n");
 
+    /* Initialize the setting manager */
+    result = Settings::InitInstance();
+    if (E_Return::NO_ERROR != result) {
+        /* TODO: Health Monitor Notify */
+    }
+
     /* Initialize the WiFi module*/
     spWifiModule = new WiFiModule("TestSSID", "12345678");
     if (nullptr == spWifiModule) {
         LOG_ERROR("Failed to instanciate the WiFi Module\n");
-        idle();
+        /* TODO: Health Monitor Notify */
     }
 
     if (E_Return::NO_ERROR != spWifiModule->Start()) {
         LOG_ERROR("Failed to start the WiFi Module\n");
-        idle();
+        /* TODO: Health Monitor Notify */
     }
 }
 
@@ -99,3 +115,4 @@ void idle(void) {
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+/* None */
