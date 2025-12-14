@@ -199,7 +199,7 @@ E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
                 try {
                     /* Get the setting and remove it exists */
                     it = this->_cache.find(krName);
-                    if (it != this->_cache.end()) {
+                    if (this->_cache.end() != it) {
                         /* Release memory and clear entry */
                         delete[] it->second.pValue;
                         this->_cache.erase(krName);

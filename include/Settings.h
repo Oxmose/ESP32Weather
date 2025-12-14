@@ -206,7 +206,7 @@ class Settings
             E_Return                                        error;
             S_SettingField                                  setting;
 
-            if (krName.size() < 15) {
+            if (15 > krName.size()) {
                 setting.pValue = new uint8_t[sizeof(T)];
 
                 if (nullptr != setting.pValue) {
@@ -218,7 +218,7 @@ class Settings
                         try {
                             /* Get the setting and remove it exists */
                             it = this->_cache.find(krName);
-                            if (it != this->_cache.end()) {
+                            if (this->_cache.end() != it) {
                                 /* Release memory and clear entry */
                                 delete[] it->second.pValue;
                                 this->_cache.erase(it);
