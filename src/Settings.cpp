@@ -121,10 +121,10 @@ E_Return Settings::Commit(void) noexcept {
     size_t                                                saveLen;
 
     error = E_Return::NO_ERROR;
-    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT)) {
+    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
 
         /* For all items in the cache, write to the preference */
-        for(it = this->_cache.begin(); this->_cache.end() != it; ++it) {
+        for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {
             saveLen = this->_stcPrefs.putBytes(
                 it->first.c_str(),
                 it->second.pValue,
@@ -138,7 +138,7 @@ E_Return Settings::Commit(void) noexcept {
             }
         }
 
-        if (pdFALSE == xSemaphoreGive(this->_lock)) {
+        if (pdPASS != xSemaphoreGive(this->_lock)) {
             /* TODO: Error Health Monitor */
         }
     }
@@ -156,16 +156,16 @@ E_Return Settings::ClearCache(void) noexcept {
     E_Return                                              error;
 
     error = E_Return::NO_ERROR;
-    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT)) {
+    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
 
         /* For all items in the cache, write to the preference */
-        for(it = this->_cache.begin(); this->_cache.end() != it; ++it) {
+        for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {
             delete[] it->second.pValue;
         }
 
         this->_cache.clear();
 
-        if (pdFALSE == xSemaphoreGive(this->_lock)) {
+        if (pdPASS != xSemaphoreGive(this->_lock)) {
             /* TODO: Error Health Monitor */
         }
     }
@@ -199,7 +199,7 @@ E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
                 try {
                     /* Get the setting and remove it exists */
                     it = this->_cache.find(krName);
-                    if (it != this->_cache.end()) {
+                    if (this->_cache.end() != it) {
                         /* Release memory and clear entry */
                         delete[] it->second.pValue;
                         this->_cache.erase(krName);
@@ -238,6 +238,6 @@ E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
     return error;
 }
 
-Settings::Settings(void) {
+Settings::Settings(void) noexcept {
     /* Nothing to do */
 }

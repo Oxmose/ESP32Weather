@@ -112,19 +112,11 @@ void test_commit(void) {
     TEST_ASSERT_EQUAL(24, buffer);
 }
 
-void setup(void) {
-    UNITY_BEGIN();
-
+void SettingsTests(void) {
     RUN_TEST(test_init);
     RUN_TEST(test_not_found);
     RUN_TEST(test_valid);
     RUN_TEST(test_invalid);
     RUN_TEST(test_clear);
     RUN_TEST(test_commit);
-
-    UNITY_END();
-}
-
-void loop(void) {
-    // Not used for unit testing
 }

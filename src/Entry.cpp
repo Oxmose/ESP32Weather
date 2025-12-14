@@ -22,14 +22,15 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Logger.h>   /* Firmware logger */
-#include <Errors.h>   /* Error codes */
-#include <Arduino.h>  /* Arduino library */
-#include <Settings.h> /* Settings manager */
+#include <BSP.h>           /* Hardware services*/
+#include <Logger.h>        /* Firmware logger */
+#include <Errors.h>        /* Error codes */
+#include <Arduino.h>       /* Arduino library */
+#include <Settings.h>      /* Settings manager */
+#include <HealthMonitor.h> /* Health Monitoring */
 
 /* Header file */
 #include <Entry.h>
-
 
 /*******************************************************************************
  * CONSTANTS
@@ -71,13 +72,23 @@
 #ifndef UNIT_TEST
 
 void setup(void) {
-    E_Return result;
+    E_Return       result;
+    HealthMonitor* pHealthMon;
 
     /* Initialize logger */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
-    delayMicroseconds(100000);
+    HWManager::DelayExecNs(500000000);
 
     LOG_INFO("RTHR Weather Station Booting...\n");
+
+    /* Initialize the Hardware Layer */
+    HWManager::Init();
+    LOG_INFO("Hardware Layer Initialized.\n");
+
+    /* Initialize the Health Monitor */
+    pHealthMon = HealthMonitor::GetInstance();
+    pHealthMon->Init();
+    LOG_INFO("Health Monitor Initialized.\n");
 
     /* Initialize the setting manager */
     result = Settings::InitInstance();
