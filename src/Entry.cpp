@@ -22,8 +22,10 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Arduino.h> /* Arduino library */
-#include <Logger.h>  /* Firmware logger */
+#include <Logger.h>   /* Firmware logger */
+#include <Errors.h>   /* Error codes */
+#include <Arduino.h>  /* Arduino library */
+#include <Settings.h> /* Settings manager */
 
 /* Header file */
 #include <Entry.h>
@@ -66,19 +68,31 @@
  * FUNCTIONS
  ******************************************************************************/
 
+#ifndef UNIT_TEST
+
 void setup(void) {
+    E_Return result;
 
-  /* Initialize logger */
-  INIT_LOGGER(LOG_LEVEL_DEBUG);
-  delayMicroseconds(100000);
+    /* Initialize logger */
+    INIT_LOGGER(LOG_LEVEL_DEBUG);
+    delayMicroseconds(100000);
 
-  LOG_INFO("RTHR Weather Station Booting...\n");
+    LOG_INFO("RTHR Weather Station Booting...\n");
+
+    /* Initialize the setting manager */
+    result = Settings::InitInstance();
+    if (E_Return::NO_ERROR != result) {
+        /* TODO: Health Monitor Notify */
+    }
 }
 
 void loop(void) {
 
 }
 
+#endif /* #ifndef UNIT_TEST */
+
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+/* None */
