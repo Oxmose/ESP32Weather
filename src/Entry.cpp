@@ -22,15 +22,15 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Logger.h>     /* Firmware logger */
-#include <Errors.h>     /* Error codes */
-#include <Arduino.h>    /* Arduino library */
-#include <Settings.h>   /* Settings manager */
-#include <WiFiModule.h> /* WiFi services */
+#include <BSP.h>           /* Hardware services*/
+#include <Logger.h>        /* Firmware logger */
+#include <Errors.h>        /* Error codes */
+#include <Arduino.h>       /* Arduino library */
+#include <Settings.h>      /* Settings manager */
+#include <HealthMonitor.h> /* Health Monitoring */
 
 /* Header file */
 #include <Entry.h>
-
 
 /*******************************************************************************
  * CONSTANTS
@@ -72,14 +72,23 @@ static WiFiModule* spWifiModule;
 #ifndef UNIT_TEST
 
 void setup(void) {
-    E_Return result;
+    E_Return       result;
+    HealthMonitor* pHealthMon;
 
     /* Initialize logger and wait */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
-    delayMicroseconds(500000); // TODO: Update with HAL when done
-
+    HWManager::DelayExecNs(500000000);
 
     LOG_INFO("RTHR Weather Station Booting...\n");
+
+    /* Initialize the Hardware Layer */
+    HWManager::Init();
+    LOG_INFO("Hardware Layer Initialized.\n");
+
+    /* Initialize the Health Monitor */
+    pHealthMon = HealthMonitor::GetInstance();
+    pHealthMon->Init();
+    LOG_INFO("Health Monitor Initialized.\n");
 
     /* Initialize the setting manager */
     result = Settings::InitInstance();

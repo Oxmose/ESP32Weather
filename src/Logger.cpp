@@ -20,6 +20,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
+#include <BSP.h>     /* Hardware services*/
 #include <cstdint>   /* Standard Int Types */
 #include <Arduino.h> /* Serial service */
 
@@ -75,7 +76,7 @@ E_LogLevel Logger::_SLOGLEVEL = E_LogLevel::LOG_LEVEL_NONE;
  * FUNCTIONS
  ******************************************************************************/
 
-void Logger::Init(const E_LogLevel kLoglevel)
+void Logger::Init(const E_LogLevel kLoglevel) noexcept
 {
     if (!_SISINIT) {
         Serial.begin(LOGGER_SERIAL_BAUDRATE);
@@ -89,7 +90,7 @@ void Logger::LogLevel(const E_LogLevel kLevel,
                       const char*      pkFile,
                       const uint32_t   kLine,
                       const char*      pkStr,
-                      ...)
+                      ...) noexcept
 {
     va_list argptr;
     size_t  len;
@@ -123,7 +124,7 @@ void Logger::LogLevel(const E_LogLevel kLevel,
             pBuffer,
             LOGGER_BUFFER_SIZE,
             pTag,
-            esp_timer_get_time() * 1000, // TODO: Once the HAL is ready, replace by HAL call
+            HWManager::GetTime(),
             pkFile,
             kLine
         );

@@ -172,7 +172,7 @@ class Logger
          *
          * @param[in] kLoglevel The log level to use.
          */
-        static void Init(const E_LogLevel kLoglevel);
+        static void Init(const E_LogLevel kLoglevel) noexcept;
 
         /**
          * @brief Logs a message to the logger.
@@ -190,7 +190,7 @@ class Logger
                              const char*      pkFile,
                              const uint32_t   kLine,
                              const char*      kStr,
-                             ...);
+                             ...) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
