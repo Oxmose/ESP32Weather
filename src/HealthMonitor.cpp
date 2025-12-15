@@ -38,12 +38,12 @@
 /**
  * @brief Defines the real-time task period in nanoseconds.
  */
-#define HW_RT_TASK_PERIOD_NS 1000000ULL
+#define HW_RT_TASK_PERIOD_NS 10000000ULL
 
 /**
  * @brief Defines the real-time task period tolerance in nanoseconds.
  */
-#define HW_RT_TASK_PERIOD_TOLERANCE_NS 5000ULL
+#define HW_RT_TASK_PERIOD_TOLERANCE_NS 100000ULL
 
 /**
  * @brief Defines the real-time task period deadline in nanoseconds.
@@ -68,7 +68,7 @@
     )
 
 /** @brief Hardware Real-Time Task name. */
-#define HW_RT_TASK_NAME "HW-RT Task"
+#define HW_RT_TASK_NAME "HW-RT_Task"
 
 /** @brief Hardware Real-Time Task stack size in bytes. */
 #define HW_RT_TASK_STACK 4096
@@ -170,7 +170,7 @@ E_Return HealthMonitor::AddWatchdog(Timeout* pTimeout, uint32_t& rId) noexcept {
 
     /* Check settings */
     if (0 != pTimeout->GetNextWatchdogEvent()) {
-        if (xSemaphoreTake(this->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
+        if (pdPASS == xSemaphoreTake(this->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
             if (this->_lastWDId < UINT32_MAX) {
                 try {
                     this->_watchdogs.emplace(
@@ -208,7 +208,7 @@ E_Return HealthMonitor::RemoveWatchdog(const uint32_t kId) noexcept {
     E_Return                                         error;
     std::unordered_map<uint32_t, Timeout*>::iterator it;
 
-    if (xSemaphoreTake(this->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
+    if (pdPASS == xSemaphoreTake(this->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
         it = this->_watchdogs.find(kId);
         if (this->_watchdogs.end() != it) {
             try {
@@ -235,13 +235,18 @@ E_Return HealthMonitor::RemoveWatchdog(const uint32_t kId) noexcept {
     return error;
 }
 
+void HealthMonitor::SetSystemState(const E_SystemState kState) noexcept {
+    this->_systemState = kState;
+}
+
 void HealthMonitor::Init(void) noexcept {
     /* Initialize the real-time task */
     RealTimeTaskInit();
 }
 
 HealthMonitor::HealthMonitor(void) noexcept {
-    _lastWDId = 0;
+    this->_lastWDId = 0;
+    this->_systemState = E_SystemState::STARTING;
 
     this->_wdLock = xSemaphoreCreateMutex();
     if (nullptr == this->_wdLock) {
@@ -259,7 +264,6 @@ void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
         HW_RT_TASK_DEADLINE_MISS_DELAY
     );
     pHM = (HealthMonitor*)pHealthMonitor;
-
     while (true) {
         /* Wait for trigger signal */
         result = xTaskNotifyWait(0xFFFFFFFFUL, 0x0UL, 0x0UL, portMAX_DELAY);
@@ -271,8 +275,12 @@ void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
         }
 
         /* Check for deadline miss */
-        if (hmDeadlineTimeout.Check()) {
-            LOG_ERROR("HW Real-Time Task deadline miss.\n");
+        if (E_SystemState::EXECUTING == pHM->_systemState &&
+            hmDeadlineTimeout.Check()) {
+            LOG_ERROR(
+                "HW Real-Time Task deadline miss (expeected %llu).\n",
+                hmDeadlineTimeout.GetNextTimeEvent()
+            );
             HWManager::Reboot();
         }
         /* Tick the timeout */
@@ -280,7 +288,7 @@ void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
 
         /* Check for watchdogs */
         currentTime = HWManager::GetTime();
-        if (xSemaphoreTake(pHM->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
+        if (pdPASS == xSemaphoreTake(pHM->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
             for (it = pHM->_watchdogs.begin();
                  pHM->_watchdogs.end() != it;
                  ++it) {

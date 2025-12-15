@@ -18,7 +18,7 @@ void test_not_found(void) {
     pSettings = Settings::GetInstance();
     TEST_ASSERT_NOT_NULL(pSettings);
 
-    result = pSettings->GetSettings("unknown_test", &buffer);
+    result = pSettings->GetSettings("unknown_test", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
 }
 
@@ -30,10 +30,10 @@ void test_valid(void) {
     pSettings = Settings::GetInstance();
     TEST_ASSERT_NOT_NULL(pSettings);
 
-    result = pSettings->SetSettings("uint8_val", &buffer);
+    result = pSettings->SetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
-    result = pSettings->GetSettings("uint8_val", &buffer);
+    result = pSettings->GetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 }
 
@@ -46,22 +46,22 @@ void test_invalid(void) {
     pSettings = Settings::GetInstance();
     TEST_ASSERT_NOT_NULL(pSettings);
 
-    result = pSettings->GetSettings("unknown_test_too_long", &buffer);
+    result = pSettings->GetSettings("unknown_test_too_long", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
 
-    result = pSettings->SetSettings("unknown_test_too_long", &buffer);
+    result = pSettings->SetSettings("unknown_test_too_long", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_INVALID, result);
 
-    result = pSettings->SetSettings("uint8_val", &buffer);
+    result = pSettings->SetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
-    result = pSettings->GetSettings("uint8_val", &bufferu32);
+    result = pSettings->GetSettings("uint8_val", (uint8_t*)&bufferu32, sizeof(uint32_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
 
-    result = pSettings->GetSettings("uint8_val_not", &buffer);
+    result = pSettings->GetSettings("uint8_val_not", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
 
-    result = pSettings->GetSettings("uint8_val", &buffer);
+    result = pSettings->GetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 }
 
@@ -75,14 +75,14 @@ void test_clear(void) {
 
     buffer = 24;
 
-    result = pSettings->SetSettings("uint8_clear", &buffer);
+    result = pSettings->SetSettings("uint8_clear", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
     result = pSettings->ClearCache();
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
     buffer = 0;
-    result = pSettings->GetSettings("uint8_clear", &buffer);
+    result = pSettings->GetSettings("uint8_clear", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::ERR_SETTING_NOT_FOUND, result);
     TEST_ASSERT_NOT_EQUAL(24, buffer);
 }
@@ -97,7 +97,7 @@ void test_commit(void) {
 
     buffer = 24;
 
-    result = pSettings->SetSettings("uint8_val", &buffer);
+    result = pSettings->SetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
     result = pSettings->Commit();
@@ -107,7 +107,7 @@ void test_commit(void) {
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 
     buffer = 0;
-    result = pSettings->GetSettings("uint8_val", &buffer);
+    result = pSettings->GetSettings("uint8_val", &buffer, sizeof(uint8_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(24, buffer);
 }

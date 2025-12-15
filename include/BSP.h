@@ -29,14 +29,27 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
 /* None */
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
 
-/* None */
+/**
+ * @brief Gets the minimal value between two.
+ *
+ * @param[in] X The first value.
+ * @param[in] Y The second value.
+ */
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
+/**
+ * @brief Gets the maximal value between two.
+ *
+ * @param[in] X The first value.
+ * @param[in] Y The second value.
+ */
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 /*******************************************************************************
  * STRUCTURES AND TYPES

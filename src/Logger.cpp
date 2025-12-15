@@ -101,7 +101,7 @@ void Logger::LogLevel(const E_LogLevel kLevel,
 
         /* Allocate buffer */
         pBuffer = new char[LOGGER_BUFFER_SIZE];
-        if (pBuffer == nullptr) {
+        if (nullptr == pBuffer) {
             return;
         }
 

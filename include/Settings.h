@@ -42,6 +42,22 @@
 #define SETTINGS_LOCK_TIMEOUT_TICKS \
     (pdMS_TO_TICKS(SETTINGS_LOCK_TIMEOUT_NS / 1000000ULL))
 
+/** @brief Defines the isAP setting key. */
+#define SETTING_IS_AP "is_ap"
+/** @brief Defines the node ssid setting key. */
+#define SETTING_NODE_SSID "node_ssid"
+/** @brief Defines the node password setting key. */
+#define SETTING_NODE_PASSWORD "node_pass"
+/** @brief Defines the web interface port settign key. */
+#define SETTING_WEB_PORT "web_port"
+/** @brief Defines the api interface port settign key. */
+#define SETTING_API_PORT "api_port"
+
+/** @brief Length of the password setting. */
+#define SETTING_NODE_SSID_LENGTH 32
+/** @brief Length of the password setting. */
+#define SETTING_NODE_PASSWORD_LENGTH 32
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -125,153 +141,34 @@ class Settings
         /**
          * @brief Reads the setting value based on the settings name.
          *
-         * @details Reads the setting value based on the settings name. If the
-         * settings does not exist, an error is returned.
+         * @details Reads the setting value based on the settings name.
+         * If the settings does not exist, an error is returned.
          *
          * @param[in] krName The name of the setting to read.
-         * @param[out] kpValue The buffer of the value to return.
+         * @param[out] pData The buffer of the value to return.
+         * @param[in] kDataLength The exact length of the data to load.
          *
          * @return The function returns the success or error status.
          */
-        template<typename T>
-        E_Return GetSettings(const std::string& krName, T* kpValue) noexcept {
-            std::map<std::string, S_SettingField>::const_iterator it;
-            E_Return                                              error;
-
-            if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
-                /* Get the setting */
-                it = this->_cache.find(krName);
-
-                /* First check, if not exists, try to load from storage */
-                if (this->_cache.end() == it &&
-                    E_Return::NO_ERROR == LoadFromNVS(krName)) {
-                        LOG_DEBUG(
-                            "Loaded setting %s from NVS\n",
-                            krName.c_str()
-                        );
-                        it = this->_cache.find(krName);
-                }
-
-                /* Second check, if still not exists, it is a failure */
-                if (this->_cache.end() != it) {
-
-                    /* Check size */
-                    if (sizeof(T) == it->second.fieldSize) {
-                        /* Get the value */
-                        memcpy(kpValue, it->second.pValue, sizeof(T));
-
-                        error = E_Return::NO_ERROR;
-                    }
-                    else {
-                        LOG_ERROR(
-                            "Invalid setting size: %s (%d vs %d).\n",
-                            krName.c_str(),
-                            sizeof(T),
-                            it->second.fieldSize
-                        );
-
-                        error = E_Return::ERR_SETTING_NOT_FOUND;
-                    }
-                }
-                else {
-                    LOG_ERROR("Failed to get setting: %s.\n", krName.c_str());
-
-                    error = E_Return::ERR_SETTING_NOT_FOUND;
-                }
-
-                if (pdPASS != xSemaphoreGive(this->_lock)) {
-                    /* TODO: Error Health Monitor */
-                }
-            }
-            else {
-                LOG_ERROR("Failed to acquire settings lock.\n");
-
-                error = E_Return::ERR_SETTING_TIMEOUT;
-            }
-            return error;
-        }
+        E_Return GetSettings(const std::string& krName,
+                             uint8_t*           pData,
+                             const size_t       kDataLength) noexcept;
 
         /**
          * @brief Writes the setting value based on the settings name.
          *
-         * @details Writes the setting value based on the settings name. If the
-         * settings does not exist it is created
+         * @details Writes the setting value based on the settings name.
+         * If the settings does not exist it is created
          *
          * @param[in] krName The name of the setting to read.
-         * @param[in] kpValue The buffer of the value to write.
+         * @param[in] kpData The buffer of the value to write.
+         * @param[in] kDataLength The length of the data to write.
          *
          * @return The function returns the success or error status.
          */
-        template<typename T>
-        E_Return SetSettings(const std::string& krName, const T* kpValue)
-        noexcept {
-            std::map<std::string, S_SettingField>::iterator it;
-            E_Return                                        error;
-            S_SettingField                                  setting;
-
-            if (krName.size() < 15) {
-                setting.pValue = new uint8_t[sizeof(T)];
-
-                if (nullptr != setting.pValue) {
-                    /* Set the field size */
-                    setting.fieldSize = sizeof(T);
-                    memcpy(setting.pValue, kpValue, sizeof(T));
-
-                    if (xSemaphoreTake(
-                            this->_lock,
-                            SETTINGS_LOCK_TIMEOUT_TICKS)
-                        ) {
-                        try {
-                            /* Get the setting and remove it exists */
-                            it = this->_cache.find(krName);
-                            if (this->_cache.end() != it) {
-                                /* Release memory and clear entry */
-                                delete[] it->second.pValue;
-                                this->_cache.erase(it);
-                            }
-
-                            this->_cache.emplace(krName, setting);
-
-                            error = E_Return::NO_ERROR;
-                        }
-                        catch (std::exception& rExc) {
-
-                            LOG_ERROR(
-                                "Failed to set setting %s.\n",
-                                krName.c_str()
-                            );
-
-                            delete[] setting.pValue;
-                            error = E_Return::ERR_MEMORY;
-                        }
-
-                        if (pdPASS != xSemaphoreGive(this->_lock)) {
-                            /* TODO: Error Health Monitor */
-                        }
-                    }
-                    else {
-                        LOG_ERROR("Failed to acquire settings lock.\n");
-                        delete[] setting.pValue;
-                        error = E_Return::ERR_SETTING_TIMEOUT;
-                    }
-                }
-                else {
-                    LOG_ERROR(
-                        "Failed to allocate setting %s.\n",
-                        krName.c_str()
-                    );
-
-                    error = E_Return::ERR_MEMORY;
-                }
-            }
-            else {
-                LOG_ERROR("Invalid setting name: %s.\n", krName.c_str());
-
-                error = E_Return::ERR_SETTING_INVALID;
-            }
-
-            return error;
-        }
+        E_Return SetSettings(const std::string& krName,
+                             const uint8_t*     kpData,
+                             const size_t       kDataLength) noexcept;
 
         /**
          * @brief Commits the changes made to the configuration to the

@@ -44,7 +44,15 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Defines the system states. */
+typedef enum {
+    /** @brief System is starting */
+    STARTING,
+    /** @brief System is executing */
+    EXECUTING,
+    /** @brief System is faulted */
+    FAULTED
+} E_SystemState;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -129,6 +137,16 @@ class HealthMonitor
          */
         E_Return RemoveWatchdog(const uint32_t kId) noexcept;
 
+        /**
+         * @brief Sets the HM system state.
+         *
+         * @details Sets the HM system state. Based on the system state, the HM
+         * will provide different services.
+         *
+         * @param[in] kState The state to set.
+         */
+        void SetSystemState(const E_SystemState kState) noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -172,6 +190,8 @@ class HealthMonitor
         uint32_t _lastWDId;
         /** @brief Stores the watchdogs mutex. */
         SemaphoreHandle_t _wdLock;
+        /** @brief Stores the current system state. */
+        E_SystemState _systemState;
 
         /** @brief Health Monitor Singleton instance. */
         static HealthMonitor* _SPINSTANCE;
