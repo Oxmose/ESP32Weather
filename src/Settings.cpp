@@ -115,13 +115,143 @@ Settings* Settings::GetInstance(void) noexcept {
     return Settings::_SP_INSTANCE;
 }
 
+E_Return Settings::GetSettings(const std::string& krName,
+                               uint8_t*           pData,
+                               const size_t       kDataLength) noexcept {
+    std::map<std::string, S_SettingField>::const_iterator it;
+    E_Return                                              error;
+
+    if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
+        /* Get the setting */
+        it = this->_cache.find(krName);
+
+        /* First check, if not exists, try to load from storage */
+        if (this->_cache.end() == it &&
+            E_Return::NO_ERROR == LoadFromNVS(krName)) {
+                LOG_DEBUG(
+                    "Loaded setting %s from NVS\n",
+                    krName.c_str()
+                );
+                it = this->_cache.find(krName);
+        }
+
+        /* Second check, if still not exists, it is a failure */
+        if (this->_cache.end() != it) {
+
+            /* Check size */
+            if (kDataLength == it->second.fieldSize) {
+                /* Get the value */
+                memcpy(pData, it->second.pValue, kDataLength);
+
+                error = E_Return::NO_ERROR;
+            }
+            else {
+                LOG_ERROR(
+                    "Invalid setting size: %s (%d vs %d).\n",
+                    krName.c_str(),
+                    kDataLength,
+                    it->second.fieldSize
+                );
+
+                error = E_Return::ERR_SETTING_NOT_FOUND;
+            }
+        }
+        else {
+            LOG_ERROR("Failed to get setting: %s.\n", krName.c_str());
+
+            error = E_Return::ERR_SETTING_NOT_FOUND;
+        }
+
+        if (pdPASS != xSemaphoreGive(this->_lock)) {
+            /* TODO: Error Health Monitor */
+        }
+    }
+    else {
+        LOG_ERROR("Failed to acquire settings lock.\n");
+
+        error = E_Return::ERR_SETTING_TIMEOUT;
+    }
+    return error;
+}
+
+E_Return Settings::SetSettings(const std::string& krName,
+                               const uint8_t*     kpData,
+                               const size_t       kDataLength) noexcept {
+    std::map<std::string, S_SettingField>::iterator it;
+    E_Return                                        error;
+    S_SettingField                                  setting;
+
+    if (15 > krName.size()) {
+        setting.pValue = new uint8_t[kDataLength];
+
+        if (nullptr != setting.pValue) {
+            /* Set the field size */
+            setting.fieldSize = kDataLength;
+            memcpy(setting.pValue, kpData, kDataLength);
+
+            if (pdPASS == xSemaphoreTake(
+                    this->_lock,
+                    SETTINGS_LOCK_TIMEOUT_TICKS)
+                ) {
+                try {
+                    /* Get the setting and remove it exists */
+                    it = this->_cache.find(krName);
+                    if (this->_cache.end() != it) {
+                        /* Release memory and clear entry */
+                        delete[] it->second.pValue;
+                        this->_cache.erase(it);
+                    }
+
+                    this->_cache.emplace(krName, setting);
+
+                    error = E_Return::NO_ERROR;
+                }
+                catch (std::exception& rExc) {
+
+                    LOG_ERROR(
+                        "Failed to set setting %s.\n",
+                        krName.c_str()
+                    );
+
+                    delete[] setting.pValue;
+                    error = E_Return::ERR_MEMORY;
+                }
+
+                if (pdPASS != xSemaphoreGive(this->_lock)) {
+                    /* TODO: Error Health Monitor */
+                }
+            }
+            else {
+                LOG_ERROR("Failed to acquire settings lock.\n");
+                delete[] setting.pValue;
+                error = E_Return::ERR_SETTING_TIMEOUT;
+            }
+        }
+        else {
+            LOG_ERROR(
+                "Failed to allocate setting %s.\n",
+                krName.c_str()
+            );
+
+            error = E_Return::ERR_MEMORY;
+        }
+    }
+    else {
+        LOG_ERROR("Invalid setting name: %s.\n", krName.c_str());
+
+        error = E_Return::ERR_SETTING_INVALID;
+    }
+
+    return error;
+}
+
 E_Return Settings::Commit(void) noexcept {
     std::map<std::string, S_SettingField>::const_iterator it;
     E_Return                                              error;
     size_t                                                saveLen;
 
     error = E_Return::NO_ERROR;
-    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
+    if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
 
         /* For all items in the cache, write to the preference */
         for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {
@@ -156,7 +286,7 @@ E_Return Settings::ClearCache(void) noexcept {
     E_Return                                              error;
 
     error = E_Return::NO_ERROR;
-    if (xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
+    if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
 
         /* For all items in the cache, write to the preference */
         for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {

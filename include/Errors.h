@@ -62,6 +62,14 @@ typedef enum {
     ERR_HM_TIMEOUT,
     /** @brief Invalid parameter. */
     ERR_INVALID_PARAM,
+    /** @brief Error while creating the web server task. */
+    ERR_WEB_SERVER_TASK,
+    /** @brief Error while creating the api server task. */
+    ERR_API_SERVER_TASK,
+    /** @brief Error while creating the web server lock. */
+    ERR_WEB_SERVER_LOCK,
+    /** @brief Error while creating the api server lock. */
+    ERR_API_SERVER_LOCK,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

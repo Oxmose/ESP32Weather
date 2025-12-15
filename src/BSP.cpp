@@ -91,7 +91,7 @@ const char* HWManager::GetHWUID(void) noexcept {
             /* TODO: Heal Monitor alert */
         }
 
-        for (i = 0; 4 > i; ++i) {
+        for (i = 0; 6 > i; ++i) {
             _SHWUID += std::string(1, spkHexTable[(value[i] >> 4) & 0xF]) +
                        std::string(1, spkHexTable[value[i] & 0xF]);
         }
@@ -112,10 +112,10 @@ const char* HWManager::GetMacAddress(void) noexcept {
         }
 
         _SMACADDR = "";
-        for (i = 0; 5 > i; ++i) {
+        for (i = 0; 6 > i; ++i) {
             _SMACADDR += std::string(1, spkHexTable[(value[i] >> 4) & 0xF]) +
                          std::string(1, spkHexTable[value[i] & 0xF]);
-            if(4 > i) {
+            if(5 > i) {
                 _SMACADDR += ":";
             }
         }

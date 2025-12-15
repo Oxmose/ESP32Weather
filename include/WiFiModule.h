@@ -23,9 +23,10 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>   /* Standard string */
-#include <cstdint>  /* Standard integer definitions */
-#include <Errors.h> /* Error definitions */
+#include <string>      /* Standard string */
+#include <cstdint>     /* Standard integer definitions */
+#include <Errors.h>    /* Error definitions */
+#include <WebServer.h> /* Web server services */
 
 /*******************************************************************************
  * CONSTANTS
@@ -106,12 +107,47 @@ class WiFiModule {
          */
         E_Return Start(const bool kStartAP) noexcept;
 
+        /**
+         * @brief Starts the Web Servers.
+         *
+         * @details Starts the Web Servers. Two servers are started: the web
+         * interface and the API interface. Both use the ports defined in
+         * parameters.
+         *
+         * @param[in] kWebIFacePort The port to use for the web interface.
+         * @param[in] kAPIIfacePort The port to use for the API interface.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return StartWebServers(const uint16_t kWebIFacePort,
+                                 const uint16_t kAPIIfacePort) noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        /**
+         * @brief Configures the web server.
+         *
+         * @details Configures the web server. This function will setup the
+         * handlers for the webserver various settings.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return ConfigureWebServer(void) noexcept;
+
+        /**
+         * @brief Configures the API server.
+         *
+         * @details Configures the API server. This function will setup the
+         * handlers for the api server various settings.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return ConfigureAPIServer(void) noexcept;
+
         /** @brief Tells if the module is set as AP or Node */
         bool _isAP;
         /** @brief Stores the AP SSID */
@@ -122,6 +158,14 @@ class WiFiModule {
         std::string _ipAddress;
         /** @brief Stores the current state of the module */
         bool _isStarted;
+        /** @brief Stores the Web Interface server instance. */
+        WebServer* _pWebServer;
+        /** @brief Stores the API Interface server instance. */
+        WebServer* _pAPIServer;
+        /** @brief Web handler task handle. */
+        TaskHandle_t _pWebServerTask;
+        /** @brief API handler task handle. */
+        TaskHandle_t _pAPIServerTask;
 };
 
 #endif /* #ifndef __WIFI_MODULE_H__ */

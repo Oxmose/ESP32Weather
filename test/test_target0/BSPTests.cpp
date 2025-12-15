@@ -5,13 +5,13 @@
 void test_hwuid() {
     const char* hwuid = HWManager::GetHWUID();
     TEST_ASSERT_NOT_NULL(hwuid);
-    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(hwuid, "RTHRWS-66E83354", 15, "None");
+    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE("RTHRWS-66E83354", hwuid, 15, "None");
 }
 
 void test_mac_addr() {
     const char* mac = HWManager::GetMacAddress();
     TEST_ASSERT_NOT_NULL(mac);
-    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(mac, "66:E8:33:54:59", 15, "None");
+    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE("66:E8:33:54:59:B0", mac, 17, "None");
 }
 
 void test_gettime() {
