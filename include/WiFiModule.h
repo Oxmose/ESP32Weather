@@ -148,6 +148,26 @@ class WiFiModule {
          */
         E_Return ConfigureAPIServer(void) noexcept;
 
+        /**
+         * @brief Configures the different servers.
+         *
+         * @details Configures the different servers. This function will setup
+         * the web and api servers.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return ConfigureServers(void) noexcept;
+
+        /**
+         * @brief Configures the different server tasks.
+         *
+         * @details Configures the different server tasks. This function will
+         * setup the web and api server tasks.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return ConfigureServerTasks(void) noexcept;
+
         /** @brief Tells if the module is set as AP or Node */
         bool _isAP;
         /** @brief Stores the AP SSID */

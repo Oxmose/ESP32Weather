@@ -207,7 +207,6 @@ E_Return WiFiModule::Start(const bool kStartAP) noexcept {
 E_Return WiFiModule::StartWebServers(const uint16_t kWebIFacePort,
                                      const uint16_t kAPIIfacePort) noexcept {
     E_Return   result;
-    BaseType_t createRes;
 
     /* Create the web server */
     if (nullptr != this->_pWebServer) {
@@ -241,16 +240,7 @@ E_Return WiFiModule::StartWebServers(const uint16_t kWebIFacePort,
 
     /* If everything went well, configure the servers */
     if (E_Return::NO_ERROR == result) {
-        result = ConfigureWebServer();
-        if (E_Return::NO_ERROR == result) {
-            result = ConfigureAPIServer();
-            if (E_Return::NO_ERROR != result) {
-                LOG_ERROR("Failed to configure the API server.\n");
-            }
-        }
-        else {
-            LOG_ERROR("Failed to configure the web server.\n");
-        }
+        result = ConfigureServers();
     }
 
     /* If everything went well, start the servers */
@@ -258,40 +248,7 @@ E_Return WiFiModule::StartWebServers(const uint16_t kWebIFacePort,
         this->_pWebServer->begin();
         this->_pAPIServer->begin();
 
-        /* Start the web server task */
-        createRes = xTaskCreatePinnedToCore(
-            WebServerHandleRoutine,
-            WEB_SERVER_TASK_NAME,
-            WEB_SERVER_TASK_STACK,
-            this->_pWebServer,
-            WEB_SERVER_TASK_PRIO,
-            &this->_pWebServerTask,
-            WEB_SERVER_TASK_CORE
-        );
-        if (pdPASS != createRes) {
-            LOG_ERROR("Failed to initialize the web handler task.\n");
-            result = E_Return::ERR_WEB_SERVER_TASK;
-        }
-
-        if (E_Return::NO_ERROR == result) {
-            /* Start the API server task */
-            createRes = xTaskCreatePinnedToCore(
-                WebServerHandleRoutine,
-                API_SERVER_TASK_NAME,
-                API_SERVER_TASK_STACK,
-                this->_pAPIServer,
-                API_SERVER_TASK_PRIO,
-                &this->_pAPIServerTask,
-                API_SERVER_TASK_CORE
-            );
-            if (pdPASS != createRes) {
-                /* Delete the first task */
-                vTaskDelete(this->_pWebServerTask);
-
-                LOG_ERROR("Failed to initialize the API handler task.\n");
-                result = E_Return::ERR_API_SERVER_TASK;
-            }
-        }
+        result = ConfigureServerTasks();
     }
 
     if (E_Return::NO_ERROR != result) {
@@ -317,6 +274,67 @@ E_Return WiFiModule::ConfigureAPIServer(void) noexcept {
 
     /* Initialize the handlers */
     result = APIServerHandlers::Init(this->_pAPIServer);
+
+    return result;
+}
+
+E_Return WiFiModule::ConfigureServers(void) noexcept {
+    E_Return result;
+
+    result = ConfigureWebServer();
+    if (E_Return::NO_ERROR == result) {
+        result = ConfigureAPIServer();
+        if (E_Return::NO_ERROR != result) {
+            LOG_ERROR("Failed to configure the API server.\n");
+        }
+    }
+    else {
+        LOG_ERROR("Failed to configure the web server.\n");
+    }
+
+    return result;
+}
+
+E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
+    E_Return  result;
+    BaseType_t createRes;
+
+    /* Start the web server task */
+    createRes = xTaskCreatePinnedToCore(
+        WebServerHandleRoutine,
+        WEB_SERVER_TASK_NAME,
+        WEB_SERVER_TASK_STACK,
+        this->_pWebServer,
+        WEB_SERVER_TASK_PRIO,
+        &this->_pWebServerTask,
+        WEB_SERVER_TASK_CORE
+    );
+    if (pdPASS == createRes) {
+        /* Start the API server task */
+        createRes = xTaskCreatePinnedToCore(
+            WebServerHandleRoutine,
+            API_SERVER_TASK_NAME,
+            API_SERVER_TASK_STACK,
+            this->_pAPIServer,
+            API_SERVER_TASK_PRIO,
+            &this->_pAPIServerTask,
+            API_SERVER_TASK_CORE
+        );
+        if (pdPASS != createRes) {
+            /* Delete the first task */
+            vTaskDelete(this->_pWebServerTask);
+
+            LOG_ERROR("Failed to initialize the API handler task.\n");
+            result = E_Return::ERR_API_SERVER_TASK;
+        }
+        else {
+            result = E_Return::NO_ERROR;
+        }
+    }
+    else {
+        LOG_ERROR("Failed to initialize the web handler task.\n");
+        result = E_Return::ERR_WEB_SERVER_TASK;
+    }
 
     return result;
 }

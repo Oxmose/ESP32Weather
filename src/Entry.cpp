@@ -132,11 +132,11 @@ static void StartWiFi(void) {
         }
     }
     else {
-        length = MIN(SETTING_NODE_SSID_LENGTH, strlen(HWManager::GetHWUID()));
+        length = strnlen(HWManager::GetHWUID(), SETTING_NODE_SSID_LENGTH);
         memcpy(networkSSID, HWManager::GetHWUID(), length);
-        length = MIN(
-            SETTING_NODE_PASSWORD_LENGTH,
-            strlen(HWManager::GetMacAddress())
+        length = strnlen(
+            HWManager::GetMacAddress(),
+            SETTING_NODE_PASSWORD_LENGTH
         );
         memcpy(networkPassword, HWManager::GetMacAddress(), length);
     }
