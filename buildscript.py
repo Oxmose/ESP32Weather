@@ -12,6 +12,12 @@ build_no = 0
 
 FULL_VERSION = ""
 
+def is_pio_build():
+    from SCons.Script import DefaultEnvironment
+    env = DefaultEnvironment()
+    if "IsCleanTarget" in dir(env) and env.IsCleanTarget(): return False
+    return not env.IsIntegrationDump()
+
 def update_versioning():
     global build_no
     global FULL_VERSION
@@ -46,5 +52,5 @@ def update_versioning():
     with open(FILENAME_VERSION_H, 'w+') as f:
         f.write(hf)
 
-
-update_versioning()
+if is_pio_build():
+    update_versioning()
