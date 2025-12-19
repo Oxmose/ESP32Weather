@@ -154,12 +154,18 @@ WiFiModule::WiFiModule(const std::string& krSSID,
         this
     );
     if (nullptr == this->_pReporter) {
-        /* TODO: HM */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_WIFI_CREATE,
+            (void*)0
+        );
     }
     pHM = HealthMonitor::GetInstance();
     result = pHM->AddReporter(this->_pReporter, this->_reporterId);
     if (E_Return::NO_ERROR != result) {
-        /* TODO: HM */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_HM_ADD_ACTION,
+            (void*)result
+        );
     }
 }
 

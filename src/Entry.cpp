@@ -249,7 +249,10 @@ void setup(void) {
     /* Initialize the setting manager */
     result = Settings::InitInstance();
     if (E_Return::NO_ERROR != result) {
-        /* TODO: Health Monitor Notify */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_SETTINGS_CREATE,
+            (void*)result
+        );
     }
 
     /* Initialize the WiFi */

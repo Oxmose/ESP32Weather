@@ -58,8 +58,6 @@ void test_delay() {
 
 void BSPTests(void) {
 
-    HWManager::Init();
-
     RUN_TEST(test_hwuid);
     RUN_TEST(test_mac_addr);
     RUN_TEST(test_gettime);

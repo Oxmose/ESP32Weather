@@ -92,7 +92,11 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/**
+ * @brief Defines the HM configuration entry, associating a HM event to a
+ * specific handler.
+ */
+typedef void(*T_EventHandler)(void*);
 
 /*******************************************************************************
  * MACROS
@@ -200,6 +204,16 @@ static void HMRTTaskWait(void* pParam);
  */
 static void HMRTTaskDeadlineMissHandler(void* pParam);
 
+
+/**
+ * @brief HM Event hander for HM_EVENT_SETTINGS_CREATE event.
+ *
+ * @details HM Event hander for HM_EVENT_SETTINGS_CREATE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSettingsCreateHandler(void* pParam);
+
 /**
  * @brief HM Event hander for HM_EVENT_SETTINGS_LOCK event.
  *
@@ -281,6 +295,17 @@ static void HMActionQCreateFailedHandler(void* pParam);
  */
 static void HMActionTaskCreateHandler(void* pParam);
 
+#ifdef HM_TEST_EVENT
+/**
+ * @brief HM Event hander for HM_EVENT_TEST event.
+ *
+ * @details HM Event hander for HM_EVENT_TEST event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+void test_hm_event_handler(void* pParam);
+#endif
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -310,6 +335,7 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMRTTaskCreateHandler,              /* HM_EVENT_RT_TASK_CREATE */
     HMRTTaskWait,                       /* HM_EVENT_RT_TASK_WAIT */
     HMRTTaskDeadlineMissHandler,        /* HM_EVENT_RT_TASK_DEADLINE_MISS */
+    HMSettingsCreateHandler,            /* HM_EVENT_SETTINGS_CREATE */
     HMSettingsLockHandler,              /* HM_EVENT_SETTINGS_LOCK */
     HMSettingsAccessLoadHandler,        /* HM_EVENT_SETTINGS_LOAD */
     HMSettingsAccessStoreHandler,       /* HM_EVENT_SETTINGS_STORE */
@@ -318,7 +344,10 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMWebStartHandler,                  /* HM_EVENT_WEB_START */
     HMAddActionHandler,                 /* HM_EVENT_HM_ADD_ACTION */
     HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_QRECV_FAILED */
-    HMActionTaskCreateHandler           /* HM_EVENT_ACTION_TASK_CREATE */
+    HMActionTaskCreateHandler,          /* HM_EVENT_ACTION_TASK_CREATE */
+#ifdef HM_TEST_EVENT
+    test_hm_event_handler,              /* HM_EVENT_TEST */
+#endif
 };
 
 /*******************************************************************************
@@ -433,7 +462,12 @@ static void HMRTTaskWait(void* pParam) {
 }
 
 static void HMRTTaskDeadlineMissHandler(void* pParam) {
-    LOG_ERROR("RT HM Task deadline miss..\n");
+    LOG_ERROR("RT HM Task deadline miss.\n");
+    HWManager::Reboot();
+}
+
+static void HMSettingsCreateHandler(void* pParam) {
+    LOG_ERROR("Failed to instanciate Settings. Error: %d\n", (uint32_t)pParam);
     HWManager::Reboot();
 }
 

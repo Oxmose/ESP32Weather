@@ -38,13 +38,13 @@ void test_timeout_wd(void) {
     uint32_t i;
 
     valueHandle = 55;
-    for (i = 0; i < 1000; ++i) {
+    for (i = 0; i < 500; ++i) {
         HWManager::DelayExecNs(10000000);
         timeoutWd.Tick();
     }
     TEST_ASSERT_EQUAL_UINT32(55, valueHandle);
 
-    HWManager::DelayExecNs(10000000000);
+    HWManager::DelayExecNs(2000000000);
     TEST_ASSERT_EQUAL_UINT32(42, valueHandle);
 }
 
@@ -52,13 +52,13 @@ void test_timeout_destroy(void) {
     Timeout* timeoutWd = new Timeout(1000000, 1000000000, wdHandlingDestroy);
 
     valueHandle = 55;
-    HWManager::DelayExecNs(2000000000);
+    HWManager::DelayExecNs(1500000000);
     TEST_ASSERT_EQUAL_UINT32(420, valueHandle);
 
     delete timeoutWd;
 
     valueHandle = 55;
-    HWManager::DelayExecNs(2000000000);
+    HWManager::DelayExecNs(1500000000);
     TEST_ASSERT_EQUAL_UINT32(55, valueHandle);
 }
 

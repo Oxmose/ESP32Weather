@@ -63,6 +63,8 @@ typedef enum {
     HM_EVENT_RT_TASK_DEADLINE_MISS,
     /** @brief HM Event: Settings lock error. */
     HM_EVENT_SETTINGS_LOCK,
+    /** @brief HM Event: Settings instantiation error. */
+    HM_EVENT_SETTINGS_CREATE,
     /** @brief HM Event: Settings access error. */
     HM_EVENT_SETTINGS_LOAD,
     /** @brief HM Event: Settings access error. */
@@ -79,6 +81,12 @@ typedef enum {
     HM_EVENT_HM_ACTION_QRECV_FAILED,
     /** @brief HM Event: Creating the action queue or task failed. */
     HM_EVENT_ACTION_TASK_CREATE,
+
+#ifdef HM_TEST_EVENT
+    /** @brief HM Event: Test event */
+    HM_EVENT_TEST,
+#endif
+
     /** @brief Maximal allowed event ID. */
     HM_EVENT_MAX
 } E_HMEvent;
@@ -92,12 +100,6 @@ typedef struct {
     /** @brief Setting buffer size in bytes. */
     size_t settingBufferSize;
 } S_HMParamSettingAccess;
-
-/**
- * @brief Defines the HM configuration entry, associating a HM event to a
- * specific handler.
- */
-typedef void(*T_EventHandler)(void*);
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS

@@ -77,7 +77,7 @@ HMReporter::HMReporter(const uint64_t     kCheckPeriodNs,
                        const std::string& krName) noexcept {
     if (0 != kCheckPeriodNs % HW_RT_TASK_PERIOD_NS) {
         LOG_ERROR(
-            "Check period for %s is not a multiple of the HM period (%dns).\n",
+            "Check period for %s is not a multiple of the HM period (%lluns).\n",
             krName.c_str(),
             HW_RT_TASK_PERIOD_NS
         );
@@ -125,10 +125,13 @@ void HMReporter::HealthCheck(const uint64_t kTime) noexcept {
     E_Return       result;
 
     if (kTime > this->_nextCheckNs) {
+        /* Update next check */
+        this->_nextCheckNs += this->_checkPeriodNs;
+
         if (!PerformCheck()) {
+            /* On failure, increment the fail count */
+            ++this->_failCount;
             if (!this->_hasRunningAction) {
-                /* On failure, increment the fail count */
-                ++this->_failCount;
 
                 /* Check if we reached an unhealthy state */
                 if (this->_failBeforeUnhealthy <= this->_failCount) {
@@ -163,9 +166,6 @@ void HMReporter::HealthCheck(const uint64_t kTime) noexcept {
             this->_failCount = 0;
             this->_status = E_HMStatus::HM_HEALTHY;
         }
-
-        /* Update next check */
-        this->_nextCheckNs += this->_checkPeriodNs;
     }
 }
 
