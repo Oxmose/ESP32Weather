@@ -23,10 +23,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>      /* Standard string */
-#include <cstdint>     /* Standard integer definitions */
-#include <Errors.h>    /* Error definitions */
-#include <WebServer.h> /* Web server services */
+#include <string>       /* Standard string */
+#include <cstdint>      /* Standard integer definitions */
+#include <Errors.h>     /* Error definitions */
+#include <WebServer.h>  /* Web server services */
+#include <HMReporter.h> /* HM Reporter abstraction */
 
 /*******************************************************************************
  * CONSTANTS
@@ -72,6 +73,8 @@
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
+/* Forward declaration */
+class WiFiModuleHealthReporter;
 
  /**
  * @brief The WiFiModule class.
@@ -91,7 +94,15 @@ class WiFiModule {
          * connect to and the actual connection is done using the Start
          * function.
          */
-        WiFiModule(const std::string& krSSID, const std::string& krPassword);
+        WiFiModule(const std::string& krSSID,
+                   const std::string& krPassword) noexcept;
+
+        /**
+         * @brief WiFiModule destructor.
+         *
+         * @details WiFiModule destructor. Release the used memory.
+         */
+        ~WiFiModule(void) noexcept;
 
         /**
          * @brief Starts the WiFiModule.
@@ -186,6 +197,84 @@ class WiFiModule {
         TaskHandle_t _pWebServerTask;
         /** @brief API handler task handle. */
         TaskHandle_t _pAPIServerTask;
+        /** @brief Stores the Health Reporter for the WiFiModule */
+        WiFiModuleHealthReporter* _pReporter;
+        /** @brief The health report ID. */
+        uint32_t _reporterId;
+
+    /********************* FRIEND DECLARATIONS *********************/
+    friend WiFiModuleHealthReporter;
+};
+
+/**
+ * @brief WiFiModule Health Reporter class.
+ *
+ * @details WiFiModule Health Reporter class. This class is used to check the
+ * WiFiModule continuous health and report the health status of the WiFiModule.
+ */
+class WiFiModuleHealthReporter : public HMReporter {
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        /**
+         * @brief Initializes the Health Reporter.
+         *
+         * @details Initializes the Health Reporter. The next check period
+         * will be started after the object initialization.
+         *
+         * @param[in] kCheckPeriodNs The health check period in nanoseconds.
+         * @param[in] kFailToDegrade The number of times the health check should
+         * fail before entering degraded state. Must be greater than 0. If
+         * greater or equal to to kFailToUnhealthy, this parameter is ignored.
+         * @param[in] kFailToUnhealthy The number of times the health check
+         * should fail before entering unhealthy state. Must be greater than 0.
+         * @param[in] krName The name of the check for reports.
+         * @param[in] pModule The WiFiModule being monitored.
+         *
+         */
+        WiFiModuleHealthReporter(const uint64_t     kCheckPeriodNs,
+                                 const uint32_t     kFailToDegrade,
+                                 const uint32_t     kFailToUnhealthy,
+                                 const std::string& krName,
+                                 WiFiModule*        pModule) noexcept;
+        /**
+         * @brief WiFiModuleHealthReporter Interface Destructor.
+         *
+         * @details WiFiModuleHealthReporter Interface Destructor. Release the
+         * used memory.
+         */
+        virtual ~WiFiModuleHealthReporter(void) noexcept;
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+        /**
+         * @brief Action executed on degraded health.
+         *
+         * @details Action executed on degraded health. Must be implemented by
+         * the inherited class.
+         */
+        virtual void OnDegraded(void) noexcept;
+        /**
+         * @brief Action executed on unhealthy health.
+         *
+         * @details Action executed on unhealthy health. Must be implemented by
+         * the inherited class.
+         */
+        virtual void OnUnhealthy(void) noexcept;
+        /**
+         * @brief Checks the current health for the report.
+         *
+         * @details  Checks the current health for the report. Must be
+         * implemented by the inherited class.
+         *
+         * @return The function returns the check status: passed is True,
+         * otherwise False.
+         */
+        virtual bool PerformCheck(void) noexcept;
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        /** @brief The module monitored by the reporter. */
+        WiFiModule* _pModule;
 };
 
 #endif /* #ifndef __WIFI_MODULE_H__ */

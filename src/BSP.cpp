@@ -22,10 +22,11 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <string>    /* Standard string */
-#include <cstdint>   /* Standard int types */
-#include <Logger.h>  /* Logger services */
-#include <Arduino.h> /* Arduino library */
+#include <string>          /* Standard string */
+#include <cstdint>         /* Standard int types */
+#include <Logger.h>        /* Logger services */
+#include <Arduino.h>       /* Arduino library */
+#include <HealthMonitor.h> /* HM Services*/
 
 /* Header file */
 #include <BSP.h>
@@ -88,7 +89,9 @@ const char* HWManager::GetHWUID(void) noexcept {
         _SHWUID = "RTHRWS-";
 
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            /* TODO: Heal Monitor alert */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL
+            );
         }
 
         for (i = 0; 6 > i; ++i) {
@@ -108,7 +111,9 @@ const char* HWManager::GetMacAddress(void) noexcept {
     /* Check if the MAC address was already generated */
     if(0 == _SMACADDR.size()) {
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            /* TODO: Heal Monitor alert */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL
+            );
         }
 
         _SMACADDR = "";
@@ -156,10 +161,4 @@ void HWManager::Reboot(void) noexcept {
     DelayExecNs(500000000ULL);
     ESP.restart();
     while (true) {}
-}
-
-void HWManager::Init(void) noexcept {
-    /* Init HWUID and MAC Address */
-    (void)GetHWUID();
-    (void)GetMacAddress();
 }

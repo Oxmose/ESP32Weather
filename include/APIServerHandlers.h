@@ -130,7 +130,7 @@ class APIServerHandlers {
          *
          * @param[out] rFooterStr The string buffer that receives the footer.
          */
-        static void GetPageFooter(std::string& rFooterStr);
+        static void GetPageFooter(std::string& rFooterStr) noexcept;
 
         /**
          * @brief Generic page handler.

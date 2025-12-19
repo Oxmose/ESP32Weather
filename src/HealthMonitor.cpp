@@ -27,7 +27,9 @@
 #include <cstdint>           /* Standard int types */
 #include <Logger.h>          /* Logger services */
 #include <Arduino.h>         /* Arduino library */
+#include <Settings.h>        /* Firmware settings */
 #include <esp32-hal-timer.h> /* ESP32 Timers */
+#include <HMConfiguration.h> /* HM Configuration */
 
 /* Header file */
 #include <HealthMonitor.h>
@@ -35,10 +37,6 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/**
- * @brief Defines the real-time task period in nanoseconds.
- */
-#define HW_RT_TASK_PERIOD_NS 10000000ULL
 
 /**
  * @brief Defines the real-time task period tolerance in nanoseconds.
@@ -68,22 +66,28 @@
     )
 
 /** @brief Hardware Real-Time Task name. */
-#define HW_RT_TASK_NAME "HW-RT_Task"
-
+#define HW_RT_TASK_NAME "HW-RT_TASK"
 /** @brief Hardware Real-Time Task stack size in bytes. */
 #define HW_RT_TASK_STACK 4096
-
 /** @brief Hardware Real-Time Task priority. */
 #define HW_RT_TASK_PRIO (configMAX_PRIORITIES - 1)
-
 /** @brief Hardware Real-Time Task mapped core ID. */
 #define HW_RT_TASK_CORE 0
-
 /** @brief Defines the watchdogs lock timeout in nanoseconds. */
 #define WD_LOCK_TIMEOUT_NS 20000000ULL
-
 /** @brief Defines the watchdogs lock timeout in ticks. */
 #define WD_LOCK_TIMEOUT_TICKS (pdMS_TO_TICKS(WD_LOCK_TIMEOUT_NS / 1000000ULL))
+
+/** @brief Actions Task name. */
+#define HM_ACTIONS_TASK_NAME "HM_ACTIONS_TASK"
+/** @brief Actions Task stack size in bytes. */
+#define HM_ACTIONS_TASK_STACK 4096
+/** @brief Actions Task priority. */
+#define HM_ACTIONS_TASK_PRIO (configMAX_PRIORITIES - 2)
+/** @brief Actions Task mapped core ID. */
+#define HM_ACTIONS_TASK_CORE 0
+/** @brief Defines the size of the actions queue. */
+#define HM_ACTIONS_TASK_QUEUE_LENGTH 1
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -106,6 +110,177 @@
  */
 static void IRAM_ATTR RealTimeTaskTimerHandler(void);
 
+/**
+ * @brief HM Event hander for HM_EVENT_API_SERVER_NO_SERVER event.
+ *
+ * @details HM Event hander for HM_EVENT_API_SERVER_NO_SERVER event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMAPIServerNoServerHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_API_SERVER_LOCK event.
+ *
+ * @details HM Event hander for HM_EVENT_API_SERVER_LOCK event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMAPIServerLockHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_WEB_SERVER_NO_SERVER event.
+ *
+ * @details HM Event hander for HM_EVENT_WEB_SERVER_NO_SERVER event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWebServerNoServerHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_WEB_SERVER_LOCK event.
+ *
+ * @details HM Event hander for HM_EVENT_WEB_SERVER_LOCK event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWebServerLockHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_HW_MAC_NOT_AVAIL event.
+ *
+ * @details HM Event hander for HM_EVENT_HW_MAC_NOT_AVAIL event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMHWMACNotAvailHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_HM_LOCK event.
+ *
+ * @details HM Event hander for HM_EVENT_HM_LOCK event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMHWLockHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_WD_TIMEOUT event.
+ *
+ * @details HM Event hander for HM_EVENT_WD_TIMEOUT event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWdTimeoutHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_RT_TASK_CREATE event.
+ *
+ * @details HM Event hander for HM_EVENT_RT_TASK_CREATE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMRTTaskCreateHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_RT_TASK_WAIT event.
+ *
+ * @details HM Event hander for HM_EVENT_RT_TASK_WAIT event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMRTTaskWait(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_RT_TASK_DEADLINE_MISS event.
+ *
+ * @details HM Event hander for HM_EVENT_RT_TASK_DEADLINE_MISS event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMRTTaskDeadlineMissHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_SETTINGS_LOCK event.
+ *
+ * @details HM Event hander for HM_EVENT_SETTINGS_LOCK event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSettingsLockHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_SETTINGS_LOAD event.
+ *
+ * @details HM Event hander for HM_EVENT_SETTINGS_LOAD event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSettingsAccessLoadHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_SETTINGS_STORE event.
+ *
+ * @details HM Event hander for HM_EVENT_SETTINGS_STORE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSettingsAccessStoreHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_SETTINGS_DEFAULT event.
+ *
+ * @details HM Event hander for HM_EVENT_SETTINGS_DEFAULT event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSettingsAccessDefaultHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_WIFI_CREATE event.
+ *
+ * @details HM Event hander for HM_EVENT_WIFI_CREATE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWifiCreateHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_WEB_START event.
+ *
+ * @details HM Event hander for HM_EVENT_WEB_START event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWebStartHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_HM_ADD_ACTION event.
+ *
+ * @details HM Event hander for HM_EVENT_HM_ADD_ACTION event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMAddActionHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_HM_ACTION_QRECV_FAILED event.
+ *
+ * @details HM Event hander for HM_EVENT_HM_ACTION_QRECV_FAILED event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMActionQCreateFailedHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_ACTION_TASK_CREATE event.
+ *
+ * @details HM Event hander for HM_EVENT_ACTION_TASK_CREATE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMActionTaskCreateHandler(void* pParam);
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -122,6 +297,29 @@ static TaskHandle_t sRTTaskHandle;
 
 /** @brief Singleton instance of the health monitor. */
 HealthMonitor* HealthMonitor::_SPINSTANCE = nullptr;
+
+/** @brief Stores the HM event handlers. */
+static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
+    HMAPIServerNoServerHandler,         /* HM_EVENT_API_SERVER_NO_SERVER */
+    HMAPIServerLockHandler,             /* HM_EVENT_API_SERVER_LOCK */
+    HMWebServerNoServerHandler,         /* HM_EVENT_WEB_SERVER_NO_SERVER */
+    HMWebServerLockHandler,             /* HM_EVENT_WEB_SERVER_LOCK */
+    HMHWMACNotAvailHandler,             /* HM_EVENT_HW_MAC_NOT_AVAIL */
+    HMHWLockHandler,                    /* HM_EVENT_HM_LOCK */
+    HMWdTimeoutHandler,                 /* HM_EVENT_WD_TIMEOUT */
+    HMRTTaskCreateHandler,              /* HM_EVENT_RT_TASK_CREATE */
+    HMRTTaskWait,                       /* HM_EVENT_RT_TASK_WAIT */
+    HMRTTaskDeadlineMissHandler,        /* HM_EVENT_RT_TASK_DEADLINE_MISS */
+    HMSettingsLockHandler,              /* HM_EVENT_SETTINGS_LOCK */
+    HMSettingsAccessLoadHandler,        /* HM_EVENT_SETTINGS_LOAD */
+    HMSettingsAccessStoreHandler,       /* HM_EVENT_SETTINGS_STORE */
+    HMSettingsAccessDefaultHandler,     /* HM_EVENT_SETTINGS_DEFAULT */
+    HMWifiCreateHandler,                /* HM_EVENT_WIFI_CREATE */
+    HMWebStartHandler,                  /* HM_EVENT_WEB_START */
+    HMAddActionHandler,                 /* HM_EVENT_HM_ADD_ACTION */
+    HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_QRECV_FAILED */
+    HMActionTaskCreateHandler           /* HM_EVENT_ACTION_TASK_CREATE */
+};
 
 /*******************************************************************************
  * FUNCTIONS
@@ -140,12 +338,238 @@ static void IRAM_ATTR RealTimeTaskTimerHandler(void) {
     );
 
     if (pdPASS != result) {
-        LOG_ERROR("Failed to notify the Real-Time Task.\n");
-        HWManager::Reboot();
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_RT_TASK_WAIT,
+            (void*)0
+        );
     }
 
     /* Check if scheduling is needed */
     portYIELD_FROM_ISR(needSchedule);
+}
+
+static void HMAPIServerNoServerHandler(void* pParam) {
+    (void)pParam;
+    LOG_ERROR("API Server has no Web Server backend.\n");
+    HWManager::Reboot();
+}
+
+static void HMAPIServerLockHandler(void* pParam) {
+    LOG_ERROR("API Server lock error:\n");
+    if ((bool)pParam) {
+        LOG_ERROR("\tFailed to lock server.\n");
+    }
+    else {
+        LOG_ERROR("\tFailed to unlock server.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMWebServerNoServerHandler(void* pParam) {
+    (void)pParam;
+    LOG_ERROR("Web Server has no Web Server backend.\n");
+    HWManager::Reboot();
+}
+
+static void HMWebServerLockHandler(void* pParam) {
+    LOG_ERROR("Web Server lock error:\n");
+    if ((bool)pParam) {
+        LOG_ERROR("\tFailed to lock server.\n");
+    }
+    else {
+        LOG_ERROR("\tFailed to unlock server.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMHWMACNotAvailHandler(void* pParam) {
+    LOG_ERROR("Error while reading MAC address.\n");
+    HWManager::Reboot();
+}
+
+static void HMHWLockHandler(void* pParam) {
+    LOG_ERROR("HM lock error:\n");
+    if ((bool)pParam) {
+        LOG_ERROR("\tFailed to lock the HM.\n");
+    }
+    else {
+        LOG_ERROR("\tFailed to unlock the HM.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMWdTimeoutHandler(void* pParam) {
+    LOG_ERROR(
+        "Error while addind or removing a watchdog: error %d.\n",
+        (uint32_t)pParam
+    );
+    HWManager::Reboot();
+}
+
+static void HMRTTaskCreateHandler(void* pParam) {
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to create the RT HM Task timer.\n");
+    }
+    else if (1 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to create the RT HM Task.\n");
+    }
+    else {
+        LOG_ERROR("Unknown RT HM Task error.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMRTTaskWait(void* pParam) {
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to notify the RT HM Task timer.\n");
+    }
+    else if (1 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to wait for the RT HM Task timer.\n");
+    }
+    else {
+        LOG_ERROR("Unknown RT HM Task error.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMRTTaskDeadlineMissHandler(void* pParam) {
+    LOG_ERROR("RT HM Task deadline miss..\n");
+    HWManager::Reboot();
+}
+
+static void HMSettingsLockHandler(void* pParam) {
+    LOG_ERROR("Settings lock error:\n");
+    if ((bool)pParam) {
+        LOG_ERROR("\tFailed to lock the settings.\n");
+    }
+    else {
+        LOG_ERROR("\tFailed to unlock the settings.\n");
+    }
+    HWManager::Reboot();
+}
+
+static void HMSettingsAccessLoadHandler(void* pParam) {
+    S_HMParamSettingAccess* pAccessParam;
+    E_Return                result;
+    Settings*               pSettings;
+
+    pAccessParam = (S_HMParamSettingAccess*)pParam;
+
+    LOG_ERROR(
+        "Failed to load setting %s. Applying default value.\n",
+        pAccessParam->kpSettingName
+    );
+
+    /* Propagate the default setting */
+    pSettings = Settings::GetInstance();
+
+    result = pSettings->GetDefault(
+        pAccessParam->kpSettingName,
+        (uint8_t*)pAccessParam->pSettingBuffer,
+        pAccessParam->settingBufferSize
+    );
+    if (E_Return::NO_ERROR != result) {
+        HMSettingsAccessDefaultHandler(pParam);
+    }
+
+    /* Apply the default setting */
+    result = pSettings->SetSettings(
+        pAccessParam->kpSettingName,
+        (uint8_t*)pAccessParam->pSettingBuffer,
+        pAccessParam->settingBufferSize
+    );
+    if (E_Return::NO_ERROR != result) {
+        LOG_ERROR(
+            "Failed to set default setting %s.",
+            pAccessParam->kpSettingName
+        );
+        HWManager::Reboot();
+    }
+
+    /* Commit */
+    result = pSettings->Commit();
+    if (E_Return::NO_ERROR != result) {
+        LOG_ERROR(
+            "Failed to commit default setting %s.",
+            pAccessParam->kpSettingName
+        );
+        HWManager::Reboot();
+    }
+}
+
+static void HMSettingsAccessStoreHandler(void* pParam) {
+    S_HMParamSettingAccess* pAccessParam;
+
+    pAccessParam = (S_HMParamSettingAccess*)pParam;
+
+    LOG_ERROR(
+        "Failed to set value for setting %s.\n",
+        pAccessParam->kpSettingName
+    );
+
+    HWManager::Reboot();
+}
+
+static void HMSettingsAccessDefaultHandler(void* pParam) {
+    S_HMParamSettingAccess* pAccessParam;
+
+    pAccessParam = (S_HMParamSettingAccess*)pParam;
+
+    LOG_ERROR(
+        "Failed to get default value for setting %s.\n",
+        pAccessParam->kpSettingName
+    );
+    HWManager::Reboot();
+}
+
+static void HMWifiCreateHandler(void* pParam) {
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to instanciate the WiFi module.\n");
+    }
+    else {
+        LOG_ERROR(
+            "Failed to create the Web Servers, error: %d\n",
+            (uint32_t)pParam
+        );
+    }
+    HWManager::Reboot();
+}
+
+static void HMWebStartHandler(void* pParam) {
+    LOG_ERROR(
+        "Failed to start the Web Servers, error: %d\n",
+        (uint32_t)pParam
+    );
+    HWManager::Reboot();
+}
+
+static void HMAddActionHandler(void* pParam) {
+    LOG_ERROR(
+        "Failed to add HM action, error: %d\n",
+        (uint32_t)pParam
+    );
+    HWManager::Reboot();
+}
+
+static void HMActionQCreateFailedHandler(void* pParam) {
+    LOG_ERROR(
+        "Failed create HM action queue, error: %d\n",
+        (uint32_t)pParam
+    );
+    HWManager::Reboot();
+}
+
+static void HMActionTaskCreateHandler(void* pParam) {
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("Failed to create the HM action queue.\n");
+    }
+    else {
+        LOG_ERROR(
+            "Failed to create the HM action task, error: %d\n",
+            (uint32_t)pParam
+        );
+    }
+    HWManager::Reboot();
 }
 
 /*******************************************************************************
@@ -163,6 +587,12 @@ HealthMonitor* HealthMonitor::GetInstance(void) noexcept {
     }
 
     return HealthMonitor::_SPINSTANCE;
+}
+
+void HealthMonitor::Init(void) noexcept {
+    /* Initialize the HM tasks */
+    RealTimeTaskInit();
+    ActionsTaskInit();
 }
 
 E_Return HealthMonitor::AddWatchdog(Timeout* pTimeout, uint32_t& rId) noexcept {
@@ -188,7 +618,10 @@ E_Return HealthMonitor::AddWatchdog(Timeout* pTimeout, uint32_t& rId) noexcept {
             }
 
             if (pdPASS != xSemaphoreGive(this->_wdLock)) {
-                /* TODO: Error Health Monitor */
+                HealthMonitor::GetInstance()->ReportHM(
+                    E_HMEvent::HM_EVENT_HM_LOCK,
+                    (void*)1
+                );
             }
         }
         else {
@@ -224,7 +657,10 @@ E_Return HealthMonitor::RemoveWatchdog(const uint32_t kId) noexcept {
         }
 
         if (pdPASS != xSemaphoreGive(this->_wdLock)) {
-            /* TODO: Error Health Monitor */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_LOCK,
+                (void*)1
+            );
         }
     }
     else {
@@ -239,13 +675,111 @@ void HealthMonitor::SetSystemState(const E_SystemState kState) noexcept {
     this->_systemState = kState;
 }
 
-void HealthMonitor::Init(void) noexcept {
-    /* Initialize the real-time task */
-    RealTimeTaskInit();
+
+E_Return HealthMonitor::AddReporter(HMReporter* pReporter,
+                                    uint32_t&   rId) noexcept {
+    E_Return error;
+
+    /* Check settings */
+    if (pdPASS == xSemaphoreTake(this->_reportersLock, WD_LOCK_TIMEOUT_TICKS)) {
+        if (this->_lastReporterId < UINT32_MAX) {
+            try {
+                this->_reporters.emplace(
+                    std::make_pair(this->_lastReporterId, pReporter)
+                );
+                rId = this->_lastReporterId++;
+                error = E_Return::NO_ERROR;
+            }
+            catch (std::exception& rExc) {
+                error = E_Return::ERR_UNKNOWN;
+            }
+        }
+        else {
+            error = E_Return::ERR_MEMORY;
+        }
+
+        if (pdPASS != xSemaphoreGive(this->_reportersLock)) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_LOCK,
+                (void*)1
+            );
+        }
+    }
+    else {
+        LOG_ERROR("Failed to acquire reporters lock.\n");
+        error = E_Return::ERR_HM_TIMEOUT;
+    }
+
+    return error;
+}
+
+E_Return HealthMonitor::RemoveReporter(const uint32_t kId) noexcept {
+    E_Return                                            error;
+    std::unordered_map<uint32_t, HMReporter*>::iterator it;
+
+    if (pdPASS == xSemaphoreTake(this->_reportersLock, WD_LOCK_TIMEOUT_TICKS)) {
+        it = this->_reporters.find(kId);
+        if (this->_reporters.end() != it) {
+            try {
+                this->_reporters.erase(it);
+                error = E_Return::NO_ERROR;
+            }
+            catch (std::exception& rExc) {
+                error = E_Return::ERR_UNKNOWN;
+            }
+        }
+        else {
+            error = E_Return::ERR_NO_SUCH_ID;
+        }
+
+        if (pdPASS != xSemaphoreGive(this->_reportersLock)) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_LOCK,
+                (void*)1
+            );
+        }
+    }
+    else {
+        LOG_ERROR("Failed to acquire reporters lock.\n");
+        error = E_Return::ERR_HM_TIMEOUT;
+    }
+
+    return error;
+}
+
+E_Return HealthMonitor::AddHMAction(HMReporter* pReporter) noexcept {
+    BaseType_t result;
+    E_Return   retVal;
+
+    /* Place the action in the actions queue */
+    result = xQueueSend(this->_actionsQueue, (void*)&pReporter, 0);
+    if (pdPASS != result) {
+        /* We should never have too many actions */
+        retVal = E_Return::ERR_HM_FULL;
+    }
+    else {
+        retVal = E_Return::NO_ERROR;
+    }
+
+    return retVal;
+}
+
+void HealthMonitor::ReportHM(const E_HMEvent kEvent,
+                             void*           pParam /* = nullptr */) const
+noexcept {
+    if (HM_EVENT_MAX > kEvent) {
+        /* Execute the registered handler */
+        sHMHandlers[kEvent](pParam);
+    }
+    else {
+        LOG_ERROR("HM Event unknown: %d.\n", kEvent);
+        HWManager::Reboot();
+    }
 }
 
 HealthMonitor::HealthMonitor(void) noexcept {
     this->_lastWDId = 0;
+    this->_lastReporterId = 0;
     this->_systemState = E_SystemState::STARTING;
 
     this->_wdLock = xSemaphoreCreateMutex();
@@ -253,59 +787,130 @@ HealthMonitor::HealthMonitor(void) noexcept {
         LOG_ERROR("Failed to initialize Health Monitor Watchdogs lock.\n");
         HWManager::Reboot();
     }
+    this->_reportersLock = xSemaphoreCreateMutex();
+    if (nullptr == this->_reportersLock) {
+        LOG_ERROR("Failed to initialize Health Monitor Reporters lock.\n");
+        HWManager::Reboot();
+    }
 }
 
 void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
-    BaseType_t                                       result;
-    HealthMonitor*                                   pHM;
-    uint64_t                                         currentTime;
-    std::unordered_map<uint32_t, Timeout*>::iterator it;
-    Timeout                                          hmDeadlineTimeout(
-        HW_RT_TASK_DEADLINE_MISS_DELAY
-    );
+    BaseType_t     result;
+    HealthMonitor* pHM;
+    Timeout        hmDeadlineTimeout(HW_RT_TASK_DEADLINE_MISS_DELAY);
+
     pHM = (HealthMonitor*)pHealthMonitor;
+
     while (true) {
         /* Wait for trigger signal */
         result = xTaskNotifyWait(0xFFFFFFFFUL, 0x0UL, 0x0UL, portMAX_DELAY);
-
-        /* Check for event error*/
         if (pdPASS != result) {
-            LOG_ERROR("HW Real-Time Task event error.\n");
-            HWManager::Reboot();
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_RT_TASK_WAIT,
+                (void*)1
+            );
         }
 
         /* Check for deadline miss */
         if (E_SystemState::EXECUTING == pHM->_systemState &&
             hmDeadlineTimeout.Check()) {
-            LOG_ERROR(
-                "HW Real-Time Task deadline miss (expeected %llu).\n",
-                hmDeadlineTimeout.GetNextTimeEvent()
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_RT_TASK_DEADLINE_MISS
             );
-            HWManager::Reboot();
         }
+
         /* Tick the timeout */
         hmDeadlineTimeout.Tick();
 
-        /* Check for watchdogs */
-        currentTime = HWManager::GetTime();
-        if (pdPASS == xSemaphoreTake(pHM->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
-            for (it = pHM->_watchdogs.begin();
-                 pHM->_watchdogs.end() != it;
-                 ++it) {
-                /* Check for dealine miss */
-                if (it->second->GetNextWatchdogEvent() < currentTime) {
-                    it->second->ExecuteHandler();
-                }
-            }
+        /* Perform HM checks */
+        pHM->CheckWatchdogs();
+        pHM->CheckReporters();
+    }
+}
 
-            if (pdPASS != xSemaphoreGive(pHM->_wdLock)) {
-                /* TODO: Error Health Monitor */
+void HealthMonitor::HMActionTaskRoutine(void* pHealthMonitor) noexcept {
+    HealthMonitor* pHM;
+    HMReporter*    pReporter;
+    BaseType_t     result;
+
+    pHM = (HealthMonitor*)pHealthMonitor;
+
+    while (true) {
+        /* Get the next job */
+        result = xQueueReceive(
+            pHM->_actionsQueue,
+            (void*)&pReporter,
+            portMAX_DELAY
+        );
+
+        if (pdPASS != result) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_ACTION_QRECV_FAILED,
+                (void*)result
+            );
+        }
+
+        /* Execute the action */
+        pReporter->ExecuteAction();
+    }
+}
+
+void HealthMonitor::CheckWatchdogs(void) const noexcept {
+    uint64_t                                               currentTime;
+    std::unordered_map<uint32_t, Timeout*>::const_iterator it;
+
+    /* Check for watchdogs */
+    currentTime = HWManager::GetTime();
+    if (pdPASS == xSemaphoreTake(this->_wdLock, WD_LOCK_TIMEOUT_TICKS)) {
+        for (it = this->_watchdogs.begin();
+             this->_watchdogs.end() != it;
+             ++it) {
+            /* Check for dealine miss */
+            if (it->second->GetNextWatchdogEvent() < currentTime) {
+                it->second->ExecuteHandler();
             }
         }
-        else {
-            LOG_ERROR("Failed to acquire watchdogs lock.\n");
-            HWManager::Reboot();
+
+        if (pdPASS != xSemaphoreGive(this->_wdLock)) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_LOCK,
+                (void*)1
+            );
         }
+    }
+    else {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_HM_LOCK,
+            (void*)0
+        );
+    }
+}
+
+void HealthMonitor::CheckReporters(void) const noexcept {
+    uint64_t                                                  currentTime;
+    std::unordered_map<uint32_t, HMReporter*>::const_iterator it;
+
+    /* Check for HM reporters */
+    currentTime = HWManager::GetTime();
+    if (pdPASS == xSemaphoreTake(this->_reportersLock, WD_LOCK_TIMEOUT_TICKS)) {
+        for (it = this->_reporters.begin();
+             this->_reporters.end() != it;
+             ++it) {
+            it->second->HealthCheck(currentTime);
+        }
+
+        if (pdPASS != xSemaphoreGive(this->_reportersLock)) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_HM_LOCK,
+                (void*)1
+            );
+        }
+    }
+    else {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_HM_LOCK,
+            (void*)0
+        );
     }
 }
 
@@ -319,8 +924,10 @@ void HealthMonitor::RealTimeTaskInit(void) noexcept {
         true
     );
     if (nullptr == this->_RTTaskTimer) {
-        LOG_ERROR("Failed to initialize the Real-Time Timer.\n");
-        HWManager::Reboot();
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_RT_TASK_CREATE,
+            (void*)0
+        );
     }
     timerAttachInterrupt(this->_RTTaskTimer, RealTimeTaskTimerHandler, true);
     timerAlarmWrite(this->_RTTaskTimer, HW_RT_TASK_TIMER_DEC_INT, true);
@@ -338,9 +945,44 @@ void HealthMonitor::RealTimeTaskInit(void) noexcept {
         HW_RT_TASK_CORE
     );
     if (pdPASS != result) {
-        LOG_ERROR("Failed to initialize the Real-Time Task.\n");
-        HWManager::Reboot();
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_RT_TASK_CREATE,
+            (void*)1
+        );
     }
 
     sRTTaskHandle = this->_RTTaskHandle;
+}
+
+void HealthMonitor::ActionsTaskInit(void) noexcept {
+    BaseType_t result;
+
+    /* Create the actions queue */
+    this->_actionsQueue = xQueueCreate(
+        HM_ACTIONS_TASK_QUEUE_LENGTH,
+        sizeof(HMReporter*)
+    );
+    if (nullptr == this->_actionsQueue) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_ACTION_TASK_CREATE,
+            (void*)0
+        );
+    }
+
+    /* Create the real-time high-priority task */
+    result = xTaskCreatePinnedToCore(
+        HMActionTaskRoutine,
+        HM_ACTIONS_TASK_NAME,
+        HM_ACTIONS_TASK_STACK,
+        this,
+        HM_ACTIONS_TASK_PRIO,
+        &this->_actionsTaskHandle,
+        HM_ACTIONS_TASK_CORE
+    );
+    if (pdPASS != result) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_ACTION_TASK_CREATE,
+            (void*)1
+        );
+    }
 }

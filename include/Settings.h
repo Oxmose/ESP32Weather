@@ -47,7 +47,7 @@
 /** @brief Defines the node ssid setting key. */
 #define SETTING_NODE_SSID "node_ssid"
 /** @brief Defines the node password setting key. */
-#define SETTING_NODE_PASSWORD "node_pass"
+#define SETTING_NODE_PASS "node_pass"
 /** @brief Defines the web interface port settign key. */
 #define SETTING_WEB_PORT "web_port"
 /** @brief Defines the api interface port settign key. */
@@ -56,7 +56,7 @@
 /** @brief Length of the password setting. */
 #define SETTING_NODE_SSID_LENGTH 32
 /** @brief Length of the password setting. */
-#define SETTING_NODE_PASSWORD_LENGTH 32
+#define SETTING_NODE_PASS_LENGTH 32
 
 /*******************************************************************************
  * MACROS
@@ -155,6 +155,22 @@ class Settings
                              const size_t       kDataLength) noexcept;
 
         /**
+         * @brief Reads the default setting value based on the settings name.
+         *
+         * @details Reads default the setting value based on the settings name.
+         * If the settings does not exist, an error is returned.
+         *
+         * @param[in] krName The name of the setting to read.
+         * @param[out] pData The buffer of the value to return.
+         * @param[in] kDataLength The exact length of the data to load.
+         *
+         * @return The function returns the success or error status.
+         */
+        E_Return GetDefault(const std::string& krName,
+                            uint8_t*           pData,
+                            const size_t       kDataLength) noexcept;
+
+        /**
          * @brief Writes the setting value based on the settings name.
          *
          * @details Writes the setting value based on the settings name.
@@ -192,6 +208,8 @@ class Settings
          */
         E_Return ClearCache(void) noexcept;
 
+
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -218,6 +236,14 @@ class Settings
          */
         Settings(void) noexcept;
 
+        /**
+         * @brief Initializes the default values for the settings.
+         *
+         * @details Initializes the default values for the settings. Those are
+         * not stored in non-volatile memory and generated at each boot.
+         */
+        void InitializeDefault(void) noexcept;
+
         /** @brief Stores the current singleton instance. */
         static Settings* _SP_INSTANCE;
 
@@ -229,6 +255,9 @@ class Settings
 
         /** @brief Stores the settings cache. */
         std::map<std::string, S_SettingField> _cache;
+
+        /** @brief Stores the default settings. */
+        std::map<std::string, const S_SettingField> _defaults;
 };
 
 #endif /* #ifndef __SETTINGS_H__ */

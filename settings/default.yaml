@@ -1,0 +1,16 @@
+---
+is_ap:
+  type: bool
+  value: "true"
+node_ssid:
+  type: char*
+  value: '"RTHR_NODE"'
+node_pass:
+  type: char*
+  value: '"RTHR_PASS"'
+web_port:
+  type: uint16_t
+  value: 80
+api_port:
+  type: uint16_t
+  value: 8333

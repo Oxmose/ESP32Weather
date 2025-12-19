@@ -22,10 +22,11 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Logger.h>    /* Logger services */
-#include <Errors.h>    /* Errors definitions */
-#include <Arduino.h>   /* Arduino Framework */
-#include <WebServer.h> /* Web server services */
+#include <Logger.h>        /* Logger services */
+#include <Errors.h>        /* Errors definitions */
+#include <Arduino.h>       /* Arduino Framework */
+#include <WebServer.h>     /* Web server services */
+#include <HealthMonitor.h> /* HM Services */
 
 /* Header file */
 #include <APIServerHandlers.h>
@@ -154,7 +155,7 @@ void APIServerHandlers::GetPageHeader(std::string& rHeaderStr,
                   "<body>";
 }
 
-void APIServerHandlers::GetPageFooter(std::string& rFooterStr) {
+void APIServerHandlers::GetPageFooter(std::string& rFooterStr) noexcept {
     rFooterStr.clear();
     rFooterStr += "</body>\n</html>";
 }
@@ -171,15 +172,22 @@ void APIServerHandlers::GenericHandler(const std::string& krPage,
             _SPSERVER->send(kCode, "text/html", krPage.c_str());
 
             if (pdPASS != xSemaphoreGive(_SSERVER_LOCK)) {
-                /* TODO: Error Health Monitor */
+                HealthMonitor::GetInstance()->ReportHM(
+                    E_HMEvent::HM_EVENT_API_SERVER_LOCK,
+                    (void*)1
+                );
             }
         }
         else {
-            /* TODO: Error Health Monitor */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_API_SERVER_LOCK,
+                (void*)0
+            );
         }
     }
     else {
-        LOG_ERROR("Handling URL without valid web server.\n");
-        /* TODO: Health Monitor Notify */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_API_SERVER_NO_SERVER
+        );
     }
 }

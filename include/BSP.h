@@ -34,22 +34,7 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-
-/**
- * @brief Gets the minimal value between two.
- *
- * @param[in] X The first value.
- * @param[in] Y The second value.
- */
-#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
-
-/**
- * @brief Gets the maximal value between two.
- *
- * @param[in] X The first value.
- * @param[in] Y The second value.
- */
-#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+/* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -145,14 +130,6 @@ class HWManager
          * function.
          */
         static void Reboot(void) noexcept;
-
-        /**
-         * @brief Initializes the hadrware manager.
-         *
-         * @details Initializes the hadrware manager. This function setups the
-         * different GPIO and peripherals needed at startup.
-         */
-        static void Init(void) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
