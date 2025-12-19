@@ -1,9 +1,18 @@
-import datetime
-
 Import("env")
+try:
+    import yaml
+except ImportError:
+    env.Execute("$PYTHONEXE -m pip install pyyaml")
+    import yaml
+
+import datetime
+import settings.defaultsettings as DefaultSettings
+
 
 FILENAME_BUILDNO = 'versioning'
 FILENAME_VERSION_H = 'include/version.h'
+FILENAME_DEFAULT_SETTINGS_CPP = "src/DefaultSettings.cpp"
+FILENAME_DEFAULT_SETTINGS_YAML = "settings/default.yaml"
 
 MAJOR = 0
 MINOR = 1
@@ -52,5 +61,10 @@ def update_versioning():
     with open(FILENAME_VERSION_H, 'w+') as f:
         f.write(hf)
 
+def generate_default_settings():
+    DefaultSettings.GenerateDerfaultSettings(FILENAME_DEFAULT_SETTINGS_YAML, FILENAME_DEFAULT_SETTINGS_CPP)
+
 if is_pio_build():
+
+    generate_default_settings()
     update_versioning()

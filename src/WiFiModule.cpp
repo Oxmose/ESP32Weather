@@ -29,6 +29,7 @@
 #include <Errors.h>            /* Error definitions */
 #include <Logger.h>            /* Logger services */
 #include <Timeout.h>           /* Timeout manager */
+#include <HealthMonitor.h>     /* HM services */
 #include <WebServerHandlers.h> /* WebServer URL handlers */
 #include <APIServerHandlers.h> /* APIServer URL handlers */
 
@@ -63,6 +64,18 @@
 #define API_SERVER_TASK_PRIO (configMAX_PRIORITIES - 2)
 /** @brief Defines the API Server Task mapped core. */
 #define API_SERVER_TASK_CORE 1
+
+/** @brief Defines the WiFiModule Health Report period in nanoseconds. */
+#define WIFI_MODULE_HM_REPORT_PERIOD_NS 1000000000ULL
+/** @brief Defines the WiFiModule Health Report degraded threshold. */
+#define WIFI_MODULE_HM_REPORT_FAIL_TO_DEGRADE 5
+/** @brief Defines the WiFiModule Health Report unhealthy threshold. */
+#define WIFI_MODULE_HM_REPORT_FAIL_TO_UNHEALTHY 10
+/** @brief Defines the WiFiModule Health Report name. */
+#define WIFI_MODULE_HM_REPORT_NAME "HM_WIFIMODULE"
+
+/** @brief Mininal accepted RSSI */
+#define WIFI_MIN_RSSI 10
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -112,8 +125,13 @@ static void WebServerHandleRoutine(void* pServer) {
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
-WiFiModule::WiFiModule(const std::string& krSSID, const std::string& krPassword)
+
+WiFiModule::WiFiModule(const std::string& krSSID,
+                       const std::string& krPassword) noexcept
 {
+    HealthMonitor* pHM;
+    E_Return       result;
+
     /* Setup the WiFi service as Access Point with the provided SSID and
     * password
     */
@@ -126,6 +144,30 @@ WiFiModule::WiFiModule(const std::string& krSSID, const std::string& krPassword)
 
     this->_pWebServer = nullptr;
     this->_pAPIServer = nullptr;
+
+    /* Add the health reporter */
+    this->_pReporter = new WiFiModuleHealthReporter(
+        WIFI_MODULE_HM_REPORT_PERIOD_NS,
+        WIFI_MODULE_HM_REPORT_FAIL_TO_DEGRADE,
+        WIFI_MODULE_HM_REPORT_FAIL_TO_UNHEALTHY,
+        WIFI_MODULE_HM_REPORT_NAME,
+        this
+    );
+    if (nullptr == this->_pReporter) {
+        /* TODO: HM */
+    }
+    pHM = HealthMonitor::GetInstance();
+    result = pHM->AddReporter(this->_pReporter, this->_reporterId);
+    if (E_Return::NO_ERROR != result) {
+        /* TODO: HM */
+    }
+}
+
+
+WiFiModule::~WiFiModule(void) noexcept {
+    if (nullptr != this->_pReporter) {
+        delete this->_pReporter;
+    }
 }
 
 E_Return WiFiModule::Start(const bool kStartAP) noexcept {
@@ -337,4 +379,73 @@ E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
     }
 
     return result;
+}
+
+WiFiModuleHealthReporter::WiFiModuleHealthReporter(
+    const uint64_t     kCheckPeriodNs,
+    const uint32_t     kFailToDegrade,
+    const uint32_t     kFailToUnhealthy,
+    const std::string& krName,
+    WiFiModule*        pModule) noexcept :
+    HMReporter(kCheckPeriodNs, kFailToDegrade, kFailToUnhealthy, krName) {
+    this->_pModule = pModule;
+}
+
+WiFiModuleHealthReporter::~WiFiModuleHealthReporter(void) noexcept {
+    /* Nothing to do */
+}
+
+void WiFiModuleHealthReporter::OnDegraded(void) noexcept {
+    LOG_ERROR(
+        "WiFi module is degraded, expecting to recover before unhealthy"
+        " status.\n"
+    );
+}
+
+void WiFiModuleHealthReporter::OnUnhealthy(void) noexcept {
+    E_Return result;
+
+    LOG_ERROR(
+        "WiFi module is unhealthy, restarting.\n"
+    )
+
+    /* Disable and restart */
+    if (this->_pModule->_isAP) {
+        WiFi.softAPdisconnect();
+    }
+    else {
+        WiFi.disconnect();
+    }
+    this->_pModule->_isStarted = false;
+
+    /* Restart */
+    result = this->_pModule->Start(this->_pModule->_isAP);
+    if (E_Return::NO_ERROR != result) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_WIFI_CREATE,
+            (void*)result
+        );
+    }
+}
+
+bool WiFiModuleHealthReporter::PerformCheck(void) noexcept {
+    bool checkResult;
+
+    checkResult = true;
+
+    if (this->_pModule->_isStarted && !this->_pModule->_isAP) {
+
+        /* Check WiFi status */
+        checkResult &= WiFi.isConnected();
+
+        /* Check WiFi RSSI */
+        if (checkResult) {
+            checkResult &= WiFi.RSSI() >= WIFI_MIN_RSSI;
+        }
+    }
+    else {
+        checkResult &= this->_pModule->_isStarted;
+    }
+
+    return checkResult;
 }

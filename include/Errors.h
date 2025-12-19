@@ -70,6 +70,8 @@ typedef enum {
     ERR_WEB_SERVER_LOCK,
     /** @brief Error while creating the api server lock. */
     ERR_API_SERVER_LOCK,
+    /** @brief HM actions cannot be added. */
+    ERR_HM_FULL,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

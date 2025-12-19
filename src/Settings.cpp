@@ -23,12 +23,13 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <map>           /* Settings map */
-#include <string>        /* Standard strings */
-#include <Logger.h>      /* Logging services */
-#include <Errors.h>      /* Errors definitions */
-#include <Arduino.h>     /* Arduino framework */
-#include <Preferences.h> /* Preference storage */
+#include <map>             /* Settings map */
+#include <string>          /* Standard strings */
+#include <Logger.h>        /* Logging services */
+#include <Errors.h>        /* Errors definitions */
+#include <Arduino.h>       /* Arduino framework */
+#include <Preferences.h>   /* Preference storage */
+#include <HealthMonitor.h> /* HM services */
 
 /* Header file */
 #include <Settings.h>
@@ -163,7 +164,9 @@ E_Return Settings::GetSettings(const std::string& krName,
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            /* TODO: Error Health Monitor */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_SETTINGS_LOCK
+            );
         }
     }
     else {
@@ -171,6 +174,42 @@ E_Return Settings::GetSettings(const std::string& krName,
 
         error = E_Return::ERR_SETTING_TIMEOUT;
     }
+    return error;
+}
+
+E_Return Settings::GetDefault(const std::string& krName,
+                              uint8_t*           pData,
+                              const size_t       kDataLength) noexcept {
+    std::map<std::string, const S_SettingField>::const_iterator it;
+    E_Return                                                    error;
+
+    /* Get the setting */
+    it = this->_defaults.find(krName);
+
+    /* Second check, if still not exists, it is a failure */
+    if (this->_defaults.end() != it) {
+        /* Check size */
+        if (kDataLength == it->second.fieldSize) {
+            /* Get the value */
+            memcpy(pData, it->second.pValue, kDataLength);
+
+            error = E_Return::NO_ERROR;
+        }
+        else {
+            LOG_ERROR(
+                "Invalid setting size: %s (%d vs %d).\n",
+                krName.c_str(),
+                kDataLength,
+                it->second.fieldSize
+            );
+
+            error = E_Return::ERR_SETTING_NOT_FOUND;
+        }
+    }
+    else {
+        error = E_Return::ERR_SETTING_NOT_FOUND;
+    }
+
     return error;
 }
 
@@ -218,7 +257,9 @@ E_Return Settings::SetSettings(const std::string& krName,
                 }
 
                 if (pdPASS != xSemaphoreGive(this->_lock)) {
-                    /* TODO: Error Health Monitor */
+                    HealthMonitor::GetInstance()->ReportHM(
+                        E_HMEvent::HM_EVENT_SETTINGS_LOCK
+                    );
                 }
             }
             else {
@@ -269,7 +310,9 @@ E_Return Settings::Commit(void) noexcept {
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            /* TODO: Error Health Monitor */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_SETTINGS_LOCK
+            );
         }
     }
     else {
@@ -296,7 +339,9 @@ E_Return Settings::ClearCache(void) noexcept {
         this->_cache.clear();
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            /* TODO: Error Health Monitor */
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_SETTINGS_LOCK
+            );
         }
     }
     else {
@@ -369,5 +414,6 @@ E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
 }
 
 Settings::Settings(void) noexcept {
-    /* Nothing to do */
+    /* Initializes the default settings */
+    InitializeDefault();
 }

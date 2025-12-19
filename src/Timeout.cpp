@@ -76,6 +76,7 @@ Timeout::Timeout(const uint64_t kTimeoutNs,
                  void           (*pHandler)(void) /* = nullptr */) noexcept {
 
     HealthMonitor* pHM;
+    E_Return       error;
 
     /* Initialize the timeouts */
     this->_timeout = kTimeoutNs;
@@ -91,19 +92,28 @@ Timeout::Timeout(const uint64_t kTimeoutNs,
     /* If a watchdog is needed, add it */
     if (0 != this->_wdTimeout && nullptr != this->_pWDHandler) {
         pHM = HealthMonitor::GetInstance();
-        if (E_Return::NO_ERROR != pHM->AddWatchdog(this, this->_watchdogId)) {
-            /* TODO: Health Monitor Alert */
+        error = pHM->AddWatchdog(this, this->_watchdogId);
+        if (E_Return::NO_ERROR != error) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_WD_TIMEOUT,
+                (void*)error
+            );
         }
     }
 }
 
 Timeout::~Timeout(void) noexcept {
     HealthMonitor* pHM;
+    E_Return       error;
 
     if (0 != this->_wdTimeout && nullptr != this->_pWDHandler) {
         pHM = HealthMonitor::GetInstance();
-        if (E_Return::NO_ERROR != pHM->RemoveWatchdog(this->_watchdogId)) {
-            /* TODO: Health Monitor Alert */
+        error = pHM->RemoveWatchdog(this->_watchdogId);
+        if (E_Return::NO_ERROR != error) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_WD_TIMEOUT,
+                (void*)error
+            );
         }
     }
 }

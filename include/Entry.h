@@ -80,14 +80,6 @@ void setup(void);
  */
 void loop(void);
 
-
-/**
- * @brief Idle loop.
- *
- * @details Idle loop, does nothing and waits.
- */
-void idle(void);
-
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/

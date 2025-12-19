@@ -77,7 +77,9 @@ static void StartWebServers(void);
 /* None */
 
 /************************** Static global variables ***************************/
+/** @brief Stores the Health Monitor Instance. */
 static HealthMonitor* spHealthMon;
+/** @brief Stores the WiFi module instance. */
 static WiFiModule*    spWifiModule;
 
 /*******************************************************************************
@@ -85,17 +87,18 @@ static WiFiModule*    spWifiModule;
  ******************************************************************************/
 
 static void StartWiFi(void) {
-    Settings*   pSettings;
-    bool        isAp;
-    char        networkSSID[SETTING_NODE_SSID_LENGTH + 1];
-    char        networkPassword[SETTING_NODE_PASSWORD_LENGTH + 1];
-    E_Return    result;
-    size_t      length;
+    Settings*              pSettings;
+    bool                   isAp;
+    char                   networkSSID[SETTING_NODE_SSID_LENGTH + 1];
+    char                   networkPassword[SETTING_NODE_PASS_LENGTH + 1];
+    E_Return               result;
+    size_t                 length;
+    S_HMParamSettingAccess hmAccessParam;
 
     pSettings = Settings::GetInstance();
 
     memset(networkSSID, 0, SETTING_NODE_SSID_LENGTH + 1);
-    memset(networkPassword, 0, SETTING_NODE_PASSWORD_LENGTH + 1);
+    memset(networkPassword, 0, SETTING_NODE_PASS_LENGTH + 1);
 
     /* Check if we should be AP */
     result = pSettings->GetSettings(
@@ -104,8 +107,13 @@ static void StartWiFi(void) {
         sizeof(bool)
     );
     if (E_Return::NO_ERROR != result) {
-        LOG_ERROR("Failed to get isAP setting\n");
-        /* TODO: Health Monitor Notify */
+        hmAccessParam.kpSettingName = SETTING_IS_AP;
+        hmAccessParam.pSettingBuffer = (void*)&isAp;
+        hmAccessParam.settingBufferSize = sizeof(bool);
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
+            &hmAccessParam
+        );
     }
 
     if (!isAp) {
@@ -117,18 +125,28 @@ static void StartWiFi(void) {
         );
         if (E_Return::NO_ERROR == result) {
             result = pSettings->GetSettings(
-                SETTING_NODE_PASSWORD,
+                SETTING_NODE_PASS,
                 (uint8_t*)networkPassword,
-                SETTING_NODE_PASSWORD_LENGTH
+                SETTING_NODE_PASS_LENGTH
             );
             if (E_Return::NO_ERROR != result) {
-                LOG_ERROR("Failed to retrieve the WiFi network password\n");
-                /* TODO: Health Monitor Notify */
+                hmAccessParam.kpSettingName = SETTING_NODE_PASS;
+                hmAccessParam.pSettingBuffer = (void*)networkPassword;
+                hmAccessParam.settingBufferSize = SETTING_NODE_PASS_LENGTH;
+                HealthMonitor::GetInstance()->ReportHM(
+                    E_HMEvent::HM_EVENT_SETTINGS_LOAD,
+                    &hmAccessParam
+                );
             }
         }
         else {
-            LOG_ERROR("Failed to retrieve the WiFi network name\n");
-            /* TODO: Health Monitor Notify */
+            hmAccessParam.kpSettingName = SETTING_NODE_SSID;
+            hmAccessParam.pSettingBuffer = (void*)networkSSID;
+            hmAccessParam.settingBufferSize = SETTING_NODE_SSID_LENGTH;
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_SETTINGS_LOAD,
+                &hmAccessParam
+            );
         }
     }
     else {
@@ -136,7 +154,7 @@ static void StartWiFi(void) {
         memcpy(networkSSID, HWManager::GetHWUID(), length);
         length = strnlen(
             HWManager::GetMacAddress(),
-            SETTING_NODE_PASSWORD_LENGTH
+            SETTING_NODE_PASS_LENGTH
         );
         memcpy(networkPassword, HWManager::GetMacAddress(), length);
     }
@@ -144,21 +162,28 @@ static void StartWiFi(void) {
     /* Initialize the WiFi module */
     spWifiModule = new WiFiModule(networkSSID, networkPassword);
     if (nullptr == spWifiModule) {
-        LOG_ERROR("Failed to instanciate the WiFi Module\n");
-        /* TODO: Health Monitor Notify */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_WIFI_CREATE,
+            (void*)0
+        );
     }
 
-    if (E_Return::NO_ERROR != spWifiModule->Start(isAp)) {
-        LOG_ERROR("Failed to start the WiFi Module\n");
-        /* TODO: Health Monitor Notify */
+    /* Start WiFi */
+    result = spWifiModule->Start(isAp);
+    if (E_Return::NO_ERROR != result) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_WIFI_CREATE,
+            (void*)result
+        );
     }
 }
 
 static void StartWebServers(void) {
-    uint16_t  webPort;
-    uint16_t  apiPort;
-    Settings* pSettings;
-    E_Return  result;
+    uint16_t               webPort;
+    uint16_t               apiPort;
+    Settings*              pSettings;
+    E_Return               result;
+    S_HMParamSettingAccess hmAccessParam;
 
     /* Get the ports from settings */
     pSettings = Settings::GetInstance();
@@ -169,8 +194,13 @@ static void StartWebServers(void) {
         sizeof(uint16_t)
     );
     if (E_Return::NO_ERROR != result) {
-        LOG_ERROR("Failed to retrieve the Web Interface port.\n");
-        /* TODO: Health Monitor Notify */
+        hmAccessParam.kpSettingName = SETTING_WEB_PORT;
+        hmAccessParam.pSettingBuffer = (void*)&webPort;
+        hmAccessParam.settingBufferSize = sizeof(uint16_t);
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
+            &hmAccessParam
+        );
     }
     result = pSettings->GetSettings(
         SETTING_API_PORT,
@@ -178,18 +208,21 @@ static void StartWebServers(void) {
         sizeof(uint16_t)
     );
     if (E_Return::NO_ERROR != result) {
-        LOG_ERROR("Failed to retrieve the API Interface port.\n");
-        /* TODO: Health Monitor Notify */
+        hmAccessParam.kpSettingName = SETTING_API_PORT;
+        hmAccessParam.pSettingBuffer = (void*)&apiPort;
+        hmAccessParam.settingBufferSize = sizeof(uint16_t);
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
+            &hmAccessParam
+        );
     }
-
-    /* TODO: Remove when HM is done and the default settings are provided */
-    webPort = 80;
-    apiPort = 8333;
 
     result = spWifiModule->StartWebServers(webPort, apiPort);
     if (E_Return::NO_ERROR != result) {
-        LOG_ERROR("Failed to start the Web Servers.\n");
-        /* TODO: Health Monitor Notify */
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_WEB_START,
+            (void*)result
+        );
     }
 }
 
@@ -202,20 +235,16 @@ void setup(void) {
     INIT_LOGGER(LOG_LEVEL_DEBUG);
     HWManager::DelayExecNs(500000000);
 
+    /* Initialize the Health Monitor */
+    spHealthMon = HealthMonitor::GetInstance();
+    spHealthMon->Init();
+    LOG_INFO("Health Monitor Initialized.\n");
+
     LOG_INFO("RTHR Weather Station Booting...\n");
     LOG_INFO("#==============================#\n");
     LOG_INFO("| HWUID: %s   |\n", HWManager::GetHWUID());
     LOG_INFO("| " VERSION "  |\n");
     LOG_INFO("#==============================#\n");
-
-    /* Initialize the Hardware Layer */
-    HWManager::Init();
-    LOG_INFO("Hardware Layer Initialized.\n");
-
-    /* Initialize the Health Monitor */
-    spHealthMon = HealthMonitor::GetInstance();
-    spHealthMon->Init();
-    LOG_INFO("Health Monitor Initialized.\n");
 
     /* Initialize the setting manager */
     result = Settings::InitInstance();
