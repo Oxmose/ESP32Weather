@@ -57,9 +57,9 @@
 /** @brief Default setting for is_ap item. */
 static const bool skis_ap = true;
 /** @brief Default setting for node_ssid item. */
-static const char* sknode_ssid = "RTHR_NODE";
+static const char* sknode_ssid = "RTHR_NODE\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 /** @brief Default setting for node_pass item. */
-static const char* sknode_pass = "RTHR_PASS";
+static const char* sknode_pass = "RTHR_PASS\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 /** @brief Default setting for web_port item. */
 static const uint16_t skweb_port = 80;
 /** @brief Default setting for api_port item. */
@@ -78,35 +78,35 @@ void Settings::InitializeDefault(void) noexcept {
 		SETTING_IS_AP,
 		S_SettingField {
 			.pValue = (uint8_t*)&skis_ap,
-			.fieldSize = sizeof(bool)
+			.fieldSize = 1
 		}
 	);
 	this->_defaults.emplace(
 		SETTING_NODE_SSID,
 		S_SettingField {
-			.pValue = (uint8_t*)&sknode_ssid,
-			.fieldSize = sizeof(char*)
+			.pValue = (uint8_t*)sknode_ssid,
+			.fieldSize = 32
 		}
 	);
 	this->_defaults.emplace(
 		SETTING_NODE_PASS,
 		S_SettingField {
-			.pValue = (uint8_t*)&sknode_pass,
-			.fieldSize = sizeof(char*)
+			.pValue = (uint8_t*)sknode_pass,
+			.fieldSize = 32
 		}
 	);
 	this->_defaults.emplace(
 		SETTING_WEB_PORT,
 		S_SettingField {
 			.pValue = (uint8_t*)&skweb_port,
-			.fieldSize = sizeof(uint16_t)
+			.fieldSize = 2
 		}
 	);
 	this->_defaults.emplace(
 		SETTING_API_PORT,
 		S_SettingField {
 			.pValue = (uint8_t*)&skapi_port,
-			.fieldSize = sizeof(uint16_t)
+			.fieldSize = 2
 		}
 	);
 }

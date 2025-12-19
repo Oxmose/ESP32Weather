@@ -2,15 +2,20 @@
 is_ap:
   type: bool
   value: "true"
+  size: 1
 node_ssid:
   type: char*
-  value: '"RTHR_NODE"'
+  value: '"RTHR_NODE\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"'
+  size: 32
 node_pass:
   type: char*
-  value: '"RTHR_PASS"'
+  value: '"RTHR_PASS\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"'
+  size: 32
 web_port:
   type: uint16_t
   value: 80
+  size: 2
 api_port:
   type: uint16_t
   value: 8333
+  size: 2

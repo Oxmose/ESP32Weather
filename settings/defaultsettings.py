@@ -96,14 +96,24 @@ def BuildFileNext(sourceFile):
 def BuildFileInit(sourceFile, settings):
     sourceFile.write("void Settings::InitializeDefault(void) noexcept {\n")
     for key, value in settings.items():
+            addRef = True
+            if '*' in value["type"]:
+                addRef = False
             sourceFile.write(
                 f"\tthis->_defaults.emplace(\n" +
-                f"\t\t{"SETTING_" + key.upper()},\n" +
-                f"\t\tS_SettingField {{\n"+
-                f"\t\t\t.pValue = (uint8_t*)&sk{key},\n" +
-                f"\t\t\t.fieldSize = sizeof({value["type"]})\n" +
+                f"\t\t{'SETTING_' + key.upper()},\n" +
+                f"\t\tS_SettingField {{\n")
+
+            if addRef:
+                sourceFile.write(f"\t\t\t.pValue = (uint8_t*)&sk{key},\n")
+            else:
+                sourceFile.write(f"\t\t\t.pValue = (uint8_t*)sk{key},\n")
+
+            sourceFile.write(
+                f"\t\t\t.fieldSize = {value["size"]}\n" +
                 f"\t\t}}\n" +
                 f"\t);\n")
+
     sourceFile.write("}")
 
 
