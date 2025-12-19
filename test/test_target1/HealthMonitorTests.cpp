@@ -256,117 +256,145 @@ void test_reporter_standalone(void) {
     reporter.HealthCheck(HWManager::GetTime() + 10000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 10000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter2.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 20000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 20000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter2.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 30000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 30000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter2.GetTotalFailureCount());
 
     /* Degraded and Unhealthy */
     startFail = true;
     reporter.HealthCheck(HWManager::GetTime() + 40000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(1, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(1, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 50000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(2, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(2, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 60000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(3, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(3, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 70000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(4, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(4, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 80000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(5, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(5, reporter.GetTotalFailureCount());
     while (1 != degradedTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter.HealthCheck(HWManager::GetTime() + 90000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(6, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(6, reporter.GetTotalFailureCount());
     while (2 != degradedTimes) {}
     HWManager::DelayExecNs(1000000);
     reporter.HealthCheck(HWManager::GetTime() + 100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(7, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(7, reporter.GetTotalFailureCount());
     while (3 != degradedTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter.HealthCheck(HWManager::GetTime() + 110000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(8, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(8, reporter.GetTotalFailureCount());
     while (4 != degradedTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter.HealthCheck(HWManager::GetTime() + 120000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(9, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(9, reporter.GetTotalFailureCount());
     while (5 != degradedTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter.HealthCheck(HWManager::GetTime() + 130000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(10, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(10, reporter.GetTotalFailureCount());
     while (1 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter.HealthCheck(HWManager::GetTime() + 140000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     while (2 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
 
     reporter2.HealthCheck(HWManager::GetTime() + 40000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(1, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(1, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 50000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(2, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(2, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 60000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(3, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(3, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 70000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(4, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(4, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 80000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(5, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(5, reporter2.GetTotalFailureCount());
     while (3 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 90000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(6, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(6, reporter2.GetTotalFailureCount());
     while (4 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(7, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(7, reporter2.GetTotalFailureCount());
     while (5 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 110000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(8, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(8, reporter2.GetTotalFailureCount());
     while (6 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 120000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(9, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(9, reporter2.GetTotalFailureCount());
     while (7 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 130000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(10, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(10, reporter2.GetTotalFailureCount());
     while (8 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
     reporter2.HealthCheck(HWManager::GetTime() + 140000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
     while (9 != unhealthyTimes) {}
     HWManager::DelayExecNs(10000000);
 
@@ -375,28 +403,36 @@ void test_reporter_standalone(void) {
     reporter.HealthCheck(HWManager::GetTime() + 150000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 160000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 170000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     reporter.HealthCheck(HWManager::GetTime() + 180000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     reporter2.HealthCheck(HWManager::GetTime() + 150000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 160000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 170000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
     reporter2.HealthCheck(HWManager::GetTime() + 180000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
 
     /* Check counts */
     TEST_ASSERT_EQUAL(5, degradedTimes);
@@ -427,14 +463,17 @@ void test_reporter0(void) {
     HWManager::DelayExecNs(50000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DISABLED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
 
     /* Degraded and Unhealthy */
     startFail = true;
@@ -442,64 +481,79 @@ void test_reporter0(void) {
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(1, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(1, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(2, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(2, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(3, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(3, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(4, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(4, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(5, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(5, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(6, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(6, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(7, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(7, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(8, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(8, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DEGRADED, reporter.GetStatus());
     TEST_ASSERT_EQUAL(9, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(9, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(10, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(10, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     startFail = false;
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     HWManager::DelayExecNs(100000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
 
     /* Check counts */
     TEST_ASSERT_EQUAL(5, degradedTimes);
@@ -539,8 +593,10 @@ void test_reporter1(void) {
 
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(0, reporter2.GetTotalFailureCount());
 
     /* Degraded and Unhealthy */
     startFail = true;
@@ -549,8 +605,10 @@ void test_reporter1(void) {
 
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
 
     startFail = false;
 
@@ -561,8 +619,10 @@ void test_reporter1(void) {
     HWManager::DelayExecNs(500000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter.GetTotalFailureCount());
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter2.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter2.GetFailureCount());
+    TEST_ASSERT_EQUAL(11, reporter2.GetTotalFailureCount());
 
     /* Check counts */
     TEST_ASSERT_EQUAL(5, degradedTimes);

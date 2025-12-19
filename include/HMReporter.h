@@ -155,6 +155,16 @@ class HMReporter
         uint32_t GetFailureCount(void) const noexcept;
 
         /**
+         * @brief Returns the total number of failures of the monitored item.
+         *
+         * @details Returns the total number of failures of the monitored
+         * item.
+         *
+         * @return Returns the total number of failures of the monitored item.
+         */
+        uint64_t GetTotalFailureCount(void) const noexcept;
+
+        /**
          * @brief Returns the name of the monitored item.
          *
          * @details Returns the name of the monitored item.
@@ -208,10 +218,10 @@ class HMReporter
          * @brief The number of failures before switching health to unhealthy.
          */
         uint32_t _failBeforeUnhealthy;
-        /**
-         * @brief The number of failures since the last healthy state.
-         */
+        /** @brief The number of failures since the last healthy state. */
         uint32_t _failCount;
+        /** @brief The number of failure since the object exists. */
+        uint64_t _totalFailCount;
         /** @brief The name of the reporter. */
         std::string _name;
         /** @brief The current health status. */
