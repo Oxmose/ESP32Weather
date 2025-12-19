@@ -112,6 +112,7 @@ HMReporter::HMReporter(const uint64_t     kCheckPeriodNs,
     this->_name = krName;
 
     this->_failCount = 0;
+    this->_totalFailCount = 0;
     this->_status = E_HMStatus::HM_DISABLED;
     this->_hasRunningAction = false;
 }
@@ -131,6 +132,7 @@ void HMReporter::HealthCheck(const uint64_t kTime) noexcept {
         if (!PerformCheck()) {
             /* On failure, increment the fail count */
             ++this->_failCount;
+            ++this->_totalFailCount;
             if (!this->_hasRunningAction) {
 
                 /* Check if we reached an unhealthy state */
@@ -187,6 +189,10 @@ E_HMStatus HMReporter::GetStatus(void) const noexcept {
 
 uint32_t HMReporter::GetFailureCount(void) const noexcept {
     return this->_failCount;
+}
+
+uint64_t HMReporter::GetTotalFailureCount(void) const noexcept {
+    return this->_totalFailCount;
 }
 
 const std::string& HMReporter::GetName(void) const noexcept {
