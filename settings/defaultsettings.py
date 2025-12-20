@@ -97,9 +97,9 @@ def BuildFileInit(sourceFile, settings):
         if '*' in value["type"]:
             addRef = False
         sourceFile.write(
-            f"\tthis->_defaults.emplace(\n" +
+            "\tthis->_defaults.emplace(\n" +
             f"\t\t{'SETTING_' + key.upper()},\n" +
-            f"\t\tS_SettingField {{\n")
+            "\t\tS_SettingField {\n")
 
         if addRef:
             sourceFile.write(f"\t\t\t.pValue = (uint8_t*)&sk{key},\n")
@@ -108,8 +108,8 @@ def BuildFileInit(sourceFile, settings):
 
         sourceFile.write(
             f"\t\t\t.fieldSize = {value['size']}\n" +
-            f"\t\t}}\n" +
-            f"\t);\n")
+            "\t\t}\n" +
+            "\t);\n")
 
     sourceFile.write("}")
 
