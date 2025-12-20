@@ -20,20 +20,12 @@ class TestHMReporter : public HMReporter {
          * @details Initializes the Health Reporter. The next check period
          * will be started after the object initialization.
          *
-         * @param[in] kCheckPeriodNs The health check period in nanoseconds.
-         * @param[in] kFailToDegrade The number of times the health check should
-         * fail before entering degraded state. Must be greater than 0. If
-         * greater or equal to to kFailToUnhealthy, this parameter is ignored.
-         * @param[in] kFailToUnhealthy The number of times the health check
-         * should fail before entering unhealthy state. Must be greater than 0.
-         * @param[in] krName The name of the check for reports.
+         * @param[in] krParam The health reporter parameters.
+         * @param[in] pModule The WiFiModule being monitored.
          *
          */
-        TestHMReporter(const uint64_t     kCheckPeriodNs,
-                                 const uint32_t     kFailToDegrade,
-                                 const uint32_t     kFailToUnhealthy,
-                                 const std::string& krName) noexcept :
-            HMReporter(kCheckPeriodNs, kFailToDegrade, kFailToUnhealthy, krName) {
+        TestHMReporter(const S_HMReporterParam& krParam) noexcept :
+            HMReporter(krParam) {
         }
         /**
          * @brief TestHMReporter Interface Destructor.
@@ -227,8 +219,8 @@ void test_reporter_standalone(void) {
     startFail = false;
 
     uint64_t initTime;
-    TestHMReporter reporter(10000000, 5, 10, "TestReporter");
-    TestHMReporter reporter2(10000000, 5, 5, "TestReporter2");
+    TestHMReporter reporter(S_HMReporterParam {10000000, 5, 10, "TestReporter"});
+    TestHMReporter reporter2(S_HMReporterParam {10000000, 5, 5, "TestReporter2"});
 
     /* Basic Tests */
     initTime = HWManager::GetTime();
@@ -446,7 +438,7 @@ void test_reporter0(void) {
 
     E_Return result;
     uint32_t reporterId;
-    TestHMReporter reporter(100000000, 5, 10, "TestReporter");
+    TestHMReporter reporter(S_HMReporterParam {100000000, 5, 10, "TestReporter"});
 
     /* Basic Tests */
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
@@ -573,7 +565,7 @@ void test_reporter1(void) {
     E_Return result;
     uint32_t reporterId;
     uint32_t reporter2Id;
-    TestHMReporter reporter(100000000, 5, 10, "TestReporter");
+    TestHMReporter reporter(S_HMReporterParam {100000000, 5, 10, "TestReporter"});
 
 
     /* Add the two Reporter with 50ms of interval */
@@ -583,7 +575,7 @@ void test_reporter1(void) {
 
     HWManager::DelayExecNs(50000000);
 
-    TestHMReporter reporter2(100000000, 5, 5, "TestReporter2");
+    TestHMReporter reporter2(S_HMReporterParam {100000000, 5, 5, "TestReporter2"});
 
     result = HealthMonitor::GetInstance()->AddReporter(&reporter2, reporter2Id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);

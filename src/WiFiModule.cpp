@@ -147,10 +147,12 @@ WiFiModule::WiFiModule(const std::string& krSSID,
 
     /* Add the health reporter */
     this->_pReporter = new WiFiModuleHealthReporter(
-        WIFI_MODULE_HM_REPORT_PERIOD_NS,
-        WIFI_MODULE_HM_REPORT_FAIL_TO_DEGRADE,
-        WIFI_MODULE_HM_REPORT_FAIL_TO_UNHEALTHY,
-        WIFI_MODULE_HM_REPORT_NAME,
+        S_HMReporterParam {
+            WIFI_MODULE_HM_REPORT_PERIOD_NS,
+            WIFI_MODULE_HM_REPORT_FAIL_TO_DEGRADE,
+            WIFI_MODULE_HM_REPORT_FAIL_TO_UNHEALTHY,
+            WIFI_MODULE_HM_REPORT_NAME
+        },
         this
     );
     if (nullptr == this->_pReporter) {
@@ -388,12 +390,9 @@ E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
 }
 
 WiFiModuleHealthReporter::WiFiModuleHealthReporter(
-    const uint64_t     kCheckPeriodNs,
-    const uint32_t     kFailToDegrade,
-    const uint32_t     kFailToUnhealthy,
-    const std::string& krName,
-    WiFiModule*        pModule) noexcept :
-    HMReporter(kCheckPeriodNs, kFailToDegrade, kFailToUnhealthy, krName) {
+    const S_HMReporterParam& krParam,
+    WiFiModule*              pModule) noexcept :
+    HMReporter(krParam) {
     this->_pModule = pModule;
 }
 
