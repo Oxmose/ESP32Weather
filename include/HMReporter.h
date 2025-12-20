@@ -53,6 +53,28 @@ typedef enum {
     HM_DISABLED
 } E_HMStatus;
 
+/** @brief Defines the HM reporter parameters. */
+typedef struct {
+    /** @brief The health check period in nanoseconds. */
+    uint64_t checkPeriodNs;
+
+    /**
+     * @brief The number of times the health check should
+     * fail before entering degraded state. Must be greater than 0. If
+     * greater or equal to to kFailToUnhealthy, this parameter is ignored.
+     */
+    uint32_t failToDegrade;
+
+    /**
+     * @brief The number of times the health check should fail before entering
+     * unhealthy state. Must be greater than 0.
+     */
+    uint32_t failToUnhealthy;
+
+    /** @brief The name of the check for reports. */
+    std::string name;
+} S_HMReporterParam;
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -97,19 +119,10 @@ class HMReporter
          * @details Initializes the Health Reporter. The next check period
          * will be started after the object initialization.
          *
-         * @param[in] kCheckPeriodNs The health check period in nanoseconds.
-         * @param[in] kFailToDegrade The number of times the health check should
-         * fail before entering degraded state. Must be greater than 0. If
-         * greater or equal to to kFailToUnhealthy, this parameter is ignored.
-         * @param[in] kFailToUnhealthy The number of times the health check
-         * should fail before entering unhealthy state. Must be greater than 0.
-         * @param[in] krName The name of the check for reports.
-         *
+         * @param[in] krParam The health reporter parameters.
          */
-        HMReporter(const uint64_t     kCheckPeriodNs,
-                   const uint32_t     kFailToDegrade,
-                   const uint32_t     kFailToUnhealthy,
-                   const std::string& krName) noexcept;
+        HMReporter(const S_HMReporterParam& krParam) noexcept;
+
         /**
          * @brief HMReporter Interface Destructor.
          *

@@ -62,10 +62,7 @@ def BuildFileStart(sourceFile):
 
 
 def BuildSettings(sourceFile, settingPath):
-    with open(settingPath, 'r') as file:
-
-        table = {}
-
+    with open(settingPath, 'r', encoding="utf-8") as file:
         # Load the settings
         loaded = {}
         try:
@@ -96,29 +93,29 @@ def BuildFileNext(sourceFile):
 def BuildFileInit(sourceFile, settings):
     sourceFile.write("void Settings::InitializeDefault(void) noexcept {\n")
     for key, value in settings.items():
-            addRef = True
-            if '*' in value["type"]:
-                addRef = False
-            sourceFile.write(
-                f"\tthis->_defaults.emplace(\n" +
-                f"\t\t{'SETTING_' + key.upper()},\n" +
-                f"\t\tS_SettingField {{\n")
+        addRef = True
+        if '*' in value["type"]:
+            addRef = False
+        sourceFile.write(
+            f"\tthis->_defaults.emplace(\n" +
+            f"\t\t{'SETTING_' + key.upper()},\n" +
+            f"\t\tS_SettingField {{\n")
 
-            if addRef:
-                sourceFile.write(f"\t\t\t.pValue = (uint8_t*)&sk{key},\n")
-            else:
-                sourceFile.write(f"\t\t\t.pValue = (uint8_t*)sk{key},\n")
+        if addRef:
+            sourceFile.write(f"\t\t\t.pValue = (uint8_t*)&sk{key},\n")
+        else:
+            sourceFile.write(f"\t\t\t.pValue = (uint8_t*)sk{key},\n")
 
-            sourceFile.write(
-                f"\t\t\t.fieldSize = {value["size"]}\n" +
-                f"\t\t}}\n" +
-                f"\t);\n")
+        sourceFile.write(
+            f"\t\t\t.fieldSize = {value['size']}\n" +
+            f"\t\t}}\n" +
+            f"\t);\n")
 
     sourceFile.write("}")
 
 
 def GenerateDerfaultSettings(settingPath, sourcePath):
-    with open(sourcePath, 'w') as sourceFile:
+    with open(sourcePath, 'w', encoding="utf-8") as sourceFile:
         BuildFileStart(sourceFile)
         settings = BuildSettings(sourceFile, settingPath)
         BuildFileNext(sourceFile)
