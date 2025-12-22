@@ -64,6 +64,18 @@ static const char* sknode_pass = "RTHR_PASS\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
 static const uint16_t skweb_port = 80;
 /** @brief Default setting for api_port item. */
 static const uint16_t skapi_port = 8333;
+/** @brief Default setting for node_static item. */
+static const bool sknode_static = false;
+/** @brief Default setting for node_st_ip item. */
+static const char* sknode_st_ip = "192.168.1.200\0\0";
+/** @brief Default setting for node_st_gate item. */
+static const char* sknode_st_gate = "192.168.1.100\0\0";
+/** @brief Default setting for node_st_subnet item. */
+static const char* sknode_st_subnet = "255.255.255.0\0\0";
+/** @brief Default setting for node_st_pdns item. */
+static const char* sknode_st_pdns = "1.1.1.1\0\0\0\0\0\0\0\0";
+/** @brief Default setting for node_st_sdns item. */
+static const char* sknode_st_sdns = "4.4.4.4\0\0\0\0\0\0\0\0";
 
 /*******************************************************************************
  * FUNCTIONS
@@ -107,6 +119,48 @@ void Settings::InitializeDefault(void) noexcept {
 		S_SettingField {
 			.pValue = (uint8_t*)&skapi_port,
 			.fieldSize = 2
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_STATIC,
+		S_SettingField {
+			.pValue = (uint8_t*)&sknode_static,
+			.fieldSize = 1
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_ST_IP,
+		S_SettingField {
+			.pValue = (uint8_t*)sknode_st_ip,
+			.fieldSize = 15
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_ST_GATE,
+		S_SettingField {
+			.pValue = (uint8_t*)sknode_st_gate,
+			.fieldSize = 15
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_ST_SUBNET,
+		S_SettingField {
+			.pValue = (uint8_t*)sknode_st_subnet,
+			.fieldSize = 15
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_ST_PDNS,
+		S_SettingField {
+			.pValue = (uint8_t*)sknode_st_pdns,
+			.fieldSize = 15
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_NODE_ST_SDNS,
+		S_SettingField {
+			.pValue = (uint8_t*)sknode_st_sdns,
+			.fieldSize = 15
 		}
 	);
 }

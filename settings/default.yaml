@@ -19,3 +19,27 @@ api_port:
   type: uint16_t
   value: 8333
   size: 2
+node_static:
+  type: bool
+  value: "false"
+  size: 1
+node_st_ip:
+  type: char*
+  value: '"192.168.1.200\0\0"'
+  size: 15
+node_st_gate:
+  type: char*
+  value: '"192.168.1.100\0\0"'
+  size: 15
+node_st_subnet:
+  type: char*
+  value: '"255.255.255.0\0\0"'
+  size: 15
+node_st_pdns:
+  type: char*
+  value: '"1.1.1.1\0\0\0\0\0\0\0\0"'
+  size: 15
+node_st_sdns:
+  type: char*
+  value: '"4.4.4.4\0\0\0\0\0\0\0\0"'
+  size: 15

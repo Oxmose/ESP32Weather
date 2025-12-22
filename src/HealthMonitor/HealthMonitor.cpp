@@ -41,7 +41,7 @@
 /**
  * @brief Defines the real-time task period tolerance in nanoseconds.
  */
-#define HW_RT_TASK_PERIOD_TOLERANCE_NS 1000000ULL
+#define HW_RT_TASK_PERIOD_TOLERANCE_NS 2000000ULL
 
 /**
  * @brief Defines the real-time task period deadline in nanoseconds.
@@ -278,9 +278,9 @@ static void HMWebStartHandler(void* pParam);
 static void HMAddActionHandler(void* pParam);
 
 /**
- * @brief HM Event hander for HM_EVENT_HM_ACTION_QRECV_FAILED event.
+ * @brief HM Event hander for HM_EVENT_HM_ACTION_RECV_FAILED event.
  *
- * @details HM Event hander for HM_EVENT_HM_ACTION_QRECV_FAILED event.
+ * @details HM Event hander for HM_EVENT_HM_ACTION_RECV_FAILED event.
  *
  * @param[in] pParam The parameter used when notifying the HM of the event.
  */
@@ -312,6 +312,17 @@ static void HMWebServerNotFoundHandler(void* pParam);
  * @param[in] pParam The parameter used when notifying the HM of the event.
  */
 static void HMSystemStateInitHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_HM_REMOVE_ACTION event.
+ *
+ * @details HM Event hander for HM_EVENT_HM_REMOVE_ACTION event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMRemoveActionHandler(void* pParam);
+
+
 
 #ifdef HM_TEST_EVENT
 /**
@@ -361,10 +372,11 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMWifiCreateHandler,                /* HM_EVENT_WIFI_CREATE */
     HMWebStartHandler,                  /* HM_EVENT_WEB_START */
     HMAddActionHandler,                 /* HM_EVENT_HM_ADD_ACTION */
-    HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_QRECV_FAILED */
+    HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_RECV_FAILED */
     HMActionTaskCreateHandler,          /* HM_EVENT_ACTION_TASK_CREATE */
     HMWebServerNotFoundHandler,         /* HM_EVENT_WEB_SERVER_NOT_FOUND */
     HMSystemStateInitHandler,           /* HM_EVENT_SYSTEM_STATE_INIT */
+    HMRemoveActionHandler,              /* HM_EVENT_HM_REMOVE_ACTION */
 #ifdef HM_TEST_EVENT
     test_hm_event_handler,              /* HM_EVENT_TEST */
 #endif
@@ -652,6 +664,14 @@ static void HMSystemStateInitHandler(void* pParam) {
     HWManager::Reboot();
 }
 
+static void HMRemoveActionHandler(void* pParam) {
+    LOG_ERROR(
+        "Failed to remove HM action, error: %d\n",
+        (uint32_t)pParam
+    );
+    HWManager::Reboot();
+}
+
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
@@ -927,7 +947,7 @@ void HealthMonitor::HMActionTaskRoutine(void* pHealthMonitor) noexcept {
 
         if (pdPASS != result) {
             HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_HM_ACTION_QRECV_FAILED,
+                E_HMEvent::HM_EVENT_HM_ACTION_RECV_FAILED,
                 (void*)result
             );
         }

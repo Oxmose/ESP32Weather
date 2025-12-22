@@ -25,8 +25,12 @@
 #include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
 #include <Arduino.h>       /* Arduino Framework */
+#include <Settings.h>      /* Settings services */
 #include <WebServer.h>     /* Web server services */
 #include <HealthMonitor.h> /* HM Services */
+
+/* Handlers */
+#include <APIHandler.h>          /* Page handler interface */
 
 /* Header file */
 #include <APIServerHandlers.h>
@@ -41,8 +45,9 @@
 #define SERVER_LOCK_TIMEOUT_TICKS \
     (pdMS_TO_TICKS(SERVER_LOCK_TIMEOUT_NS / 1000000ULL))
 
-/** @brief Defines the index URL */
-#define API_SERVER_URL_INDEX "/"
+/** @brief Defines the ping URL */
+#define PAGE_URL_PING "/ping"
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
@@ -51,7 +56,27 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-/* None */
+/**
+ * @brief Creates a new API handler.
+ *
+ * @details  Creates a new API handler. This will add the handler to the
+ * handlers table and generate a HM event in case of error.
+ *
+ * @param[in] URL The URL to handle.
+ * @param[in] HANDLER_CLASS The class of the object used to handle the URL.
+ * @param[out] HANDLER_OBJ The object that gets assigned the new handler.
+ */
+#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {   \
+    HANDLER_OBJ = new HANDLER_CLASS();                          \
+    if (nullptr == HANDLER_OBJ) {                               \
+        HealthMonitor::GetInstance()->ReportHM(                 \
+            E_HMEvent::HM_EVENT_API_SERVER_INIT_ERROR,          \
+            (void*)2                                            \
+        );                                                      \
+    }                                                           \
+    this->_apiHandlers.emplace(URL, HANDLER_OBJ);               \
+    this->_pServer->on(URL, HandleKnownURL);                    \
+}
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -69,10 +94,8 @@
 /* None */
 
 /************************** Static global variables ***************************/
-/** @brief See APIServerHandlers.h */
-WebServer* APIServerHandlers::_SPSERVER = nullptr;
-/** @brief See APIServerHandlers.h */
-SemaphoreHandle_t APIServerHandlers::_SSERVER_LOCK = nullptr;
+/** @brief Stores the current API server instance. */
+static APIServerHandlers* spInstance = nullptr;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -82,112 +105,93 @@ SemaphoreHandle_t APIServerHandlers::_SSERVER_LOCK = nullptr;
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
-E_Return APIServerHandlers::Init(WebServer* pServer) noexcept {
-    E_Return error;
+APIServerHandlers::APIServerHandlers(WebServer* pServer) noexcept {
+    APIHandler* pNewHandler;
 
-    /* Create the server lock */
-    if (nullptr == _SSERVER_LOCK) {
-        _SSERVER_LOCK = xSemaphoreCreateMutex();
-        if (nullptr == _SSERVER_LOCK) {
-            LOG_ERROR("Failed to initialize the server lock.\n");
-            error = E_Return::ERR_API_SERVER_LOCK;
-        }
-        else {
-            _SPSERVER = pServer;
-            error = E_Return::NO_ERROR;
-        }
-    }
-    else {
-        _SPSERVER = pServer;
-        error = E_Return::NO_ERROR;
+    if (nullptr != spInstance) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_API_SERVER_INIT_ERROR,
+            (void*)0
+        );
     }
 
-    if (E_Return::NO_ERROR == error) {
-        /* Configure the handlers */
-        pServer->onNotFound(HandleNotFound);
-        pServer->on(API_SERVER_URL_INDEX, HandleIndex);
+    this->_lock = xSemaphoreCreateMutex();
+    if (nullptr == this->_lock) {
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_API_SERVER_INIT_ERROR,
+            (void*)1
+        );
     }
 
-    return error;
+    this->_pServer = pServer;
+
+    /* Create the handlers */
+    CREATE_NEW_HANDLER(PAGE_URL_PING, PingAPIHandler, pNewHandler);
+
+    /* Configure the not found handler */
+    this->_pServer->onNotFound(HandleNotFound);
+
+    /* Set the instance */
+    spInstance = this;
+}
+
+APIServerHandlers::~APIServerHandlers(void) {
+    spInstance = nullptr;
 }
 
 void APIServerHandlers::HandleNotFound(void) noexcept {
-    std::string header;
-    std::string footer;
-    std::string page;
-
-    /* Generate the page */
-    GetPageHeader(header, "Not Found");
-    GetPageFooter(footer);
-    page = header + "<h1>Not Found</h1>" + footer;
+    /* TODO */
 
     /* Send */
-    GenericHandler(page, 404);
+    spInstance->GenericHandler("", 404);
 }
 
-void APIServerHandlers::HandleIndex(void) noexcept {
-    std::string header;
-    std::string footer;
-    std::string page;
+void APIServerHandlers::HandleKnownURL(void) noexcept {
+    std::map<std::string, APIHandler*>::const_iterator it;
+    S_HMParamAPIServerError                            error;
+    std::string                                        response;
+    const char*                                        pageUrl;
+    String                                             pageURLStr;
 
-    /* Generate the page */
-    GetPageHeader(header, "Index");
-    GetPageFooter(footer);
-    page = header + "<h1>Index</h1>" + footer;
+    /* Get the handler */
+    pageURLStr = spInstance->_pServer->uri();
+    pageUrl    = pageURLStr.c_str();
 
-    /* Send */
-    GenericHandler(page, 200);
-}
-
-void APIServerHandlers::GetPageHeader(std::string& rHeaderStr,
-                                      const std::string& krTitle) noexcept {
-    rHeaderStr.clear();
-    rHeaderStr += "<!DOCTYPE html>\n"
-                  "<html lang='en'>\n"
-                  "<head>\n"
-                  "<meta name='viewport' "
-                  "content='width=device-width, initial-scale=1' "
-                  "charset='UTF-8'/>\n"
-                  "<title>\n";
-    rHeaderStr += krTitle;
-    rHeaderStr += "</title>\n"
-                  "</head>\n"
-                  "<body>";
-}
-
-void APIServerHandlers::GetPageFooter(std::string& rFooterStr) noexcept {
-    rFooterStr.clear();
-    rFooterStr += "</body>\n</html>";
-}
-
-void APIServerHandlers::GenericHandler(const std::string& krPage,
-                                       const int32_t      kCode) noexcept {
-    if (nullptr != _SPSERVER) {
-        /* Update page length and send */
-        if (pdPASS == xSemaphoreTake(
-            _SSERVER_LOCK,
-            SERVER_LOCK_TIMEOUT_TICKS
-        )) {
-            _SPSERVER->setContentLength(krPage.size());
-            _SPSERVER->send(kCode, "text/html", krPage.c_str());
-
-            if (pdPASS != xSemaphoreGive(_SSERVER_LOCK)) {
-                HealthMonitor::GetInstance()->ReportHM(
-                    E_HMEvent::HM_EVENT_API_SERVER_LOCK,
-                    (void*)1
-                );
-            }
-        }
-        else {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_API_SERVER_LOCK,
-                (void*)0
-            );
-        }
+    it = spInstance->_apiHandlers.find(pageUrl);
+    if (spInstance->_apiHandlers.end() == it) {
+        error.pPageURL = pageUrl;
+        error.pPage = &response;
+        HealthMonitor::GetInstance()->ReportHM(
+            E_HMEvent::HM_EVENT_API_SERVER_NOT_FOUND,
+            (void*)&error
+        );
     }
     else {
+        it->second->Handle(response);
+    }
+
+    /* Send */
+    spInstance->GenericHandler(response, 200);
+}
+
+void APIServerHandlers::GenericHandler(const std::string& krResponse,
+                                       const int32_t      kCode) noexcept {
+    /* Update page length and send */
+    if (pdPASS == xSemaphoreTake(this->_lock, SERVER_LOCK_TIMEOUT_TICKS)) {
+        this->_pServer->setContentLength(krResponse.size());
+        this->_pServer->send(kCode, "text/html", krResponse.c_str());
+
+        if (pdPASS != xSemaphoreGive(this->_lock)) {
+            HealthMonitor::GetInstance()->ReportHM(
+                E_HMEvent::HM_EVENT_API_SERVER_LOCK,
+                (void*)1
+            );
+        }
+        }
+    else {
         HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_API_SERVER_NO_SERVER
+            E_HMEvent::HM_EVENT_API_SERVER_LOCK,
+            (void*)0
         );
     }
 }
