@@ -1,30 +1,31 @@
 /*******************************************************************************
- * @file BSP.h
+ * @file AboutPageHandler.h
  *
- * @see BSP.cpp
+ * @see AboutPageHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 14/12/2025
+ * @date 19/12/2025
  *
  * @version 1.0
  *
- * @brief This file defines the hardware layer.
+ * @brief About page handler.
  *
- * @details This file defines the hardware layer. This layer provides services
- * to interact with the ESP32 module hardware.
+ * @details About page handler. This file defines the about page handler
+ * used to generate the about page for the web server.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef __ABOUT_PAGE_HANDLER_H__
+#define __ABOUT_PAGE_HANDLER_H__
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>  /* Standard string */
-#include <cstdint> /* Standard int types */
+#include <string>        /* Standard string */
+#include <Errors.h>      /* Errors definitions */
+#include <PageHandler.h> /* Page Handler interface */
 
 /*******************************************************************************
  * CONSTANTS
@@ -34,6 +35,7 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
@@ -69,67 +71,34 @@
  * CLASSES
  ******************************************************************************/
 
-/**
- * @brief Hardware manager class.
+ /**
+ * @brief The AboutPageHandler class.
  *
- * @details Hardware manager class. This class provides the services
- * to access hwardware information, features and interract directly with the
- * different components of the ESP32 module.
+ * @details The AboutPageHandler class provides the necessary functions to
+ * handle about page requests.
  */
-class HWManager
-{
+class AboutPageHandler :public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Returns the ESP32 unique hardware ID.
+         * @brief AboutPageHandler destructor.
          *
-         * @details Returns the ESP32 unique hardware ID. The unique ID is
-         * composed of a basic string (defined directly in the source code) and
-         * a part of the ESP32 mac address.
-         *
-         * @return The ESP32 unique hardware ID.
+         * @details AboutPageHandler destructor. Releases the used resources.
          */
-        static const char* GetHWUID(void) noexcept;
+        virtual ~AboutPageHandler(void) noexcept;
 
         /**
-         * @brief Returns the ESP32 MAC address.
+         * @brief Generates the about page.
          *
-         * @details Returns the ESP32 MAC address. The WiFi MAC address is
-         * used.
+         * @details Generate the about page. The function generates the
+         * about page and title based on the current state of the system.
          *
-         * @return The ESP32 MAC address.
+         * @param[out] rPageTitle The title to give to the about page.
+         * @param[out] rPageBody The body to give to the about page.
+         *
          */
-        static const char* GetMacAddress(void) noexcept;
-
-        /**
-         * @brief Returns the time in milliseconds.
-         *
-         * @details Returns the time in milliseconds. The 64bit value is
-         * software managed as the ESP32 only has 32bits resolution for the
-         * time.
-         *
-         * @return The execution time is returned.
-         */
-        static uint64_t GetTime(void) noexcept;
-
-        /**
-         * @brief Delays the calling thread.
-         *
-         * @details Delays the calling thread, if possible the passive option
-         * will be used. If not, active wait will be made.
-         *
-         * @param[in] kDelayNs The details to wait in milliseconds.
-         */
-        static void DelayExecNs(const uint64_t kDelayNs) noexcept;
-
-        /**
-         * @brief Reboots the board.
-         *
-         * @details Reboots the board. The reboot is effective immediatelly and
-         * all pending operations should be completed before calling this
-         * function.
-         */
-        static void Reboot(void) noexcept;
+        virtual void Generate(std::string& rPageTitle,
+                              std::string& rPageBody) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -137,11 +106,7 @@ class HWManager
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /** @brief Stores the hwardware unique ID. */
-        static std::string _SHWUID;
-        /** @brief Stores the MAC address. */
-        static std::string _SMACADDR;
+        /* None */
 };
 
-
-#endif /* #ifndef __BSP_H__ */
+#endif /* #ifndef __ABOUT_PAGE_HANDLER_H__ */

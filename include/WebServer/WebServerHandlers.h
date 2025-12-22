@@ -23,9 +23,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <Errors.h>    /* Errors definitions */
-#include <Arduino.h>   /* Arduino Framework */
-#include <WebServer.h> /* Web server services */
+#include <map>           /* Standard maps */
+#include <Errors.h>      /* Errors definitions */
+#include <Arduino.h>     /* Arduino Framework */
+#include <WebServer.h>   /* Web server services */
+#include <PageHandler.h> /* Page Handlers */
 
 /*******************************************************************************
  * CONSTANTS
@@ -81,16 +83,22 @@ class WebServerHandlers {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Initializes the handlers.
+         * @brief WebServerHandlers constructor.
          *
-         * @details Initializes the handlers. This sets the webserver used by
-         * the handlers to handle requests.
+         * @details WebServerHandlers constructor. This sets the webserver used
+         * by the handlers to handle requests.
          *
          * @param[in] pServer The server to use.
-         *
-         * @return The function returns the success or error status.
          */
-        static E_Return Init(WebServer* pServer) noexcept;
+        WebServerHandlers(WebServer* pServer) noexcept;
+
+        /**
+         * @brief WebServerHandlers destructor.
+         *
+         * @details WebServerHandlers destructor. Releases the used resources.
+         */
+        ~WebServerHandlers(void) noexcept;
+
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -106,11 +114,12 @@ class WebServerHandlers {
         static void HandleNotFound(void) noexcept;
 
         /**
-         * @brief Handles the index URL.
+         * @brief Handles the registered URLs.
          *
-         * @details Handles the index URL.
+         * @details Handles the registered URLs. If the URL is not found in the
+         * handlers table, the HM is notified.
          */
-        static void HandleIndex(void) noexcept;
+        static void HandleKnownURL(void) noexcept;
 
         /**
          * @brief Creates the page header.
@@ -121,8 +130,8 @@ class WebServerHandlers {
          * @param[out] rHeaderStr The string buffer that receives the header.
          * @param[in] krTitle The page title to set.
          */
-        static void GetPageHeader(std::string&       rHeaderStr,
-                                  const std::string& krTitle) noexcept;
+        void GetPageHeader(std::string&       rHeaderStr,
+                           const std::string& krTitle) const noexcept;
         /**
          * @brief Creates the page footer.
          *
@@ -130,7 +139,17 @@ class WebServerHandlers {
          *
          * @param[out] rFooterStr The string buffer that receives the footer.
          */
-        static void GetPageFooter(std::string& rFooterStr) noexcept;
+        void GetPageFooter(std::string& rFooterStr) const noexcept;
+
+        /**
+         * @brief Creates the page CSS section.
+         *
+         * @details Creates the page CSS section. This will fill the string
+         * buffer.
+         *
+         * @param[out] rHeaderStr The string buffer that receives the CSS.
+         */
+        void GeneratePageCSS(std::string& rHeaderStr) const noexcept;
 
         /**
          * @brief Generic page handler.
@@ -141,14 +160,17 @@ class WebServerHandlers {
          * @param[in] kpPage The page to send.
          * @param[in] kCode The code to respond.
          */
-        static void GenericHandler(const std::string& krPage,
-                                   const int32_t      kCode) noexcept;
+        void GenericHandler(const std::string& krPage,
+                            const int32_t      kCode) noexcept;
 
         /** @brief Stores the WebServer used by the handlers. */
-        static WebServer* _SPSERVER;
+        WebServer* _pServer;
 
         /** @brief Stores the WebServer lock.  */
-        static SemaphoreHandle_t _SSERVER_LOCK;
+        SemaphoreHandle_t _lock;
+
+        /** @brief Stores the registered handlers for the pages. */
+        std::map<std::string, PageHandler*> _pageHandlers;
 };
 
 #endif /* #ifndef __WEB_SERVER_HANDLERS_H__ */

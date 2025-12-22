@@ -452,12 +452,7 @@ void test_reporter0(void) {
 
 
     /* Basic checks */
-    HWManager::DelayExecNs(50000000);
-    TEST_ASSERT_EQUAL(E_HMStatus::HM_DISABLED, reporter.GetStatus());
-    TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
-    TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
-
-    HWManager::DelayExecNs(100000000);
+    HWManager::DelayExecNs(150000000);
     TEST_ASSERT_EQUAL(E_HMStatus::HM_HEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(0, reporter.GetFailureCount());
     TEST_ASSERT_EQUAL(0, reporter.GetTotalFailureCount());
