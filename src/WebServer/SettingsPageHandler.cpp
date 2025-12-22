@@ -92,6 +92,7 @@ const noexcept {
     SystemState* pSysState;
     bool         isAp;
     std::string  buffer;
+    uint16_t     port;
 
     pSysState = SystemState::GetInstance();
 
@@ -168,6 +169,23 @@ const noexcept {
     pSysState->GetNetworkSecondaryDNS(buffer);
     rPageBuffer += "<tr><td>Secondary DNS</td><td>";
     rPageBuffer += buffer;
+    rPageBuffer += "</td></tr>";
+
+    rPageBuffer += "</table></div>";
+
+    rPageBuffer += "<h2>==== Interfaces Settings ====</h2>";
+    rPageBuffer += "<div>";
+    rPageBuffer += "<table>";
+
+    /* Web interface port */
+    pSysState->GetWebInterfacePort(port);
+    rPageBuffer += "<tr><td>Web Interface Port</td><td>";
+    rPageBuffer += std::to_string(port);
+    rPageBuffer += "</td></tr>";
+    /* API interface port */
+    pSysState->GetAPIInterfacePort(port);
+    rPageBuffer += "<tr><td>API Interface Port</td><td>";
+    rPageBuffer += std::to_string(port);
     rPageBuffer += "</td></tr>";
 
     rPageBuffer += "</table></div>";

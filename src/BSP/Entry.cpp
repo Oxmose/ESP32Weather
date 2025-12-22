@@ -27,7 +27,7 @@
 #include <Errors.h>        /* Error codes */
 #include <Arduino.h>       /* Arduino library */
 #include <version.h>       /* Versionning info */
-#include <Settings.h>      /* Settings manager */
+#include <Settings.h>      /* Settings services */
 #include <WiFiModule.h>    /* WiFi Module driver */
 #include <HealthMonitor.h> /* Health Monitoring */
 
@@ -59,13 +59,6 @@
  */
 static void StartWiFi(void);
 
-/**
- * @brief Starts the WiFi web servers.
- *
- * @details Starts the WiFi web servers. On error, Health Monitor is triggered.
- */
-static void StartWebServers(void);
-
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -87,80 +80,10 @@ static WiFiModule*    spWifiModule;
  ******************************************************************************/
 
 static void StartWiFi(void) {
-    Settings*              pSettings;
-    bool                   isAp;
-    char                   networkSSID[SETTING_NODE_SSID_LENGTH + 1];
-    char                   networkPassword[SETTING_NODE_PASS_LENGTH + 1];
-    E_Return               result;
-    size_t                 length;
-    S_HMParamSettingAccess hmAccessParam;
-
-    pSettings = Settings::GetInstance();
-
-    memset(networkSSID, 0, SETTING_NODE_SSID_LENGTH + 1);
-    memset(networkPassword, 0, SETTING_NODE_PASS_LENGTH + 1);
-
-    /* Check if we should be AP */
-    result = pSettings->GetSettings(
-        SETTING_IS_AP,
-        (uint8_t*)&isAp,
-        sizeof(bool)
-    );
-    if (E_Return::NO_ERROR != result) {
-        hmAccessParam.kpSettingName = SETTING_IS_AP;
-        hmAccessParam.pSettingBuffer = (void*)&isAp;
-        hmAccessParam.settingBufferSize = sizeof(bool);
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
-            &hmAccessParam
-        );
-    }
-
-    if (!isAp) {
-        /* Get the network and password for node mode */
-        result = pSettings->GetSettings(
-            SETTING_NODE_SSID,
-            (uint8_t*)networkSSID,
-            SETTING_NODE_SSID_LENGTH
-        );
-        if (E_Return::NO_ERROR == result) {
-            result = pSettings->GetSettings(
-                SETTING_NODE_PASS,
-                (uint8_t*)networkPassword,
-                SETTING_NODE_PASS_LENGTH
-            );
-            if (E_Return::NO_ERROR != result) {
-                hmAccessParam.kpSettingName = SETTING_NODE_PASS;
-                hmAccessParam.pSettingBuffer = (void*)networkPassword;
-                hmAccessParam.settingBufferSize = SETTING_NODE_PASS_LENGTH;
-                HealthMonitor::GetInstance()->ReportHM(
-                    E_HMEvent::HM_EVENT_SETTINGS_LOAD,
-                    &hmAccessParam
-                );
-            }
-        }
-        else {
-            hmAccessParam.kpSettingName = SETTING_NODE_SSID;
-            hmAccessParam.pSettingBuffer = (void*)networkSSID;
-            hmAccessParam.settingBufferSize = SETTING_NODE_SSID_LENGTH;
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_SETTINGS_LOAD,
-                &hmAccessParam
-            );
-        }
-    }
-    else {
-        length = strnlen(HWManager::GetHWUID(), SETTING_NODE_SSID_LENGTH);
-        memcpy(networkSSID, HWManager::GetHWUID(), length);
-        length = strnlen(
-            HWManager::GetMacAddress(),
-            SETTING_NODE_PASS_LENGTH
-        );
-        memcpy(networkPassword, HWManager::GetMacAddress(), length);
-    }
+    E_Return result;
 
     /* Initialize the WiFi module */
-    spWifiModule = new WiFiModule(networkSSID, networkPassword);
+    spWifiModule = new WiFiModule();
     if (nullptr == spWifiModule) {
         HealthMonitor::GetInstance()->ReportHM(
             E_HMEvent::HM_EVENT_WIFI_CREATE,
@@ -169,55 +92,16 @@ static void StartWiFi(void) {
     }
 
     /* Start WiFi */
-    result = spWifiModule->Start(isAp);
+    result = spWifiModule->Start();
     if (E_Return::NO_ERROR != result) {
         HealthMonitor::GetInstance()->ReportHM(
             E_HMEvent::HM_EVENT_WIFI_CREATE,
             (void*)result
         );
     }
-}
 
-static void StartWebServers(void) {
-    uint16_t               webPort;
-    uint16_t               apiPort;
-    Settings*              pSettings;
-    E_Return               result;
-    S_HMParamSettingAccess hmAccessParam;
-
-    /* Get the ports from settings */
-    pSettings = Settings::GetInstance();
-
-    result = pSettings->GetSettings(
-        SETTING_WEB_PORT,
-        (uint8_t*)&webPort,
-        sizeof(uint16_t)
-    );
-    if (E_Return::NO_ERROR != result) {
-        hmAccessParam.kpSettingName = SETTING_WEB_PORT;
-        hmAccessParam.pSettingBuffer = (void*)&webPort;
-        hmAccessParam.settingBufferSize = sizeof(uint16_t);
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
-            &hmAccessParam
-        );
-    }
-    result = pSettings->GetSettings(
-        SETTING_API_PORT,
-        (uint8_t*)&apiPort,
-        sizeof(uint16_t)
-    );
-    if (E_Return::NO_ERROR != result) {
-        hmAccessParam.kpSettingName = SETTING_API_PORT;
-        hmAccessParam.pSettingBuffer = (void*)&apiPort;
-        hmAccessParam.settingBufferSize = sizeof(uint16_t);
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_SETTINGS_LOAD,
-            &hmAccessParam
-        );
-    }
-
-    result = spWifiModule->StartWebServers(webPort, apiPort);
+    /* Start the web servers */
+    result = spWifiModule->StartWebServers();
     if (E_Return::NO_ERROR != result) {
         HealthMonitor::GetInstance()->ReportHM(
             E_HMEvent::HM_EVENT_WEB_START,
@@ -257,7 +141,6 @@ void setup(void) {
 
     /* Initialize the WiFi */
     StartWiFi();
-    StartWebServers();
 
     /* Set system as started */
     spHealthMon->SetSystemState(E_SystemState::EXECUTING);

@@ -78,13 +78,15 @@ typedef enum {
     /** @brief HM Event: Adding action failed. */
     HM_EVENT_HM_ADD_ACTION,
     /** @brief HM Event: Receiving the action queue failed. */
-    HM_EVENT_HM_ACTION_QRECV_FAILED,
+    HM_EVENT_HM_ACTION_RECV_FAILED,
     /** @brief HM Event: Creating the action queue or task failed. */
     HM_EVENT_ACTION_TASK_CREATE,
     /** @brief HM Event: Registered WebServer page handler not found. */
     HM_EVENT_WEB_SERVER_NOT_FOUND,
     /** @brief HM Event: Failed to initialize the system state. */
     HM_EVENT_SYSTEM_STATE_INIT,
+    /** @brief HM Event: Removing action failed. */
+    HM_EVENT_HM_REMOVE_ACTION,
 
 #ifdef HM_TEST_EVENT
     /** @brief HM Event: Test event */

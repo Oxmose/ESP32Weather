@@ -271,6 +271,44 @@ class SystemState
          */
         void GetNetworkSecondaryDNS(std::string& rDnsIp) const noexcept;
 
+        /**
+         * @brief Sets the current web interface port.
+         *
+         * @details Sets the current web interface port.
+         *
+         * @param[in] kPort The current web interface port.
+         */
+        void SetWebInterfacePort(const uint16_t kPort) noexcept;
+
+        /**
+         * @brief Provides the current web interface port.
+         *
+         * @details Provides the current web interface port.
+         *
+         * @param[out] rDnsIp The buffer used to provide the current web
+         * interface port.
+         */
+        void GetWebInterfacePort(uint16_t& rPort) const noexcept;
+
+        /**
+         * @brief Sets the current API interface port.
+         *
+         * @details Sets the current API interface port.
+         *
+         * @param[in] kPort The current API interface port.
+         */
+        void SetAPIInterfacePort(const uint16_t kPort) noexcept;
+
+        /**
+         * @brief Provides the current API interface port.
+         *
+         * @details Provides the current API interface port.
+         *
+         * @param[out] rDnsIp The buffer used to provide the current API
+         * interface port.
+         */
+        void GetAPIInterfacePort(uint16_t& rPort) const noexcept;
+
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -312,6 +350,12 @@ class SystemState
 
         /** @brief Stores the current network AP mode. */
         bool _isAP;
+
+        /** @brief Stores the current web interface port. */
+        uint16_t _webPort;
+
+        /** @brief Stores the current API interface port. */
+        uint16_t _apiPort;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

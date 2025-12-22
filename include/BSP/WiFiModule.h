@@ -28,6 +28,7 @@
 #include <Errors.h>            /* Error definitions */
 #include <WebServer.h>         /* Web server services */
 #include <HMReporter.h>        /* HM Reporter abstraction */
+#include <SystemState.h>       /* System State services */
 #include <WebServerHandlers.h> /* WebServer handlers */
 
 /*******************************************************************************
@@ -95,8 +96,7 @@ class WiFiModule {
          * connect to and the actual connection is done using the Start
          * function.
          */
-        WiFiModule(const std::string& krSSID,
-                   const std::string& krPassword) noexcept;
+        WiFiModule(void) noexcept;
 
         /**
          * @brief WiFiModule destructor.
@@ -112,12 +112,9 @@ class WiFiModule {
          * uses the SSID and Password to create the network. When not an AP, the
          * module will connect to the network with the given SSID and password.
          *
-         * @param[in] kStartAP Tells if the module should be started as access
-         * point or connect to an existing network.
-         *
          * @return The functions returns the success or error status.
          */
-        E_Return Start(const bool kStartAP) noexcept;
+        E_Return Start(void) noexcept;
 
         /**
          * @brief Starts the Web Servers.
@@ -126,13 +123,9 @@ class WiFiModule {
          * interface and the API interface. Both use the ports defined in
          * parameters.
          *
-         * @param[in] kWebIFacePort The port to use for the web interface.
-         * @param[in] kAPIIfacePort The port to use for the API interface.
-         *
          * @return The functions returns the success or error status.
          */
-        E_Return StartWebServers(const uint16_t kWebIFacePort,
-                                 const uint16_t kAPIIfacePort) noexcept;
+        E_Return StartWebServers(void) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -140,6 +133,27 @@ class WiFiModule {
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+
+        /**
+         * @brief Starts the WiFi module in AP mode.
+         *
+         * @details Starts the WiFi module in AP mode. The configuration is read
+         * from the persistent storage.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return StartAP(void) noexcept;
+
+        /**
+         * @brief Starts the WiFi module in node mode.
+         *
+         * @details Starts the WiFi module in node mode. The configuration is
+         * read from the persistent storage.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return StartNode(void) noexcept;
+
         /**
          * @brief Configures the API server.
          *
@@ -178,22 +192,44 @@ class WiFiModule {
         std::string _password;
         /** @brief Stores the WiFi module IP address */
         std::string _ipAddress;
+        /** @brief Stores the static configuration state */
+        bool _isStatic;
+        /** @brief Stores the static configuration gateway */
+        std::string _staticGatewayIP;
+        /** @brief Stores the static configuration subnet */
+        std::string _staticSubnet;
+        /** @brief Stores the static configuration primary DNS */
+        std::string _staticPrimaryDNSIP;
+        /** @brief Stores the static configuration secondary DNS */
+        std::string _staticSecondaryDNSIP;
+
         /** @brief Stores the current state of the module */
         bool _isStarted;
+
         /** @brief Stores the Web Interface server instance. */
         WebServer* _pWebServer;
         /** @brief Stores the API Interface server instance. */
         WebServer* _pAPIServer;
+        /** @brief Stores the web interface port. */
+        uint16_t _webPort;
+        /** @brief Stores the API interface port. */
+        uint16_t _apiPort;
+
         /** @brief Stores the Web Interface server handlers instance. */
         WebServerHandlers* _pWebServerHandler;
+
         /** @brief Web handler task handle. */
         TaskHandle_t _pWebServerTask;
         /** @brief API handler task handle. */
         TaskHandle_t _pAPIServerTask;
+
         /** @brief Stores the Health Reporter for the WiFiModule */
         WiFiModuleHealthReporter* _pReporter;
         /** @brief The health report ID. */
         uint32_t _reporterId;
+
+        /** @brief Stores the system state object. */
+        SystemState* _pSysState;
 
     /********************* FRIEND DECLARATIONS *********************/
     friend WiFiModuleHealthReporter;

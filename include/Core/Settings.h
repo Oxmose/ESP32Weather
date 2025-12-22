@@ -50,11 +50,25 @@
 #define SETTING_WEB_PORT "web_port"
 /** @brief Defines the api interface port setting key. */
 #define SETTING_API_PORT "api_port"
+/** @brief Defines the static mode configuration. */
+#define SETTING_NODE_STATIC "node_static"
+/** @brief Defines the static IP configuration. */
+#define SETTING_NODE_ST_IP "node_st_ip"
+/** @brief Defines the static gateway configuration. */
+#define SETTING_NODE_ST_GATE "node_st_gate"
+/** @brief Defines the static subnet configuration. */
+#define SETTING_NODE_ST_SUBNET "node_st_subnet"
+/** @brief Defines the static primary DNS configuration. */
+#define SETTING_NODE_ST_PDNS "node_st_pdns"
+/** @brief Defines the static secondary DNS configuration. */
+#define SETTING_NODE_ST_SDNS "node_st_sdns"
 
 /** @brief Length of the password setting. */
 #define SETTING_NODE_SSID_LENGTH 32
 /** @brief Length of the password setting. */
 #define SETTING_NODE_PASS_LENGTH 32
+/** @brief Length of the address settings. */
+#define SETTING_ADDR_LENGTH 15
 
 /*******************************************************************************
  * MACROS

@@ -164,6 +164,22 @@ void SystemState::GetNetworkSecondaryDNS(std::string& rDnsIP) const noexcept {
    rDnsIP = this-> _netSecondaryDns;
 }
 
+void SystemState::SetWebInterfacePort(const uint16_t kPort) noexcept {
+    this->_webPort = kPort;
+}
+
+void SystemState::GetWebInterfacePort(uint16_t& rPort) const noexcept {
+    rPort = this->_webPort;
+}
+
+void SystemState::SetAPIInterfacePort(const uint16_t kPort) noexcept {
+    this->_apiPort = kPort;
+}
+
+void SystemState::GetAPIInterfacePort(uint16_t& rPort) const noexcept {
+    rPort = this->_apiPort;
+}
+
 SystemState::SystemState(void) noexcept {
     /* Nothing to do */
 }
