@@ -41,7 +41,7 @@
 /**
  * @brief Defines the real-time task period tolerance in nanoseconds.
  */
-#define HW_RT_TASK_PERIOD_TOLERANCE_NS 100000ULL
+#define HW_RT_TASK_PERIOD_TOLERANCE_NS 1000000ULL
 
 /**
  * @brief Defines the real-time task period deadline in nanoseconds.
@@ -87,7 +87,7 @@
 /** @brief Actions Task mapped core ID. */
 #define HM_ACTIONS_TASK_CORE 0
 /** @brief Defines the size of the actions queue. */
-#define HM_ACTIONS_TASK_QUEUE_LENGTH 1
+#define HM_ACTIONS_TASK_QUEUE_LENGTH 10
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -133,13 +133,13 @@ static void HMAPIServerNoServerHandler(void* pParam);
 static void HMAPIServerLockHandler(void* pParam);
 
 /**
- * @brief HM Event hander for HM_EVENT_WEB_SERVER_NO_SERVER event.
+ * @brief HM Event hander for HM_EVENT_WEB_SERVER_INIT_ERROR event.
  *
- * @details HM Event hander for HM_EVENT_WEB_SERVER_NO_SERVER event.
+ * @details HM Event hander for HM_EVENT_WEB_SERVER_INIT_ERROR event.
  *
  * @param[in] pParam The parameter used when notifying the HM of the event.
  */
-static void HMWebServerNoServerHandler(void* pParam);
+static void HMWebServerInitErrorHandler(void* pParam);
 
 /**
  * @brief HM Event hander for HM_EVENT_WEB_SERVER_LOCK event.
@@ -295,6 +295,24 @@ static void HMActionQCreateFailedHandler(void* pParam);
  */
 static void HMActionTaskCreateHandler(void* pParam);
 
+/**
+ * @brief HM Event hander for HM_EVENT_WEB_SERVER_NOT_FOUND event.
+ *
+ * @details HM Event hander for HM_EVENT_WEB_SERVER_NOT_FOUND event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMWebServerNotFoundHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_SYSTEM_STATE_INIT event.
+ *
+ * @details HM Event hander for HM_EVENT_SYSTEM_STATE_INIT event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMSystemStateInitHandler(void* pParam);
+
 #ifdef HM_TEST_EVENT
 /**
  * @brief HM Event hander for HM_EVENT_TEST event.
@@ -327,7 +345,7 @@ HealthMonitor* HealthMonitor::_SPINSTANCE = nullptr;
 static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMAPIServerNoServerHandler,         /* HM_EVENT_API_SERVER_NO_SERVER */
     HMAPIServerLockHandler,             /* HM_EVENT_API_SERVER_LOCK */
-    HMWebServerNoServerHandler,         /* HM_EVENT_WEB_SERVER_NO_SERVER */
+    HMWebServerInitErrorHandler,        /* HM_EVENT_WEB_SERVER_INIT_ERROR */
     HMWebServerLockHandler,             /* HM_EVENT_WEB_SERVER_LOCK */
     HMHWMACNotAvailHandler,             /* HM_EVENT_HW_MAC_NOT_AVAIL */
     HMHWLockHandler,                    /* HM_EVENT_HM_LOCK */
@@ -345,6 +363,8 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMAddActionHandler,                 /* HM_EVENT_HM_ADD_ACTION */
     HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_QRECV_FAILED */
     HMActionTaskCreateHandler,          /* HM_EVENT_ACTION_TASK_CREATE */
+    HMWebServerNotFoundHandler,         /* HM_EVENT_WEB_SERVER_NOT_FOUND */
+    HMSystemStateInitHandler,           /* HM_EVENT_SYSTEM_STATE_INIT */
 #ifdef HM_TEST_EVENT
     test_hm_event_handler,              /* HM_EVENT_TEST */
 #endif
@@ -394,9 +414,17 @@ static void HMAPIServerLockHandler(void* pParam) {
     HWManager::Reboot();
 }
 
-static void HMWebServerNoServerHandler(void* pParam) {
-    (void)pParam;
-    LOG_ERROR("Web Server has no Web Server backend.\n");
+static void HMWebServerInitErrorHandler(void* pParam) {
+    LOG_ERROR("Web Server initialization error.\n");
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("Web server is already initialized.\n");
+    }
+    else if (1 == (uint32_t)pParam) {
+        LOG_ERROR("Web server lock failed to initialize.\n");
+    }
+    else if (2 == (uint32_t)pParam) {
+        LOG_ERROR("Web server handler failed to be allocated.\n");
+    }
     HWManager::Reboot();
 }
 
@@ -603,6 +631,24 @@ static void HMActionTaskCreateHandler(void* pParam) {
             (uint32_t)pParam
         );
     }
+    HWManager::Reboot();
+}
+
+static void HMWebServerNotFoundHandler(void* pParam) {
+    S_HMParamWebServerError* pWebParam;
+
+    pWebParam = (S_HMParamWebServerError*)pParam;
+
+    /* Update the page content */
+    *(pWebParam->pPage) = std::string("<h1>HM Error: ") +
+        pWebParam->pPageURL +
+        std::string(" not found</h1>");
+}
+
+static void HMSystemStateInitHandler(void* pParam) {
+    (void)pParam;
+
+    LOG_ERROR("Failed to initialize the system state object.\n");
     HWManager::Reboot();
 }
 
@@ -835,6 +881,7 @@ void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
 
     pHM = (HealthMonitor*)pHealthMonitor;
 
+
     while (true) {
         /* Wait for trigger signal */
         result = xTaskNotifyWait(0xFFFFFFFFUL, 0x0UL, 0x0UL, portMAX_DELAY);
@@ -844,6 +891,7 @@ void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
                 (void*)1
             );
         }
+
 
         /* Check for deadline miss */
         if (E_SystemState::EXECUTING == pHM->_systemState &&

@@ -31,8 +31,6 @@
 #include <Arduino.h>     /* Arduino framework */
 #include <Preferences.h> /* Preference storage */
 
-#include <unity.h>
-
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
@@ -48,9 +46,9 @@
 #define SETTING_NODE_SSID "node_ssid"
 /** @brief Defines the node password setting key. */
 #define SETTING_NODE_PASS "node_pass"
-/** @brief Defines the web interface port settign key. */
+/** @brief Defines the web interface port setting key. */
 #define SETTING_WEB_PORT "web_port"
-/** @brief Defines the api interface port settign key. */
+/** @brief Defines the api interface port setting key. */
 #define SETTING_API_PORT "api_port"
 
 /** @brief Length of the password setting. */

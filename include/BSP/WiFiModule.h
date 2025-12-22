@@ -23,11 +23,12 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>       /* Standard string */
-#include <cstdint>      /* Standard integer definitions */
-#include <Errors.h>     /* Error definitions */
-#include <WebServer.h>  /* Web server services */
-#include <HMReporter.h> /* HM Reporter abstraction */
+#include <string>              /* Standard string */
+#include <cstdint>             /* Standard integer definitions */
+#include <Errors.h>            /* Error definitions */
+#include <WebServer.h>         /* Web server services */
+#include <HMReporter.h>        /* HM Reporter abstraction */
+#include <WebServerHandlers.h> /* WebServer handlers */
 
 /*******************************************************************************
  * CONSTANTS
@@ -140,16 +141,6 @@ class WiFiModule {
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         /**
-         * @brief Configures the web server.
-         *
-         * @details Configures the web server. This function will setup the
-         * handlers for the webserver various settings.
-         *
-         * @return The functions returns the success or error status.
-         */
-        E_Return ConfigureWebServer(void) noexcept;
-
-        /**
          * @brief Configures the API server.
          *
          * @details Configures the API server. This function will setup the
@@ -193,6 +184,8 @@ class WiFiModule {
         WebServer* _pWebServer;
         /** @brief Stores the API Interface server instance. */
         WebServer* _pAPIServer;
+        /** @brief Stores the Web Interface server handlers instance. */
+        WebServerHandlers* _pWebServerHandler;
         /** @brief Web handler task handle. */
         TaskHandle_t _pWebServerTask;
         /** @brief API handler task handle. */

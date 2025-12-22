@@ -233,7 +233,7 @@ void setup(void) {
 
     /* Initialize logger and wait */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
-    HWManager::DelayExecNs(500000000);
+    HWManager::DelayExecNs(50000000);
 
     /* Initialize the Health Monitor */
     spHealthMon = HealthMonitor::GetInstance();

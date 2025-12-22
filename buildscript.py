@@ -11,7 +11,7 @@ import settings.defaultsettings as DefaultSettings
 
 FILENAME_BUILDNO = 'versioning'
 FILENAME_VERSION_H = 'include/version.h'
-FILENAME_DEFAULT_SETTINGS_CPP = "src/DefaultSettings.cpp"
+FILENAME_DEFAULT_SETTINGS_CPP = "src/Core/DefaultSettings.cpp"
 FILENAME_DEFAULT_SETTINGS_YAML = "settings/default.yaml"
 
 MAJOR = 0

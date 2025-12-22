@@ -29,6 +29,7 @@
 #include <Errors.h>            /* Error definitions */
 #include <Logger.h>            /* Logger services */
 #include <Timeout.h>           /* Timeout manager */
+#include <SystemState.h>       /* System state provider */
 #include <HealthMonitor.h>     /* HM services */
 #include <WebServerHandlers.h> /* WebServer URL handlers */
 #include <APIServerHandlers.h> /* APIServer URL handlers */
@@ -249,6 +250,15 @@ E_Return WiFiModule::Start(const bool kStartAP) noexcept {
                 error = E_Return::ERR_WIFI_CONN;
             }
         }
+
+        if (E_Return::NO_ERROR == error) {
+
+            /* Update the system state */
+            SystemState::GetInstance()->SetNetworkAPMode(this->_isAP);
+            SystemState::GetInstance()->SetNetworkSSID(this->_ssid);
+            SystemState::GetInstance()->SetNetworkPassword(this->_password);
+            SystemState::GetInstance()->SetNetworkIP(this->_ipAddress);
+        }
     }
 
     return error;
@@ -309,15 +319,6 @@ E_Return WiFiModule::StartWebServers(const uint16_t kWebIFacePort,
     return result;
 }
 
-E_Return WiFiModule::ConfigureWebServer(void) noexcept {
-    E_Return result;
-
-    /* Initialize the handlers */
-    result = WebServerHandlers::Init(this->_pWebServer);
-
-    return result;
-}
-
 E_Return WiFiModule::ConfigureAPIServer(void) noexcept {
 
     E_Return result;
@@ -331,16 +332,20 @@ E_Return WiFiModule::ConfigureAPIServer(void) noexcept {
 E_Return WiFiModule::ConfigureServers(void) noexcept {
     E_Return result;
 
-    result = ConfigureWebServer();
+    result = E_Return::NO_ERROR;
+
+    this->_pWebServerHandler = new WebServerHandlers(this->_pWebServer);
+    if (nullptr == this->_pWebServerHandler) {
+        result = E_Return::ERR_MEMORY;
+    }
+
     if (E_Return::NO_ERROR == result) {
         result = ConfigureAPIServer();
         if (E_Return::NO_ERROR != result) {
             LOG_ERROR("Failed to configure the API server.\n");
         }
     }
-    else {
-        LOG_ERROR("Failed to configure the web server.\n");
-    }
+
 
     return result;
 }

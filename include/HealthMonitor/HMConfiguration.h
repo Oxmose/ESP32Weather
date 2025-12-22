@@ -45,8 +45,8 @@ typedef enum {
     HM_EVENT_API_SERVER_NO_SERVER,
     /** @brief HM Event: API Server lock error. */
     HM_EVENT_API_SERVER_LOCK,
-    /** @brief HM Event: Web Server has not attached Web Server. */
-    HM_EVENT_WEB_SERVER_NO_SERVER,
+    /** @brief HM Event: Web Server has initialized corretly. */
+    HM_EVENT_WEB_SERVER_INIT_ERROR,
     /** @brief HM Event: Web Server lock error. */
     HM_EVENT_WEB_SERVER_LOCK,
     /** @brief HM Event: MAC Address error. */
@@ -81,6 +81,10 @@ typedef enum {
     HM_EVENT_HM_ACTION_QRECV_FAILED,
     /** @brief HM Event: Creating the action queue or task failed. */
     HM_EVENT_ACTION_TASK_CREATE,
+    /** @brief HM Event: Registered WebServer page handler not found. */
+    HM_EVENT_WEB_SERVER_NOT_FOUND,
+    /** @brief HM Event: Failed to initialize the system state. */
+    HM_EVENT_SYSTEM_STATE_INIT,
 
 #ifdef HM_TEST_EVENT
     /** @brief HM Event: Test event */
@@ -101,14 +105,21 @@ typedef struct {
     size_t settingBufferSize;
 } S_HMParamSettingAccess;
 
+/**
+ * @brief Defines the HM parameter for the HM_EVENT_WEB_SERVER_NOT_FOUND event.
+ */
+typedef struct {
+    /** @brief The URL of the requested page. */
+    const char* pPageURL;
+
+    /** @brief The string pointer to the page buffer to update. */
+    std::string* pPage;
+} S_HMParamWebServerError;
+
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
-#ifdef HM_TABLE_CONF_REQ
-
-
-
-#endif /* #ifdef HM_TABLE_CONF_REQ */
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES

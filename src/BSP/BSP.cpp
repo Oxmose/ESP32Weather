@@ -65,12 +65,23 @@
 std::string HWManager::_SHWUID;
 /** @brief See BSP.h */
 std::string HWManager::_SMACADDR;
-
+/** @brief See BSP.h */
+float HWManager::_SCPUCYCLE = 0.0;
+/** @brief See BSP.h */
+uint64_t HWManager::_STIME_LOW = 0;
+/** @brief See BSP.h */
+uint64_t HWManager::_STIME_HIGH = 0;
+/** @brief See BSP.h */
+bool HWManager::_TIMERROLL = false;
 /** @brief Decimal to Hexadecimal convertion table */
 static const char spkHexTable[16] = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 };
+
+/** @brief Time spinlock. */
+static portMUX_TYPE sTimeSpinlock = portMUX_INITIALIZER_UNLOCKED;
+
 
 /*******************************************************************************
  * FUNCTIONS
@@ -131,7 +142,36 @@ const char* HWManager::GetMacAddress(void) noexcept {
 }
 
 uint64_t HWManager::GetTime(void) noexcept {
-    return (uint64_t)esp_timer_get_time() * 1000;
+    uint32_t newTime;
+    uint64_t resultTime;
+
+    taskENTER_CRITICAL(&sTimeSpinlock);
+
+    /* Initialize CPU cycle time if needed */
+    if (0.0 == _SCPUCYCLE) {
+        _SCPUCYCLE = (double)1000.0 / (double)getCpuFrequencyMhz();
+    }
+
+    /* Get cpu time */
+    newTime = portGET_RUN_TIME_COUNTER_VALUE();
+
+    /* Manage rollover */
+    if (newTime < _STIME_LOW && _STIME_LOW > 4000000000ULL) {
+        if (_TIMERROLL) {
+            ++_STIME_HIGH;
+        }
+        else {
+            _TIMERROLL = true;
+        }
+    }
+    _STIME_LOW = newTime;
+
+
+    resultTime =(_STIME_HIGH << 32) | _STIME_LOW;
+
+    taskEXIT_CRITICAL(&sTimeSpinlock);
+
+    return (uint64_t)((double)resultTime * _SCPUCYCLE);
 }
 
 void HWManager::DelayExecNs(const uint64_t kDelayNs) noexcept {
