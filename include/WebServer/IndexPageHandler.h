@@ -77,7 +77,7 @@
  * @details The IndexPageHandler class provides the necessary functions to
  * handle index page requests.
  */
-class IndexPageHandler :public PageHandler {
+class IndexPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**

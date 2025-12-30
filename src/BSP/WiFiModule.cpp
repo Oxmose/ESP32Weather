@@ -493,33 +493,22 @@ E_Return WiFiModule::StartNode(void) noexcept {
     return error;
 }
 
-E_Return WiFiModule::ConfigureAPIServer(void) noexcept {
-
-    E_Return result;
-
-    /* Initialize the handlers */
-    result = APIServerHandlers::Init(this->_pAPIServer);
-
-    return result;
-}
-
 E_Return WiFiModule::ConfigureServers(void) noexcept {
     E_Return result;
 
     result = E_Return::NO_ERROR;
 
     this->_pWebServerHandler = new WebServerHandlers(this->_pWebServer);
-    if (nullptr == this->_pWebServerHandler) {
-        result = E_Return::ERR_MEMORY;
-    }
-
-    if (E_Return::NO_ERROR == result) {
-        result = ConfigureAPIServer();
-        if (E_Return::NO_ERROR != result) {
-            LOG_ERROR("Failed to configure the API server.\n");
+    if (nullptr != this->_pWebServerHandler) {
+        this->_pAPIServerHandler = new APIServerHandlers(this->_pAPIServer);
+        if (nullptr == this->_pAPIServerHandler) {
+            result = E_Return::ERR_MEMORY;
         }
     }
-
+    else {
+        result = E_Return::ERR_MEMORY;
+    }
+    
     return result;
 }
 

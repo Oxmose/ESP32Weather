@@ -77,7 +77,7 @@
  * @details The MonitorPageHandler class provides the necessary functions to
  * handle monitor page requests.
  */
-class MonitorPageHandler :public PageHandler {
+class MonitorPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**

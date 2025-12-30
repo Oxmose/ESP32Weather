@@ -77,7 +77,7 @@
  * @details The AboutPageHandler class provides the necessary functions to
  * handle about page requests.
  */
-class AboutPageHandler :public PageHandler {
+class AboutPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**

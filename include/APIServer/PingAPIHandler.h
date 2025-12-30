@@ -1,31 +1,31 @@
 /*******************************************************************************
- * @file SettingsPageHandler.h
- *
- * @see SettingsPageHandler.cpp
+ * @file PinAPIHandler.h
+ * 
+ * @see PinAPIHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 19/12/2025
+ * @date 23/12/2025
  *
  * @version 1.0
  *
- * @brief Settings page handler.
+ * @brief Ping API handler.
  *
- * @details Settings page handler. This file defines the settings page handler
- * used to generate the settings page for the web server.
+ * @details Ping API handler. This file defines the Ping API handler
+ * used to handle and generate the ping response.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __SETTINGS_PAGE_HANDLER_H__
-#define __SETTINGS_PAGE_HANDLER_H__
+#ifndef __PING_API_HANDLER_H__
+#define __PING_API_HANDLER_H__
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>        /* Standard string */
-#include <Errors.h>      /* Errors definitions */
-#include <PageHandler.h> /* Page Handler interface */
+#include <string>       /* Standard strings */
+#include <WebServer.h>  /* Web Server services */
+#include <APIHandler.h> /* API Handler interface */
 
 /*******************************************************************************
  * CONSTANTS
@@ -72,33 +72,33 @@
  ******************************************************************************/
 
  /**
- * @brief The SettingsPageHandler class.
+ * @brief The PingAPIHandler class.
  *
- * @details The SettingsPageHandler class provides the necessary functions to
- * handle settings page requests.
+ * @details The PingAPIHandler class provides the necessary functions to handle
+ * a Ping call through the API.
  */
-class SettingsPageHandler : public PageHandler {
+class PingAPIHandler : public APIHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief SettingsPageHandler destructor.
+         * @brief PingAPIHandler destructor.
          *
-         * @details SettingsPageHandler destructor. Releases the used resources.
+         * @details PingAPIHandler destructor. The API handler should implement
+         * this method.
          */
-        virtual ~SettingsPageHandler(void) noexcept;
+        virtual ~PingAPIHandler(void) noexcept;
 
         /**
-         * @brief Generates the settings page.
+         * @brief Handle the API call.
          *
-         * @details Generate the settings page. The function generates the
-         * settings page and title based on the current state of the system.
+         * @details Generate the page. The function should generate API response
+         * and process the API call.
          *
-         * @param[out] rPageTitle The title to give to the settings page.
-         * @param[out] rPageBody The body to give to the settings page.
-         *
+         * @param[out] rResponse The response to the API call.
+         * @param[in] pServer The server that received the call. Used to 
+         * retrieve the call parameters.
          */
-        virtual void Generate(std::string& rPageTitle,
-                              std::string& rPageBody) noexcept;
+        virtual void Handle(std::string& rResponse, WebServer* pServer) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -106,15 +106,7 @@ class SettingsPageHandler : public PageHandler {
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /**
-         * @brief Generates the networks settings.
-         *
-         * @details Generates the networks settings. The content is added to the
-         * page buffer given as parameter.
-         *
-         * @param[out] rPageBuffer The page buffer to fill.
-         */
-        void GenerateNetworkSettings(std::string& rPageBuffer) const noexcept;
+        /* None */
 };
 
-#endif /* #ifndef __SETTINGS_PAGE_HANDLER_H__ */
+#endif /* #ifndef __PING_API_HANDLER_H__ */

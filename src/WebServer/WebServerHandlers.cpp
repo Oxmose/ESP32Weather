@@ -257,21 +257,6 @@ void WebServerHandlers::GeneratePageCSS(std::string& rHeaderStr) const noexcept 
 void WebServerHandlers::GenericHandler(const std::string& krPage,
                                        const int32_t      kCode) noexcept {
     /* Update page length and send */
-    if (pdPASS == xSemaphoreTake(this->_lock, SERVER_LOCK_TIMEOUT_TICKS)) {
-        this->_pServer->setContentLength(krPage.size());
-        this->_pServer->send(kCode, "text/html", krPage.c_str());
-
-        if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_WEB_SERVER_LOCK,
-                (void*)1
-            );
-        }
-        }
-    else {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WEB_SERVER_LOCK,
-            (void*)0
-        );
-    }
+    this->_pServer->setContentLength(krPage.size());
+    this->_pServer->send(kCode, "text/html", krPage.c_str());
 }

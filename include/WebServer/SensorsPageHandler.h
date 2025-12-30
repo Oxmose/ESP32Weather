@@ -77,7 +77,7 @@
  * @details The SensorsPageHandler class provides the necessary functions to
  * handle sensors page requests.
  */
-class SensorsPageHandler :public PageHandler {
+class SensorsPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
