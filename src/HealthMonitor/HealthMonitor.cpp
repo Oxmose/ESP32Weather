@@ -28,9 +28,9 @@
 #include <Logger.h>          /* Logger services */
 #include <Arduino.h>         /* Arduino library */
 #include <Settings.h>        /* Firmware settings */
+#include <APIHandler.h>      /* API Handler errors */
 #include <esp32-hal-timer.h> /* ESP32 Timers */
 #include <HMConfiguration.h> /* HM Configuration */
-
 /* Header file */
 #include <HealthMonitor.h>
 
@@ -115,24 +115,6 @@ typedef void(*T_EventHandler)(void*);
 static void IRAM_ATTR RealTimeTaskTimerHandler(void);
 
 /**
- * @brief HM Event hander for HM_EVENT_API_SERVER_NO_SERVER event.
- *
- * @details HM Event hander for HM_EVENT_API_SERVER_NO_SERVER event.
- *
- * @param[in] pParam The parameter used when notifying the HM of the event.
- */
-static void HMAPIServerNoServerHandler(void* pParam);
-
-/**
- * @brief HM Event hander for HM_EVENT_API_SERVER_LOCK event.
- *
- * @details HM Event hander for HM_EVENT_API_SERVER_LOCK event.
- *
- * @param[in] pParam The parameter used when notifying the HM of the event.
- */
-static void HMAPIServerLockHandler(void* pParam);
-
-/**
  * @brief HM Event hander for HM_EVENT_WEB_SERVER_INIT_ERROR event.
  *
  * @details HM Event hander for HM_EVENT_WEB_SERVER_INIT_ERROR event.
@@ -142,13 +124,13 @@ static void HMAPIServerLockHandler(void* pParam);
 static void HMWebServerInitErrorHandler(void* pParam);
 
 /**
- * @brief HM Event hander for HM_EVENT_WEB_SERVER_LOCK event.
+ * @brief HM Event hander for HM_EVENT_API_SERVER_INIT_ERROR event.
  *
- * @details HM Event hander for HM_EVENT_WEB_SERVER_LOCK event.
+ * @details HM Event hander for HM_EVENT_API_SERVER_INIT_ERROR event.
  *
  * @param[in] pParam The parameter used when notifying the HM of the event.
  */
-static void HMWebServerLockHandler(void* pParam);
+static void HMAPIServerInitErrorHandler(void* pParam);
 
 /**
  * @brief HM Event hander for HM_EVENT_HW_MAC_NOT_AVAIL event.
@@ -305,6 +287,15 @@ static void HMActionTaskCreateHandler(void* pParam);
 static void HMWebServerNotFoundHandler(void* pParam);
 
 /**
+ * @brief HM Event hander for HM_EVENT_API_SERVER_NOT_FOUND event.
+ *
+ * @details HM Event hander for HM_EVENT_API_SERVER_NOT_FOUND event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMAPIServerNotFoundHandler(void* pParam);
+
+/**
  * @brief HM Event hander for HM_EVENT_SYSTEM_STATE_INIT event.
  *
  * @details HM Event hander for HM_EVENT_SYSTEM_STATE_INIT event.
@@ -354,10 +345,8 @@ HealthMonitor* HealthMonitor::_SPINSTANCE = nullptr;
 
 /** @brief Stores the HM event handlers. */
 static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
-    HMAPIServerNoServerHandler,         /* HM_EVENT_API_SERVER_NO_SERVER */
-    HMAPIServerLockHandler,             /* HM_EVENT_API_SERVER_LOCK */
     HMWebServerInitErrorHandler,        /* HM_EVENT_WEB_SERVER_INIT_ERROR */
-    HMWebServerLockHandler,             /* HM_EVENT_WEB_SERVER_LOCK */
+    HMAPIServerInitErrorHandler,        /* HM_EVENT_API_SERVER_INIT_ERROR */
     HMHWMACNotAvailHandler,             /* HM_EVENT_HW_MAC_NOT_AVAIL */
     HMHWLockHandler,                    /* HM_EVENT_HM_LOCK */
     HMWdTimeoutHandler,                 /* HM_EVENT_WD_TIMEOUT */
@@ -375,6 +364,7 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMActionQCreateFailedHandler,       /* HM_EVENT_HM_ACTION_RECV_FAILED */
     HMActionTaskCreateHandler,          /* HM_EVENT_ACTION_TASK_CREATE */
     HMWebServerNotFoundHandler,         /* HM_EVENT_WEB_SERVER_NOT_FOUND */
+    HMAPIServerNotFoundHandler,         /* HM_EVENT_API_SERVER_NOT_FOUND */
     HMSystemStateInitHandler,           /* HM_EVENT_SYSTEM_STATE_INIT */
     HMRemoveActionHandler,              /* HM_EVENT_HM_REMOVE_ACTION */
 #ifdef HM_TEST_EVENT
@@ -409,23 +399,6 @@ static void IRAM_ATTR RealTimeTaskTimerHandler(void) {
     portYIELD_FROM_ISR(needSchedule);
 }
 
-static void HMAPIServerNoServerHandler(void* pParam) {
-    (void)pParam;
-    LOG_ERROR("API Server has no Web Server backend.\n");
-    HWManager::Reboot();
-}
-
-static void HMAPIServerLockHandler(void* pParam) {
-    LOG_ERROR("API Server lock error:\n");
-    if ((bool)pParam) {
-        LOG_ERROR("\tFailed to lock server.\n");
-    }
-    else {
-        LOG_ERROR("\tFailed to unlock server.\n");
-    }
-    HWManager::Reboot();
-}
-
 static void HMWebServerInitErrorHandler(void* pParam) {
     LOG_ERROR("Web Server initialization error.\n");
     if (0 == (uint32_t)pParam) {
@@ -440,13 +413,16 @@ static void HMWebServerInitErrorHandler(void* pParam) {
     HWManager::Reboot();
 }
 
-static void HMWebServerLockHandler(void* pParam) {
-    LOG_ERROR("Web Server lock error:\n");
-    if ((bool)pParam) {
-        LOG_ERROR("\tFailed to lock server.\n");
+static void HMAPIServerInitErrorHandler(void* pParam) {
+    LOG_ERROR("API Server initialization error.\n");
+    if (0 == (uint32_t)pParam) {
+        LOG_ERROR("API server is already initialized.\n");
     }
-    else {
-        LOG_ERROR("\tFailed to unlock server.\n");
+    else if (1 == (uint32_t)pParam) {
+        LOG_ERROR("API server lock failed to initialize.\n");
+    }
+    else if (2 == (uint32_t)pParam) {
+        LOG_ERROR("API server handler failed to be allocated.\n");
     }
     HWManager::Reboot();
 }
@@ -655,6 +631,19 @@ static void HMWebServerNotFoundHandler(void* pParam) {
     *(pWebParam->pPage) = std::string("<h1>HM Error: ") +
         pWebParam->pPageURL +
         std::string(" not found</h1>");
+}
+
+static void HMAPIServerNotFoundHandler(void* pParam) {
+    S_HMParamAPIServerError* pAPIParam;
+
+    pAPIParam = (S_HMParamAPIServerError*)pParam;
+
+    /* Update the page content */
+    *(pAPIParam->pResponse) = std::string("{\"result\": ") +
+        std::to_string(E_APIResult::API_RES_HM_ERROR) +
+        std::string(", \"msg\": \"Unknown API ") +
+        pAPIParam->pAPIURL +
+        std::string(".\"}");
 }
 
 static void HMSystemStateInitHandler(void* pParam) {

@@ -41,14 +41,10 @@
  ******************************************************************************/
 /** @brief Defines the HM events. */
 typedef enum {
-    /** @brief HM Event: API Server has not attached Web Server. */
-    HM_EVENT_API_SERVER_NO_SERVER,
-    /** @brief HM Event: API Server lock error. */
-    HM_EVENT_API_SERVER_LOCK,
-    /** @brief HM Event: Web Server has initialized corretly. */
+    /** @brief HM Event: Web Server has initialized incorrectly. */
     HM_EVENT_WEB_SERVER_INIT_ERROR,
-    /** @brief HM Event: Web Server lock error. */
-    HM_EVENT_WEB_SERVER_LOCK,
+    /** @brief HM Event: API Server has initialized incorrectly. */
+    HM_EVENT_API_SERVER_INIT_ERROR,
     /** @brief HM Event: MAC Address error. */
     HM_EVENT_HW_MAC_NOT_AVAIL,
     /** @brief HM Event: Health Monitor lock error. */
@@ -83,6 +79,8 @@ typedef enum {
     HM_EVENT_ACTION_TASK_CREATE,
     /** @brief HM Event: Registered WebServer page handler not found. */
     HM_EVENT_WEB_SERVER_NOT_FOUND,
+    /** @brief HM Event: Registered WebServer API handler not found. */
+    HM_EVENT_API_SERVER_NOT_FOUND, 
     /** @brief HM Event: Failed to initialize the system state. */
     HM_EVENT_SYSTEM_STATE_INIT,
     /** @brief HM Event: Removing action failed. */
@@ -117,6 +115,17 @@ typedef struct {
     /** @brief The string pointer to the page buffer to update. */
     std::string* pPage;
 } S_HMParamWebServerError;
+
+/**
+ * @brief Defines the HM parameter for the HM_EVENT_API_SERVER_NOT_FOUND event.
+ */
+typedef struct {
+    /** @brief The URL of the requested API. */
+    const char* pAPIURL;
+
+    /** @brief The string pointer to the response buffer to update. */
+    std::string* pResponse;
+} S_HMParamAPIServerError;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS

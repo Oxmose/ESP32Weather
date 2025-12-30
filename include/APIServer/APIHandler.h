@@ -21,8 +21,8 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>   /* Standard strings */
-#include <Errors.h> /* Error definitions */
+#include <string>       /* Standard strings */
+#include <WebServer.h>  /* Web Server services */
 
 /*******************************************************************************
  * CONSTANTS
@@ -38,7 +38,19 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Defines the API result values. */
+typedef enum {
+    /** @brief No error. */
+    API_RES_NO_ERROR = 0,
+    /** @brief Health Monitor error. */
+    API_RES_HM_ERROR = 1,
+    /** @brief Unknown API. */
+    API_RES_UNKNOWN = 2,
+    /** @brief Unknown wifi settings parameters */
+    API_RES_WIFI_SET_UNKNOWN = 3,
+    /** @brief Error while setting the wifi settings  */
+    API_RES_WIFI_SET_ACTION_ERR = 4,
+} E_APIResult;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -91,9 +103,12 @@ class APIHandler {
          * @details Generate the page. The function should generate API response
          * and process the API call.
          *
-         * @param[out] rReponse The response to the API call.
+         * @param[out] rResponse The response to the API call.
+         * @param[in] pServer The server that received the call. Used to 
+         * retrieve the call parameters.
          */
-        virtual void Handle(std::string& rReponse) noexcept = 0;
+        virtual void Handle(std::string& rResponse, WebServer* pServer) 
+            noexcept = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

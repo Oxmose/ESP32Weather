@@ -30,6 +30,7 @@
 #include <HMReporter.h>        /* HM Reporter abstraction */
 #include <SystemState.h>       /* System State services */
 #include <WebServerHandlers.h> /* WebServer handlers */
+#include <APIServerHandlers.h> /* APIServer handlers */
 
 /*******************************************************************************
  * CONSTANTS
@@ -46,7 +47,27 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Defines the structure containing the settable WiFi setings. */
+typedef struct {
+    /** @brief WiFI AP mode. */
+    bool isAP;
+    /** @brief WiFi Static ocnfiguration status. */
+    bool isStatic;
+    /** @brief WiFi network SSID. */
+    std::string ssid;
+    /** @brief WiFi network password. */
+    std::string password;
+    /** @brief WiFi IP address. */
+    std::string ip;
+    /** @brief WiFi static gateway IP adress. */
+    std::string gateway;
+    /** @brief WiFi static subnet. */
+    std::string subnet;
+    /** @brief WiFi primary DNS IP address. */
+    std::string primaryDNS;
+    /** @brief WiFi secondary DNS IP address. */
+    std::string secondaryDNS;
+} S_WiFiConfig;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -155,16 +176,6 @@ class WiFiModule {
         E_Return StartNode(void) noexcept;
 
         /**
-         * @brief Configures the API server.
-         *
-         * @details Configures the API server. This function will setup the
-         * handlers for the api server various settings.
-         *
-         * @return The functions returns the success or error status.
-         */
-        E_Return ConfigureAPIServer(void) noexcept;
-
-        /**
          * @brief Configures the different servers.
          *
          * @details Configures the different servers. This function will setup
@@ -217,6 +228,8 @@ class WiFiModule {
 
         /** @brief Stores the Web Interface server handlers instance. */
         WebServerHandlers* _pWebServerHandler;
+        /** @brief Stores the API Interface server handlers instance. */
+        APIServerHandlers* _pAPIServerHandler;
 
         /** @brief Web handler task handle. */
         TaskHandle_t _pWebServerTask;

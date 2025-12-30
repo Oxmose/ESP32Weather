@@ -30,7 +30,9 @@
 #include <HealthMonitor.h> /* HM Services */
 
 /* Handlers */
-#include <APIHandler.h>          /* Page handler interface */
+#include <APIHandler.h>            /* API handler interface */
+#include <PingAPIHandler.h>        /* Ping handler */
+#include <WiFiSettingAPIHandler.h> /* WiFi Settings handler */
 
 /* Header file */
 #include <APIServerHandlers.h>
@@ -46,7 +48,9 @@
     (pdMS_TO_TICKS(SERVER_LOCK_TIMEOUT_NS / 1000000ULL))
 
 /** @brief Defines the ping URL */
-#define PAGE_URL_PING "/ping"
+#define API_URL_PING "/ping"
+/** @brief Defines the ping URL */
+#define API_URL_WIFI "/wifi"
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -75,7 +79,7 @@
         );                                                      \
     }                                                           \
     this->_apiHandlers.emplace(URL, HANDLER_OBJ);               \
-    this->_pServer->on(URL, HandleKnownURL);                    \
+    this->_pServer->on(URL, HTTP_POST, HandleKnownURL);         \
 }
 
 /*******************************************************************************
@@ -126,7 +130,8 @@ APIServerHandlers::APIServerHandlers(WebServer* pServer) noexcept {
     this->_pServer = pServer;
 
     /* Create the handlers */
-    CREATE_NEW_HANDLER(PAGE_URL_PING, PingAPIHandler, pNewHandler);
+    CREATE_NEW_HANDLER(API_URL_PING, PingAPIHandler, pNewHandler);
+    CREATE_NEW_HANDLER(API_URL_WIFI, WiFiSettingAPIHandler, pNewHandler);
 
     /* Configure the not found handler */
     this->_pServer->onNotFound(HandleNotFound);
@@ -140,10 +145,14 @@ APIServerHandlers::~APIServerHandlers(void) {
 }
 
 void APIServerHandlers::HandleNotFound(void) noexcept {
-    /* TODO */
+    std::string response;
+
+    response = std::string("{\"result\": ") +
+        std::to_string(E_APIResult::API_RES_UNKNOWN) +
+        std::string(", \"msg\": \"Unknown API\"}");
 
     /* Send */
-    spInstance->GenericHandler("", 404);
+    spInstance->GenericHandler(response, 200);
 }
 
 void APIServerHandlers::HandleKnownURL(void) noexcept {
@@ -159,15 +168,16 @@ void APIServerHandlers::HandleKnownURL(void) noexcept {
 
     it = spInstance->_apiHandlers.find(pageUrl);
     if (spInstance->_apiHandlers.end() == it) {
-        error.pPageURL = pageUrl;
-        error.pPage = &response;
+        error.pAPIURL = pageUrl;
+        error.pResponse = &response;
         HealthMonitor::GetInstance()->ReportHM(
             E_HMEvent::HM_EVENT_API_SERVER_NOT_FOUND,
             (void*)&error
         );
     }
     else {
-        it->second->Handle(response);
+        /* Get the potential GET and POST parameters */
+        it->second->Handle(response, spInstance->_pServer);
     }
 
     /* Send */
@@ -177,21 +187,6 @@ void APIServerHandlers::HandleKnownURL(void) noexcept {
 void APIServerHandlers::GenericHandler(const std::string& krResponse,
                                        const int32_t      kCode) noexcept {
     /* Update page length and send */
-    if (pdPASS == xSemaphoreTake(this->_lock, SERVER_LOCK_TIMEOUT_TICKS)) {
-        this->_pServer->setContentLength(krResponse.size());
-        this->_pServer->send(kCode, "text/html", krResponse.c_str());
-
-        if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_API_SERVER_LOCK,
-                (void*)1
-            );
-        }
-        }
-    else {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_API_SERVER_LOCK,
-            (void*)0
-        );
-    }
+    this->_pServer->setContentLength(krResponse.size());
+    this->_pServer->send(kCode, "application/json", krResponse.c_str());
 }

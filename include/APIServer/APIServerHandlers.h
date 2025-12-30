@@ -91,7 +91,7 @@ class APIServerHandlers {
          *
          * @param[in] pServer The server to use.
          */
-        APIServerHandlers::APIServerHandlers(WebServer* pServer) noexcept;
+        APIServerHandlers(WebServer* pServer) noexcept;
 
         /**
          * @brief APIServerHandlers destructor.
@@ -127,10 +127,10 @@ class APIServerHandlers {
          * @details Generic API handler. The handler will send the reponse
          * to the requesting server.
          *
-         * @param[in] krReponse The reponse to send.
+         * @param[in] krResponse The reponse to send.
          * @param[in] kCode The code to respond.
          */
-        void GenericHandler(const std::string& krReponse,
+        void GenericHandler(const std::string& krResponse,
                             const int32_t      kCode) noexcept;
 
         /** @brief Stores the WebServer used by the handlers. */

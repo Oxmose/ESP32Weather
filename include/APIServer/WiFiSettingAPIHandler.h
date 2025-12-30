@@ -1,31 +1,31 @@
 /*******************************************************************************
- * @file SettingsPageHandler.h
- *
- * @see SettingsPageHandler.cpp
+ * @file WiFiSettingAPIHandler.h
+ * 
+ * @see WiFiSettingAPIHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 19/12/2025
+ * @date 24/12/2025
  *
  * @version 1.0
  *
- * @brief Settings page handler.
+ * @brief WiFi Settings API handler.
  *
- * @details Settings page handler. This file defines the settings page handler
- * used to generate the settings page for the web server.
+ * @details WiFi Settings API handler. This file defines the WiFi Settings API 
+ * handler used to handle all calls related to WiFi settings.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __SETTINGS_PAGE_HANDLER_H__
-#define __SETTINGS_PAGE_HANDLER_H__
+#ifndef __WIFI_SETTINGS_API_HANDLER_H__
+#define __WIFI_SETTINGS_API_HANDLER_H__
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>        /* Standard string */
-#include <Errors.h>      /* Errors definitions */
-#include <PageHandler.h> /* Page Handler interface */
+#include <string>       /* Standard strings */
+#include <WebServer.h>  /* Web Server services */
+#include <APIHandler.h> /* API Handler interface */
 
 /*******************************************************************************
  * CONSTANTS
@@ -72,33 +72,33 @@
  ******************************************************************************/
 
  /**
- * @brief The SettingsPageHandler class.
+ * @brief The WiFiSettingAPIHandler class.
  *
- * @details The SettingsPageHandler class provides the necessary functions to
- * handle settings page requests.
+ * @details The WiFiSettingAPIHandler class provides the necessary functions to handle
+ * a WiFi settings call through the API.
  */
-class SettingsPageHandler : public PageHandler {
+class WiFiSettingAPIHandler : public APIHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief SettingsPageHandler destructor.
+         * @brief APIHandler destructor.
          *
-         * @details SettingsPageHandler destructor. Releases the used resources.
+         * @details APIHandler destructor. The API handler should implement
+         * this method.
          */
-        virtual ~SettingsPageHandler(void) noexcept;
+        virtual ~WiFiSettingAPIHandler(void) noexcept;
 
         /**
-         * @brief Generates the settings page.
+         * @brief Handle the API call.
          *
-         * @details Generate the settings page. The function generates the
-         * settings page and title based on the current state of the system.
+         * @details Generate the page. The function should generate API response
+         * and process the API call.
          *
-         * @param[out] rPageTitle The title to give to the settings page.
-         * @param[out] rPageBody The body to give to the settings page.
-         *
+         * @param[out] rResponse The response to the API call.
+         * @param[in] pServer The server that received the call. Used to 
+         * retrieve the call parameters.
          */
-        virtual void Generate(std::string& rPageTitle,
-                              std::string& rPageBody) noexcept;
+        virtual void Handle(std::string& rResponse, WebServer* pServer) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -106,15 +106,28 @@ class SettingsPageHandler : public PageHandler {
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /**
-         * @brief Generates the networks settings.
-         *
-         * @details Generates the networks settings. The content is added to the
-         * page buffer given as parameter.
-         *
-         * @param[out] rPageBuffer The page buffer to fill.
+        /** 
+         * @brief Retrieves the WiFi settings.
+         * 
+         * @details Retrieves the WiFi settings and fills the API response with 
+         * the registered settings.
+         * 
+         * @param[out] rResponse The JSON buffer to fill with the WiFi settings.
          */
-        void GenerateNetworkSettings(std::string& rPageBuffer) const noexcept;
+        void GetWiFiSettings(std::string& rResponse) const noexcept;
+
+        /** 
+         * @brief Updates the WiFi settings.
+         * 
+         * @details Updates the WiFi settings and fills the API response with 
+         * the update status settings.
+         * 
+         * @param[in] pServer The server that received the request. Used to 
+         * retrieve the settings values.
+         * @param[out] rResponse The JSON buffer to fill with the WiFi settings.
+         */
+        void SetWiFiSettings(WebServer* pServer, std::string& rResponse) const 
+        noexcept;
 };
 
-#endif /* #ifndef __SETTINGS_PAGE_HANDLER_H__ */
+#endif /* #ifndef __WIFI_SETTINGS_API_HANDLER_H__ */
