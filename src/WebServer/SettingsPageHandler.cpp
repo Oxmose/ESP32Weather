@@ -24,6 +24,7 @@
 /* Included headers */
 #include <string>        /* Standard string */
 #include <Errors.h>      /* Errors definitions */
+#include <WiFiModule.h>  /* WiFi module services */
 #include <PageHandler.h> /* Page Handler interface */
 #include <SystemState.h> /* System state provider */
 
@@ -89,12 +90,11 @@ void SettingsPageHandler::Generate(std::string& rPageTitle,
 
 void SettingsPageHandler::GenerateNetworkSettings(std::string& rPageBuffer)
 const noexcept {
-    SystemState* pSysState;
-    bool         isAp;
-    std::string  buffer;
-    uint16_t     port;
+    WiFiModule*  pWiFiModule;
+    S_WiFiConfig config;
 
-    pSysState = SystemState::GetInstance();
+    pWiFiModule = SystemState::GetInstance()->GetWiFiModule();
+    pWiFiModule->GetConfiguration(&config);
 
     rPageBuffer += "<h2>==== Access Point Settings ====</h2>";
     rPageBuffer += "<div>";
@@ -106,8 +106,7 @@ const noexcept {
     rPageBuffer += "<input type=\"checkbox\" id=\"ap_enable\" "
                    "name=\"ap_enable\" disabled ";
 
-    pSysState->GetNetworkAPMode(isAp);
-    if (isAp) {
+    if (config.isAP) {
         rPageBuffer += "checked";
     }
     rPageBuffer += "/></td></tr></table>";
@@ -118,15 +117,13 @@ const noexcept {
     rPageBuffer += "<table>";
 
     /* Network SSID */
-    pSysState->GetNetworkSSID(buffer);
     rPageBuffer += "<tr><td>Network SSID</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.ssid;
     rPageBuffer += "</td></tr>";
 
     /* Network Password */
-    pSysState->GetNetworkPassword(buffer);
     rPageBuffer += "<tr><td>Network Password</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.password;
     rPageBuffer += "</td></tr>";
 
     /* Network Static / Dynamic mode */
@@ -135,40 +132,34 @@ const noexcept {
     rPageBuffer += "<input type=\"checkbox\" id=\"net_stat_en\" "
                    "name=\"net_stat_en\" disabled ";
 
-    pSysState->GetNetworkConfigMode(isAp);
-    if (isAp) {
+    if (config.isStatic) {
         rPageBuffer += "checked";
     }
     rPageBuffer += "/></td></tr>";
 
     /* Network Static IP */
-    pSysState->GetNetworkIP(buffer);
     rPageBuffer += "<tr><td>Node IP</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.ip;
     rPageBuffer += "</td></tr>";
 
     /* Network Static Gateway */
-    pSysState->GetNetworkGatewayIP(buffer);
     rPageBuffer += "<tr><td>Gateway IP</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.gateway;
     rPageBuffer += "</td></tr>";
 
     /* Network Subnet */
-    pSysState->GetNetworkSubnet(buffer);
     rPageBuffer += "<tr><td>Subnet</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.subnet;
     rPageBuffer += "</td></tr>";
 
     /* Network Primary DNS */
-    pSysState->GetNetworkPrimaryDNS(buffer);
     rPageBuffer += "<tr><td>Primary DNS</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.primaryDNS;
     rPageBuffer += "</td></tr>";
 
     /* Network Secondary DNS */
-    pSysState->GetNetworkSecondaryDNS(buffer);
     rPageBuffer += "<tr><td>Secondary DNS</td><td>";
-    rPageBuffer += buffer;
+    rPageBuffer += config.secondaryDNS;
     rPageBuffer += "</td></tr>";
 
     rPageBuffer += "</table></div>";
@@ -178,14 +169,12 @@ const noexcept {
     rPageBuffer += "<table>";
 
     /* Web interface port */
-    pSysState->GetWebInterfacePort(port);
     rPageBuffer += "<tr><td>Web Interface Port</td><td>";
-    rPageBuffer += std::to_string(port);
+    rPageBuffer += std::to_string(config.webPort);
     rPageBuffer += "</td></tr>";
     /* API interface port */
-    pSysState->GetAPIInterfacePort(port);
     rPageBuffer += "<tr><td>API Interface Port</td><td>";
-    rPageBuffer += std::to_string(port);
+    rPageBuffer += std::to_string(config.apiPort);
     rPageBuffer += "</td></tr>";
 
     rPageBuffer += "</table></div>";

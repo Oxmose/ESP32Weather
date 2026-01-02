@@ -28,7 +28,6 @@
 #include <Errors.h>            /* Error definitions */
 #include <WebServer.h>         /* Web server services */
 #include <HMReporter.h>        /* HM Reporter abstraction */
-#include <SystemState.h>       /* System State services */
 #include <WebServerHandlers.h> /* WebServer handlers */
 #include <APIServerHandlers.h> /* APIServer handlers */
 
@@ -36,7 +35,14 @@
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+/** @brief Defines the size of the SSID setting. */
+#define SSID_SIZE_BYTES 32
+/** @brief Defines the size of the password setting. */
+#define PASS_SIZE_BYTES 32
+/** @brief Defines the minimal size of the password setting. */
+#define MIN_PASS_SIZE_BYTES 8
+/** @brief Defines the size of the IP setting. */
+#define IP_ADDR_SIZE_BYTES 15
 
 /*******************************************************************************
  * MACROS
@@ -51,23 +57,53 @@
 typedef struct {
     /** @brief WiFI AP mode. */
     bool isAP;
-    /** @brief WiFi Static ocnfiguration status. */
+    /** @brief WiFi Static configuration status. */
     bool isStatic;
     /** @brief WiFi network SSID. */
-    std::string ssid;
+    char ssid[SSID_SIZE_BYTES + 1];
     /** @brief WiFi network password. */
-    std::string password;
+    char password[PASS_SIZE_BYTES + 1];
     /** @brief WiFi IP address. */
-    std::string ip;
+    char ip[IP_ADDR_SIZE_BYTES + 1];
     /** @brief WiFi static gateway IP adress. */
-    std::string gateway;
+    char gateway[IP_ADDR_SIZE_BYTES + 1];
     /** @brief WiFi static subnet. */
-    std::string subnet;
+    char subnet[IP_ADDR_SIZE_BYTES + 1];
     /** @brief WiFi primary DNS IP address. */
-    std::string primaryDNS;
+    char primaryDNS[IP_ADDR_SIZE_BYTES + 1];
     /** @brief WiFi secondary DNS IP address. */
-    std::string secondaryDNS;
+    char secondaryDNS[IP_ADDR_SIZE_BYTES + 1];
+    /** @brief WiFi web interface port. */
+    uint16_t webPort;
+    /** @brief WiFi API interface port. */
+    uint16_t apiPort;
 } S_WiFiConfig;
+
+/** @brief Defines the structure containing the settable WiFi setings request. */
+typedef struct {
+    /** @brief WiFI AP mode. */
+    std::pair<bool, bool> isAP;
+    /** @brief WiFi Static configuration status. */
+    std::pair<bool, bool> isStatic;
+    /** @brief WiFi network SSID. */
+    std::pair<std::string, bool> ssid;
+    /** @brief WiFi network password. */
+    std::pair<std::string, bool> password;
+    /** @brief WiFi IP address. */
+    std::pair<std::string, bool> ip;
+    /** @brief WiFi static gateway IP adress. */
+    std::pair<std::string, bool> gateway;
+    /** @brief WiFi static subnet. */
+    std::pair<std::string, bool> subnet;
+    /** @brief WiFi primary DNS IP address. */
+    std::pair<std::string, bool> primaryDNS;
+    /** @brief WiFi secondary DNS IP address. */
+    std::pair<std::string, bool> secondaryDNS;
+    /** @brief WiFi web interface port. */
+    std::pair<uint16_t, bool> webPort;
+    /** @brief WiFi API interface port. */
+    std::pair<uint16_t, bool> apiPort;
+} S_WiFiConfigRequest;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -138,6 +174,16 @@ class WiFiModule {
         E_Return Start(void) noexcept;
 
         /**
+         * @brief Stops the WiFiModule.
+         *
+         * @details Stops the WiFiModule. Reeases the resources used by the
+         * servers and the WiFi module and stops it.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return Stop(void) noexcept;
+
+        /**
          * @brief Starts the Web Servers.
          *
          * @details Starts the Web Servers. Two servers are started: the web
@@ -147,6 +193,41 @@ class WiFiModule {
          * @return The functions returns the success or error status.
          */
         E_Return StartWebServers(void) noexcept;
+
+        /**
+         * @brief Stops the Web Servers.
+         *
+         * @details Stops the Web Servers. The API and Web servers are stopped
+         * and the resources are released.
+         *
+         * @return The functions returns the success or error status.
+         */
+        E_Return StopWebServers(void) noexcept;
+
+        /**
+         * @brief Provides the current WiFi configuration.
+         *
+         * @details Provides the current WiFi configuration. The configuration
+         * is filled in the buffer given as parameter.
+         *
+         * @param[out] pConfig The configuration buffer that receives the
+         * current configuration.
+         */
+        void GetConfiguration(S_WiFiConfig* pConfig) const noexcept;
+
+        /**
+         * @brief Updates the current WiFi configuration.
+         *
+         * @details Updates the current WiFi configuration. The new provided
+         * configuration is compared to the current one and only applicable
+         * settings are updated. The function performs all configuration checks
+         * before appying the new configuration.
+         *
+         * @param[in] krConfig The new configuration to apply.
+         *
+         * @return The function returns the success or error status.
+         */
+        E_Return SetConfiguration(const S_WiFiConfigRequest& krConfig) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -195,24 +276,22 @@ class WiFiModule {
          */
         E_Return ConfigureServerTasks(void) noexcept;
 
-        /** @brief Tells if the module is set as AP or Node */
-        bool _isAP;
-        /** @brief Stores the AP SSID */
-        std::string _ssid;
-        /** @brief Stores the AP password */
-        std::string _password;
-        /** @brief Stores the WiFi module IP address */
-        std::string _ipAddress;
-        /** @brief Stores the static configuration state */
-        bool _isStatic;
-        /** @brief Stores the static configuration gateway */
-        std::string _staticGatewayIP;
-        /** @brief Stores the static configuration subnet */
-        std::string _staticSubnet;
-        /** @brief Stores the static configuration primary DNS */
-        std::string _staticPrimaryDNSIP;
-        /** @brief Stores the static configuration secondary DNS */
-        std::string _staticSecondaryDNSIP;
+        /**
+         * @brief Validates the new WiFi configuration.
+         *
+         * @details Validates the new  WiFi configuration. The new provided
+         * configuration is compared to the current one and only applicable
+         * settings are updated. The function performs all configuration checks.
+         *
+         * @param[in] krConfig The new configuration to apply.
+         *
+         * @return The function returns the success or error status.
+         */
+        E_Return ValidateConfiguration(const S_WiFiConfigRequest& krConfig)
+        const noexcept;
+
+        /** @brief Stores the WiFi module configuration. */
+        S_WiFiConfig _config;
 
         /** @brief Stores the current state of the module */
         bool _isStarted;
@@ -221,10 +300,6 @@ class WiFiModule {
         WebServer* _pWebServer;
         /** @brief Stores the API Interface server instance. */
         WebServer* _pAPIServer;
-        /** @brief Stores the web interface port. */
-        uint16_t _webPort;
-        /** @brief Stores the API interface port. */
-        uint16_t _apiPort;
 
         /** @brief Stores the Web Interface server handlers instance. */
         WebServerHandlers* _pWebServerHandler;
@@ -240,9 +315,6 @@ class WiFiModule {
         WiFiModuleHealthReporter* _pReporter;
         /** @brief The health report ID. */
         uint32_t _reporterId;
-
-        /** @brief Stores the system state object. */
-        SystemState* _pSysState;
 
     /********************* FRIEND DECLARATIONS *********************/
     friend WiFiModuleHealthReporter;

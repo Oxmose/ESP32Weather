@@ -44,12 +44,6 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/** @brief Defines the server lock timeout in nanoseconds. */
-#define SERVER_LOCK_TIMEOUT_NS 1000000000ULL
-/** @brief Defines the server lock timeout in ticks. */
-#define SERVER_LOCK_TIMEOUT_TICKS \
-    (pdMS_TO_TICKS(SERVER_LOCK_TIMEOUT_NS / 1000000ULL))
-
 /** @brief Defines the index URL */
 #define PAGE_URL_INDEX "/"
 /** @brief Defines the monitoring URL */
@@ -79,16 +73,13 @@
  * @param[in] HANDLER_CLASS The class of the object used to handle the URL.
  * @param[out] HANDLER_OBJ The object that gets assigned the new handler.
  */
-#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {   \
-    HANDLER_OBJ = new HANDLER_CLASS();                          \
-    if (nullptr == HANDLER_OBJ) {                               \
-        HealthMonitor::GetInstance()->ReportHM(                 \
-            E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR,          \
-            (void*)2                                            \
-        );                                                      \
-    }                                                           \
-    this->_pageHandlers.emplace(URL, HANDLER_OBJ);              \
-    this->_pServer->on(URL, HandleKnownURL);                    \
+#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {           \
+    HANDLER_OBJ = new HANDLER_CLASS();                                  \
+    if (nullptr == HANDLER_OBJ) {                                       \
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR, 2);  \
+    }                                                                   \
+    this->_pageHandlers.emplace(URL, HANDLER_OBJ);                      \
+    this->_pServer->on(URL, HandleKnownURL);                            \
 }
 
 /*******************************************************************************
@@ -122,18 +113,7 @@ WebServerHandlers::WebServerHandlers(WebServer* pServer) noexcept {
     PageHandler* pNewHandler;
 
     if (nullptr != spInstance) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR,
-            (void*)0
-        );
-    }
-
-    this->_lock = xSemaphoreCreateMutex();
-    if (nullptr == this->_lock) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR,
-            (void*)1
-        );
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR, 0);
     }
 
     this->_pServer = pServer;
@@ -188,10 +168,7 @@ void WebServerHandlers::HandleKnownURL(void) noexcept {
     if (spInstance->_pageHandlers.end() == it) {
         error.pPageURL = pageUrl;
         error.pPage = &page;
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WEB_SERVER_NOT_FOUND,
-            (void*)&error
-        );
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_NOT_FOUND, &error);
         title = "HM Error";
     }
     else {

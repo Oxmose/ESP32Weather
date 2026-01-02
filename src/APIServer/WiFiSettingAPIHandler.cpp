@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @file WiFiSettingAPIHandler.cpp
- * 
+ *
  * @see WiFiSettingAPIHandler.h
  *
  * @author Alexy Torres Aurora Dugo
@@ -11,7 +11,7 @@
  *
  * @brief WiFi Settings API handler.
  *
- * @details WiFi Settings API handler. This file defines the WiFi Settings API 
+ * @details WiFi Settings API handler. This file defines the WiFi Settings API
  * handler used to handle all calls related to WiFi settings.
  *
  * @copyright Alexy Torres Aurora Dugo
@@ -54,6 +54,10 @@
 #define API_ARG_PRIMARY_DNS "pdns"
 /** @brief Defines the argument string for the secondary DNS setting. */
 #define API_ARG_SECONDARY_DNS "sdns"
+/** @brief Defines the argument string for the web port setting. */
+#define API_ARG_WEB_PORT "webp"
+/** @brief Defines the argument string for the API port setting. */
+#define API_ARG_API_PORT "apip"
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -63,51 +67,73 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-/** 
+/**
  * @brief Checks and retrives a bool argument from the API call.
- * 
- * @details Checks and retrives a bool argument from the API call. The check 
- * increases the number of set arguments, set the current argument as set and 
+ *
+ * @details Checks and retrives a bool argument from the API call. The check
+ * increases the number of set arguments, set the current argument as set and
  * retrieve the value in the WiFi configuration structure.
- * 
+ *
  * @param[in] I The index of the argument to retrieve.
  * @param[in] NAME The name of the argument to check against.
- * @param[out] SETFLAG The set flag to set to true.
  * @param[out] PARAM The parameter to set with the value of the argument.
  */
-#define CHECK_BOOL_ARG(I, NAME, SETFLAG, PARAM)                             \
-    (pServer->argName(I).equals(NAME) && !SETFLAG) {                        \
+#define CHECK_BOOL_ARG(I, NAME, PARAM)                                      \
+    (pServer->argName(I).equals(NAME) && !PARAM.second) {                   \
         currentArg = pServer->arg(I);                                       \
         if (currentArg.equals("0")) {                                       \
-            PARAM = false;                                                  \
+            PARAM.first = false;                                            \
         }                                                                   \
         else {                                                              \
-            PARAM = true;                                                   \
+            PARAM.first = true;                                             \
         }                                                                   \
         ++argsSet;                                                          \
-        SETFLAG = true;                                                     \
+        PARAM.second = true;                                                \
     }
 
-/** 
+/**
  * @brief Checks and retrives a string argument from the API call.
- * 
- * @details Checks and retrives a string argument from the API call. The check 
- * increases the number of set arguments, set the current argument as set and 
+ *
+ * @details Checks and retrives a string argument from the API call. The check
+ * increases the number of set arguments, set the current argument as set and
  * retrieve the value in the WiFi configuration structure.
- * 
+ *
  * @param[in] I The index of the argument to retrieve.
  * @param[in] NAME The name of the argument to check against.
- * @param[out] SETFLAG The set flag to set to true.
  * @param[out] PARAM The parameter to set with the value of the argument.
  */
-#define CHECK_STR_ARG(I, NAME, SETFLAG, PARAM)                              \
-    (pServer->argName(I).equals(NAME) && !SETFLAG) {                        \
-        currentArg = pServer->arg(I);                                       \
-        PARAM = currentArg.c_str();                                         \
+#define CHECK_STR_ARG(I, NAME, PARAM)                                       \
+    (pServer->argName(I).equals(NAME) && !PARAM.second) {                   \
+        PARAM.first = std::string(pServer->arg(I).c_str());                 \
         ++argsSet;                                                          \
-        SETFLAG = true;                                                     \
+        PARAM.second = true;                                                \
     }
 
+/**
+ * @brief Checks and retrives a uint16 argument from the API call.
+ *
+ * @details Checks and retrives a uint16 argument from the API call. The check
+ * increases the number of set arguments, set the current argument as set and
+ * retrieve the value in the WiFi configuration structure.
+ *
+ * @param[in] I The index of the argument to retrieve.
+ * @param[in] NAME The name of the argument to check against.
+ * @param[out] PARAM The parameter to set with the value of the argument.
+ */
+#define CHECK_UINT16_ARG(I, NAME, PARAM)                                    \
+    (pServer->argName(I).equals(NAME) && !PARAM.second) {                   \
+        try {                                                               \
+            PARAM.first = (uint16_t)std::stoi(pServer->arg(I).c_str());     \
+            ++argsSet;                                                      \
+            PARAM.second = true;                                            \
+        }                                                                   \
+        catch (std::exception& rExc) {                                      \
+            rResponse = "{\"result\": " +                                   \
+                std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +     \
+                ", \"msg\": \"Invalid parameter " NAME " value.\"}";        \
+            break;                                                          \
+        }                                                                   \
+    }
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
@@ -138,7 +164,7 @@ WiFiSettingAPIHandler::~WiFiSettingAPIHandler(void) noexcept {
     /* Nothing to do */
 }
 
-void WiFiSettingAPIHandler::Handle(std::string& rResponse, WebServer* pServer) 
+void WiFiSettingAPIHandler::Handle(std::string& rResponse, WebServer* pServer)
 noexcept {
     uint32_t args;
 
@@ -149,107 +175,94 @@ noexcept {
     if (1 == args && pServer->arg("mode").equals("getsettings")) {
         GetWiFiSettings(rResponse);
     }
-    else if (10 == args && pServer->arg("mode").equals("setsettings")) {
+    else if (12 == args && pServer->arg("mode").equals("setsettings")) {
         SetWiFiSettings(pServer, rResponse);
     }
     else {
-        rResponse = "{\"result\": " + 
-            std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) + 
+        rResponse = "{\"result\": " +
+            std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +
             ", \"msg\": \"Unknown parameters.\"}";
     }
 }
 
-void WiFiSettingAPIHandler::GetWiFiSettings(std::string& rResponse) 
+void WiFiSettingAPIHandler::GetWiFiSettings(std::string& rResponse)
 const noexcept {
-    SystemState* pSysState;
-    std::string  buffer;
-    bool         boolBuffer;
+    WiFiModule*  pWiFiModule;
+    S_WiFiConfig config;
 
-    pSysState = SystemState::GetInstance();
+    pWiFiModule = SystemState::GetInstance()->GetWiFiModule();
+    pWiFiModule->GetConfiguration(&config);
 
     rResponse = "{\"result\": ";
     rResponse += std::to_string(E_APIResult::API_RES_NO_ERROR) + ", ";
-    pSysState->GetNetworkAPMode(boolBuffer);
-    rResponse += "\"" API_ARG_AP_MODE "\": \"" + std::to_string(boolBuffer) + 
+    rResponse += "\"" API_ARG_AP_MODE "\": \"" + std::to_string(config.isAP) +
         "\", ";
-    pSysState->GetNetworkSSID(buffer);
-    rResponse += "\"" API_ARG_SSID "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkPassword(buffer);
-    rResponse += "\"" API_ARG_PASSWORD "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkConfigMode(boolBuffer);
-    rResponse += "\"" API_ARG_STATIC "\": \"" + std::to_string(boolBuffer) + 
+    rResponse += "\"" API_ARG_SSID "\": \"" + std::string(config.ssid) + "\", ";
+    rResponse += "\"" API_ARG_PASSWORD "\": \"" + std::string(config.password) +
         "\", ";
-    pSysState->GetNetworkIP(buffer);
-    rResponse += "\"" API_ARG_IP "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkGatewayIP(buffer);
-    rResponse += "\"" API_ARG_GATEWY "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkSubnet(buffer);
-    rResponse += "\"" API_ARG_SUBNET "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkPrimaryDNS(buffer);
-    rResponse += "\"" API_ARG_PRIMARY_DNS "\": \"" + buffer + "\", ";
-    pSysState->GetNetworkSecondaryDNS(buffer);
-    rResponse += "\"" API_ARG_SECONDARY_DNS "\": \"" + buffer + "\"} ";
+    rResponse += "\"" API_ARG_STATIC "\": \"" + std::to_string(config.isStatic)+
+        "\", ";
+    rResponse += "\"" API_ARG_IP "\": \"" + std::string(config.ip) + "\", ";
+    rResponse += "\"" API_ARG_GATEWY "\": \"" + std::string(config.gateway) +
+        "\", ";
+    rResponse += "\"" API_ARG_SUBNET "\": \"" + std::string(config.subnet) +
+        "\", ";
+    rResponse += "\"" API_ARG_PRIMARY_DNS "\": \"" +
+        std::string(config.primaryDNS) + "\", ";
+    rResponse += "\"" API_ARG_SECONDARY_DNS "\": \"" +
+        std::string(config.secondaryDNS) + "\", ";
+    rResponse += "\"" API_ARG_WEB_PORT "\": \"" +
+        std::to_string(config.webPort) + "\", ";
+    rResponse += "\"" API_ARG_API_PORT "\": \"" +
+        std::to_string(config.apiPort) + "\"} ";
+
 }
 
-void WiFiSettingAPIHandler::SetWiFiSettings(WebServer* pServer, 
-                                            std::string& rResponse) const 
+void WiFiSettingAPIHandler::SetWiFiSettings(WebServer* pServer,
+                                            std::string& rResponse) const
 noexcept {
-    uint32_t     args;
-    uint32_t     i;
-    uint32_t     argsSet;
-    bool         apModeSet;
-    bool         ssidSet;
-    bool         netpassSet;
-    bool         staticSet;
-    bool         ipSet;
-    bool         gatewaySet;
-    bool         subnetSet;
-    bool         pDNSSet;
-    bool         sDNSSet;
-    String       currentArg;
-    S_WiFiConfig config;
-    E_Return     result;
+    uint32_t            args;
+    uint32_t            i;
+    uint32_t            argsSet;
+    S_WiFiConfigRequest config;
+    E_Return            result;
+    WiFiModule*         pWiFiModule;
+    String              currentArg;
 
     /* Check the number of arguments and their value */
     rResponse.clear();
-    apModeSet = false;
-    ssidSet = false;
-    netpassSet = false;
-    staticSet = false;
-    ipSet = false;
-    gatewaySet = false;
-    subnetSet = false;
-    pDNSSet = false;
-    sDNSSet = false;
+    config.isAP.second = false;
+    config.isStatic.second = false;
+    config.ssid.second = false;
+    config.password.second = false;
+    config.ip.second = false;
+    config.gateway.second = false;
+    config.subnet.second = false;
+    config.primaryDNS.second = false;
+    config.secondaryDNS.second = false;
+    config.webPort.second = false;
+    config.apiPort.second = false;
     argsSet = 0;
     args = pServer->args();
     for (i = 0; i < args; ++i) {
-        if CHECK_BOOL_ARG(i, API_ARG_AP_MODE, apModeSet, config.isAP)
-        else if CHECK_BOOL_ARG(i, API_ARG_STATIC, staticSet, config.isStatic)
-        else if CHECK_STR_ARG(i, API_ARG_SSID, ssidSet, config.ssid)
-        else if CHECK_STR_ARG(i, API_ARG_PASSWORD, netpassSet, config.password)
-        else if CHECK_STR_ARG(i, API_ARG_IP, ipSet, config.ip)
-        else if CHECK_STR_ARG(i, API_ARG_GATEWY, gatewaySet, config.gateway)
-        else if CHECK_STR_ARG(i, API_ARG_SUBNET, subnetSet, config.subnet)
-        else if CHECK_STR_ARG(
-            i, 
-            API_ARG_PRIMARY_DNS, 
-            pDNSSet, 
-            config.primaryDNS
-        )
-        else if CHECK_STR_ARG(
-            i, 
-            API_ARG_SECONDARY_DNS, 
-            sDNSSet, 
-            config.secondaryDNS
-        )
+        if CHECK_BOOL_ARG(i, API_ARG_AP_MODE, config.isAP)
+        else if CHECK_BOOL_ARG(i, API_ARG_STATIC, config.isStatic)
+        else if CHECK_STR_ARG(i, API_ARG_SSID, config.ssid)
+        else if CHECK_STR_ARG(i, API_ARG_PASSWORD, config.password)
+        else if CHECK_STR_ARG(i, API_ARG_IP, config.ip)
+        else if CHECK_STR_ARG(i, API_ARG_GATEWY, config.gateway)
+        else if CHECK_STR_ARG(i, API_ARG_SUBNET, config.subnet)
+        else if CHECK_STR_ARG(i, API_ARG_PRIMARY_DNS, config.primaryDNS)
+        else if CHECK_STR_ARG(i, API_ARG_SECONDARY_DNS, config.secondaryDNS)
+        else if CHECK_UINT16_ARG(i, API_ARG_WEB_PORT, config.webPort)
+        else if CHECK_UINT16_ARG(i, API_ARG_API_PORT, config.apiPort)
         else if (!pServer->argName(i).equals("mode")) {
-            rResponse = "{\"result\": " + 
-                std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) + 
-                ", \"msg\": \"Unknown parameters or duplicate parameter " + 
-                pServer->argName(i).c_str() + 
+            rResponse = "{\"result\": " +
+                std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +
+                ", \"msg\": \"Unknown parameters or duplicate parameter " +
+                pServer->argName(i).c_str() +
                 ".\"}";
-            
+
             break;
         }
         else {
@@ -257,24 +270,26 @@ noexcept {
         }
     }
 
-    if (9 == argsSet) {
+    if (11 == argsSet) {
         /* Everything went fine, continue */
-        result = E_Return::NO_ERROR; /* TODO */
+        pWiFiModule = SystemState::GetInstance()->GetWiFiModule();
+        result = pWiFiModule->SetConfiguration(config);
         if (E_Return::NO_ERROR == result) {
-            rResponse = "{\"result\": " + 
-                std::to_string(E_APIResult::API_RES_NO_ERROR) + 
+            rResponse = "{\"result\": " +
+                std::to_string(E_APIResult::API_RES_NO_ERROR) +
                 ", \"msg\": \"Saved WiFi settings.\"}";
         }
         else {
-            rResponse = "{\"result\": " + 
-                std::to_string(E_APIResult::API_RES_WIFI_SET_ACTION_ERR) + 
-                ", \"msg\": \"Error while saving the WiFi settings: error " + 
+            rResponse = "{\"result\": " +
+                std::to_string(E_APIResult::API_RES_WIFI_SET_ACTION_ERR) +
+                ", \"msg\": \"Error while saving the WiFi settings: error " +
                 std::to_string(result) + "\"}";
         }
     }
     else if (0 == rResponse.size()) {
-        rResponse = "{\"result\": " + 
-            std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) + 
-            ", \"msg\": \"Invalid parameters.\"}";
+        rResponse = "{\"result\": " +
+            std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +
+            ", \"msg\": \"Invalid parameters, expected 11, parsed " +
+            std::to_string(argsSet) + ".\"}";
     }
 }

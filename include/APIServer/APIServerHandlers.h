@@ -136,9 +136,6 @@ class APIServerHandlers {
         /** @brief Stores the WebServer used by the handlers. */
         WebServer* _pServer;
 
-        /** @brief Stores the WebServer lock.  */
-        SemaphoreHandle_t _lock;
-
         /** @brief Stores the registered handlers for the API. */
         std::map<std::string, APIHandler*> _apiHandlers;
 };

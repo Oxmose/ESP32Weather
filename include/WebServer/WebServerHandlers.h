@@ -166,9 +166,6 @@ class WebServerHandlers {
         /** @brief Stores the WebServer used by the handlers. */
         WebServer* _pServer;
 
-        /** @brief Stores the WebServer lock.  */
-        SemaphoreHandle_t _lock;
-
         /** @brief Stores the registered handlers for the pages. */
         std::map<std::string, PageHandler*> _pageHandlers;
 };

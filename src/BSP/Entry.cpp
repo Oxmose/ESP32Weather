@@ -70,10 +70,14 @@ static void StartWiFi(void);
 /* None */
 
 /************************** Static global variables ***************************/
-/** @brief Stores the Health Monitor Instance. */
+/** @brief Stores the Health Monitor instance. */
 static HealthMonitor* spHealthMon;
 /** @brief Stores the WiFi module instance. */
 static WiFiModule*    spWifiModule;
+/** @brief Stores the Settings instance. */
+static Settings*      spSettings;
+/** @brief Stores the System State instance. */
+static SystemState*   spSystemState;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -85,45 +89,45 @@ static void StartWiFi(void) {
     /* Initialize the WiFi module */
     spWifiModule = new WiFiModule();
     if (nullptr == spWifiModule) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WIFI_CREATE,
-            (void*)0
-        );
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, 0);
     }
+
+    /* Set to system state */
+    spSystemState->SetWiFiModule(spWifiModule);
 
     /* Start WiFi */
     result = spWifiModule->Start();
     if (E_Return::NO_ERROR != result) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WIFI_CREATE,
-            (void*)result
-        );
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, result);
     }
 
     /* Start the web servers */
     result = spWifiModule->StartWebServers();
     if (E_Return::NO_ERROR != result) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_WEB_START,
-            (void*)result
-        );
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_START, result);
     }
 }
 
 #ifndef UNIT_TEST
 
 void setup(void) {
-    E_Return result;
-
     /* Initialize logger and wait */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
     HWManager::DelayExecNs(50000000);
 
+    /* Init system state */
+    spSystemState = SystemState::GetInstance();
+
     /* Initialize the Health Monitor */
-    spHealthMon = HealthMonitor::GetInstance();
-    spHealthMon->Init();
+    spHealthMon = new HealthMonitor();
+    if (nullptr == spHealthMon) {
+        LOG_ERROR("Failed to create the Health Monitor instance.\n");
+        HWManager::Reboot();
+    }
+    spSystemState->SetHealthMonitor(spHealthMon);
     LOG_INFO("Health Monitor Initialized.\n");
 
+    /* Welcome output*/
     LOG_INFO("RTHR Weather Station Booting...\n");
     LOG_INFO("#==============================#\n");
     LOG_INFO("| HWUID: %s   |\n", HWManager::GetHWUID());
@@ -131,13 +135,11 @@ void setup(void) {
     LOG_INFO("#==============================#\n");
 
     /* Initialize the setting manager */
-    result = Settings::InitInstance();
-    if (E_Return::NO_ERROR != result) {
-        HealthMonitor::GetInstance()->ReportHM(
-            E_HMEvent::HM_EVENT_SETTINGS_CREATE,
-            (void*)result
-        );
+    spSettings = new Settings();
+    if (nullptr == spSettings) {
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_CREATE, ERR_UNKNOWN);
     }
+    spSystemState->SetSettings(spSettings);
 
     /* Initialize the WiFi */
     StartWiFi();

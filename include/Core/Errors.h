@@ -72,6 +72,22 @@ typedef enum {
     ERR_API_SERVER_LOCK,
     /** @brief HM actions cannot be added. */
     ERR_HM_FULL,
+    /** @brief WiFi settings error: invalid switches */
+    ERR_WIFI_INVALID_SWITCHES,
+    /** @brief WiFi settings error: invalid SSID */
+    ERR_WIFI_INVALID_SSID,
+    /** @brief WiFi settings error: invalid passwerd */
+    ERR_WIFI_INVALID_PASSWORD,
+    /** @brief WiFi settings error: invalid ip */
+    ERR_WIFI_INVALID_IP,
+    /** @brief WiFi settings error: invalid gateway */
+    ERR_WIFI_INVALID_GATEWAY,
+    /** @brief WiFi settings error: invalid subnet */
+    ERR_WIFI_INVALID_SUBNET,
+    /** @brief WiFi settings error: invalid dns */
+    ERR_WIFI_INVALID_DNS,
+    /** @brief WiFi settings error: invalid ports */
+    ERR_WIFI_INVALID_PORTS,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

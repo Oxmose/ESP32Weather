@@ -34,12 +34,6 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/** @brief Defines the settings lock timeout in nanoseconds. */
-#define SETTINGS_LOCK_TIMEOUT_NS 20000000ULL
-/** @brief Defines the settings lock timeout in ticks. */
-#define SETTINGS_LOCK_TIMEOUT_TICKS \
-    (pdMS_TO_TICKS(SETTINGS_LOCK_TIMEOUT_NS / 1000000ULL))
-
 /** @brief Defines the isAP setting key. */
 #define SETTING_IS_AP "is_ap"
 /** @brief Defines the node ssid setting key. */
@@ -62,13 +56,6 @@
 #define SETTING_NODE_ST_PDNS "node_st_pdns"
 /** @brief Defines the static secondary DNS configuration. */
 #define SETTING_NODE_ST_SDNS "node_st_sdns"
-
-/** @brief Length of the password setting. */
-#define SETTING_NODE_SSID_LENGTH 32
-/** @brief Length of the password setting. */
-#define SETTING_NODE_PASS_LENGTH 32
-/** @brief Length of the address settings. */
-#define SETTING_ADDR_LENGTH 15
 
 /*******************************************************************************
  * MACROS
@@ -129,26 +116,12 @@ class Settings
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Initializes the instance of the Settings object.
+         * @brief Settings object constructor.
          *
-         * @details Initializes the instance of the Settings object.
-         * If this is the first time this function is called, the Settings
-         * singleton is initialized and configured.
-         *
-         * @return The function returns the success or error status.
+         * @details Settings object constructor. The function will initialize
+         * the preference and create the instance when successfull.
          */
-        static E_Return InitInstance(void) noexcept;
-
-        /**
-         * @brief Get the instance of the Settings object.
-         *
-         * @details Get the instance of the Settings object. If the preference
-         * singleton has not been initialized, nullptr is returned.
-         *
-         * @return The instance of the Settings object is returned. nullptr is
-         * returned on error.
-         */
-        static Settings* GetInstance(void) noexcept;
+        Settings(void) noexcept;
 
         /**
          * @brief Reads the setting value based on the settings name.
@@ -241,23 +214,12 @@ class Settings
         E_Return LoadFromNVS(const std::string& krName) noexcept;
 
         /**
-         * @brief Settings object constructor.
-         *
-         * @details Settings object constructor. The function will initialize
-         * the preference and create the instance when successfull.
-         */
-        Settings(void) noexcept;
-
-        /**
          * @brief Initializes the default values for the settings.
          *
          * @details Initializes the default values for the settings. Those are
          * not stored in non-volatile memory and generated at each boot.
          */
         void InitializeDefault(void) noexcept;
-
-        /** @brief Stores the current singleton instance. */
-        static Settings* _SP_INSTANCE;
 
         /** @brief Stores the settings mutex. */
         SemaphoreHandle_t _lock;

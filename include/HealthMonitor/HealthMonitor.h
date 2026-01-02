@@ -28,6 +28,7 @@
 #include <Timeout.h>         /* Timeout services */
 #include <HMReporter.h>      /* HM Reporters */
 #include <unordered_map>     /* Standard unordered map */
+#include <SystemState.h>     /* System State manager */
 #include <esp32-hal-timer.h> /* ESP32 Timers */
 #include <HMConfiguration.h> /* Health Monitor Configuration */
 
@@ -44,7 +45,21 @@
  * MACROS
  ******************************************************************************/
 
-/* None */
+/**
+ * @brief Reports an event to the health monitor.
+ *
+ * @details Reports an event to the health monitor. The health monitor instance
+ * is retrieved and used to raise the event.
+ *
+ * @param[in] EVENT The event to raise to the HM.
+ * @param[in] PARAM The parameter used with the event.
+ */
+#define HM_REPORT_EVENT(EVENT, PARAM) {                                     \
+    SystemState::GetInstance()->GetHealthMonitor()->ReportHM(               \
+        EVENT,                                                              \
+        (void*)PARAM                                                        \
+    );                                                                      \
+}
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -99,22 +114,12 @@ class HealthMonitor
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Get the instance of the Health Monitor object.
+         * @brief Health Monitor constructor.
          *
-         * @details Get the instance of the Health monotor object.
-         *
-         * @return The instance of the Health monotor object is returned.
-         * nullptr is returned on error.
+         * @details Health Monitor constructor. Allocates the resources prior to
+         * initialization and initializes the HM.
          */
-        static HealthMonitor* GetInstance(void) noexcept;
-
-        /**
-         * @brief Initializes the health monitor.
-         *
-         * @details Initializes the health monitor. This function setups the
-         * health monitor and its related tasks.
-         */
-        void Init(void) noexcept;
+        HealthMonitor(void) noexcept;
 
         /**
          * @brief Adds a watchdog to the watchdogs check list.
@@ -211,14 +216,6 @@ class HealthMonitor
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         /**
-         * @brief Health Monitor constructor.
-         *
-         * @details Health Monitor constructor. Allocates the resources prior to
-         * initialization.
-         */
-        HealthMonitor(void) noexcept;
-
-        /**
          * @brief Hardware Real time task.
          *
          * @details Hardware Real time task. Executes periodically at high
@@ -293,10 +290,6 @@ class HealthMonitor
         E_SystemState _systemState;
         /** @brief The HM actions queue */
         QueueHandle_t _actionsQueue;
-
-
-        /** @brief Health Monitor Singleton instance. */
-        static HealthMonitor* _SPINSTANCE;
 };
 
 

@@ -23,8 +23,10 @@
  ******************************************************************************/
 
 /* Included headers */
+#include <BSP.h>           /* HW layer services */
 #include <WiFi.h>          /* WiFi Services */
 #include <string>          /* Standard strings */
+#include <Logger.h>        /* Logging */
 #include <HealthMonitor.h> /* HM services */
 
 /* Header file */
@@ -79,105 +81,36 @@ SystemState* SystemState::GetInstance(void) noexcept {
         SystemState::_SPINSTANCE = new SystemState();
 
         if (nullptr == SystemState::_SPINSTANCE) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_SYSTEM_STATE_INIT
-            );
+            LOG_ERROR("Failed to instanciate the System State object.\n");
+            HWManager::Reboot();
         }
     }
 
     return SystemState::_SPINSTANCE;
 }
 
-void SystemState::SetNetworkSSID(const std::string& krSSID) noexcept {
-    this->_netSSID = krSSID;
+void SystemState::SetWiFiModule(WiFiModule* pWiFiModule) noexcept {
+    this->_pWiFiModule = pWiFiModule;
 }
 
-void SystemState::GetNetworkSSID(std::string& rSSID) const noexcept {
-    rSSID = this->_netSSID;
+void SystemState::SetHealthMonitor(HealthMonitor* pHealthMonitor) noexcept {
+    this->_pHealthMonitor = pHealthMonitor;
 }
 
-void SystemState::SetNetworkIP(const std::string& krIpAddress) noexcept {
-    this->_netIPAddress = krIpAddress;
+void SystemState::SetSettings(Settings* pSettings) noexcept {
+    this->_pSettings = pSettings;
 }
 
-void SystemState::GetNetworkIP(std::string& rIpAddress) const noexcept {
-    rIpAddress = this->_netIPAddress;
+WiFiModule* SystemState::GetWiFiModule(void) const noexcept {
+    return this->_pWiFiModule;
 }
 
-void SystemState::SetNetworkPassword(const std::string& krPassword) noexcept {
-    this->_netPassword = krPassword;
+HealthMonitor* SystemState::GetHealthMonitor(void) const noexcept {
+    return this->_pHealthMonitor;
 }
 
-void SystemState::GetNetworkPassword(std::string& rPassword) const noexcept {
-    rPassword = this->_netPassword;
-}
-
-void SystemState::SetNetworkAPMode(const bool kIsAP) noexcept {
-    this->_isAP = kIsAP;
-}
-
-void SystemState::GetNetworkAPMode(bool& rIsAP) const noexcept {
-    rIsAP = this->_isAP;
-}
-
-void SystemState::GetNetworkRSSI(uint8_t& rRSSI) const noexcept {
-    rRSSI = WiFi.RSSI();
-}
-
-void SystemState::SetNetworkConfigMode(const bool kIsStatic) noexcept {
-    this->_isNetworkStatic = kIsStatic;
-}
-
-void SystemState::GetNetworkConfigMode(bool& rIsStatic) const noexcept {
-    rIsStatic = this->_isNetworkStatic;
-}
-
-void SystemState::SetNetworkGatewayIP(const std::string& krIp) noexcept {
-    this->_netGatewayIP = krIp;
-}
-
-void SystemState::GetNetworkGatewayIP(std::string& rIp) const noexcept {
-    rIp = this-> _netGatewayIP;
-}
-
-void SystemState::SetNetworkSubnet(const std::string& krSubnet) noexcept {
-    this->_netSubnet = krSubnet;
-}
-
-void SystemState::GetNetworkSubnet(std::string& rSubnet) const noexcept {
-    rSubnet = this->_netSubnet;
-}
-
-void SystemState::SetNetworkPrimaryDNS(const std::string& krDnsIp) noexcept {
-    this->_netPrimaryDns = krDnsIp;
-}
-
-void SystemState::GetNetworkPrimaryDNS(std::string& rDnsIP) const noexcept {
-   rDnsIP = this->_netPrimaryDns;
-}
-
-void SystemState::SetNetworkSecondaryDNS(const std::string& krDnsIp) noexcept {
-   this->_netSecondaryDns = krDnsIp;
-}
-
-void SystemState::GetNetworkSecondaryDNS(std::string& rDnsIP) const noexcept {
-   rDnsIP = this-> _netSecondaryDns;
-}
-
-void SystemState::SetWebInterfacePort(const uint16_t kPort) noexcept {
-    this->_webPort = kPort;
-}
-
-void SystemState::GetWebInterfacePort(uint16_t& rPort) const noexcept {
-    rPort = this->_webPort;
-}
-
-void SystemState::SetAPIInterfacePort(const uint16_t kPort) noexcept {
-    this->_apiPort = kPort;
-}
-
-void SystemState::GetAPIInterfacePort(uint16_t& rPort) const noexcept {
-    rPort = this->_apiPort;
+Settings* SystemState::GetSettings(void) const noexcept {
+    return this->_pSettings;
 }
 
 SystemState::SystemState(void) noexcept {
