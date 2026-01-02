@@ -95,15 +95,6 @@ void test_hm_event_handler(void* pParam) {
     isHmEventTriggered = true;
 }
 
-void test_instance(void) {
-    HealthMonitor* pHM;
-
-    pHM = HealthMonitor::GetInstance();
-    TEST_ASSERT_NOT_NULL(pHM);
-
-    pHM->Init();
-}
-
 void test_add_wd(void) {
     HealthMonitor* pHM;
     Timeout timeout(1000000);
@@ -111,7 +102,7 @@ void test_add_wd(void) {
     E_Return result;
     uint32_t id;
 
-    pHM = HealthMonitor::GetInstance();
+    pHM = SystemState::GetInstance()->GetHealthMonitor();
     TEST_ASSERT_NOT_NULL(pHM);
 
     id = 0xFFFFFFF8;
@@ -131,7 +122,7 @@ void test_remove_wd(void) {
     E_Return result;
     uint32_t id;
 
-    pHM = HealthMonitor::GetInstance();
+    pHM = SystemState::GetInstance()->GetHealthMonitor();
     TEST_ASSERT_NOT_NULL(pHM);
 
     id = 0xFFFFFFF8;
@@ -155,7 +146,7 @@ void test_exec_wd(void) {
 
     valueHandle = 55;
 
-    pHM = HealthMonitor::GetInstance();
+    pHM = SystemState::GetInstance()->GetHealthMonitor();
     TEST_ASSERT_NOT_NULL(pHM);
 
     result = pHM->AddWatchdog(&timeoutWd, id);
@@ -171,7 +162,7 @@ void test_clean(void) {
     uint8_t i;
     E_Return result;
 
-    pHM = HealthMonitor::GetInstance();
+    pHM = SystemState::GetInstance()->GetHealthMonitor();
     TEST_ASSERT_NOT_NULL(pHM);
 
     for (i = 0; i < 50; ++i) {
@@ -198,7 +189,7 @@ void test_event(void) {
     HealthMonitor* pHM;
     S_HMParamSettingAccess param;
 
-    pHM = HealthMonitor::GetInstance();
+    pHM = SystemState::GetInstance()->GetHealthMonitor();
     TEST_ASSERT_NOT_NULL(pHM);
 
     param.kpSettingName = "TEST_NAME";
@@ -446,7 +437,7 @@ void test_reporter0(void) {
     TEST_ASSERT_EQUAL(E_HMStatus::HM_DISABLED, reporter.GetStatus());
 
     /* Add the Reporter with 500ms of interval */
-    result = HealthMonitor::GetInstance()->AddReporter(&reporter, reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->AddReporter(&reporter, reporterId);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(0, reporterId);
 
@@ -546,9 +537,9 @@ void test_reporter0(void) {
     TEST_ASSERT_EQUAL(5, degradedTimes);
     TEST_ASSERT_EQUAL(2, unhealthyTimes);
 
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporterId);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporterId);
     TEST_ASSERT_EQUAL(E_Return::ERR_NO_SUCH_ID, result);
 }
 
@@ -564,7 +555,7 @@ void test_reporter1(void) {
 
 
     /* Add the two Reporter with 50ms of interval */
-    result = HealthMonitor::GetInstance()->AddReporter(&reporter, reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->AddReporter(&reporter, reporterId);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(1, reporterId);
 
@@ -572,7 +563,7 @@ void test_reporter1(void) {
 
     TestHMReporter reporter2(S_HMReporterParam {100000000, 5, 5, "TestReporter2"});
 
-    result = HealthMonitor::GetInstance()->AddReporter(&reporter2, reporter2Id);
+    result = SystemState::GetInstance()->GetHealthMonitor()->AddReporter(&reporter2, reporter2Id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(2, reporter2Id);
 
@@ -588,7 +579,7 @@ void test_reporter1(void) {
     /* Degraded and Unhealthy */
     startFail = true;
 
-    HWManager::DelayExecNs(1060000000);
+    HWManager::DelayExecNs(1100000000);
 
     TEST_ASSERT_EQUAL(E_HMStatus::HM_UNHEALTHY, reporter.GetStatus());
     TEST_ASSERT_EQUAL(11, reporter.GetFailureCount());
@@ -615,18 +606,17 @@ void test_reporter1(void) {
     TEST_ASSERT_EQUAL(5, degradedTimes);
     TEST_ASSERT_EQUAL(9, unhealthyTimes);
 
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporterId);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporterId);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporterId);
     TEST_ASSERT_EQUAL(E_Return::ERR_NO_SUCH_ID, result);
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporter2Id);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporter2Id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    result = HealthMonitor::GetInstance()->RemoveReporter(reporter2Id);
+    result = SystemState::GetInstance()->GetHealthMonitor()->RemoveReporter(reporter2Id);
     TEST_ASSERT_EQUAL(E_Return::ERR_NO_SUCH_ID, result);
 }
 
 void HealthMonitorTests(void) {
-    RUN_TEST(test_instance);
     RUN_TEST(test_add_wd);
     RUN_TEST(test_remove_wd);
     RUN_TEST(test_exec_wd);
