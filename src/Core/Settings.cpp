@@ -41,6 +41,12 @@
 /** @brief Defines the name of the preference instance. */
 #define SETTINGS_PREF_NAME "rthrws_settings"
 
+/** @brief Defines the settings lock timeout in nanoseconds. */
+#define SETTINGS_LOCK_TIMEOUT_NS 20000000ULL
+/** @brief Defines the settings lock timeout in ticks. */
+#define SETTINGS_LOCK_TIMEOUT_TICKS \
+    (pdMS_TO_TICKS(SETTINGS_LOCK_TIMEOUT_NS / 1000000ULL))
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
@@ -67,8 +73,7 @@
 /* None */
 
 /************************** Static global variables ***************************/
-/** @brief Stores the current singleton instance. */
-Settings* Settings::_SP_INSTANCE = nullptr;
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
@@ -78,42 +83,19 @@ Settings* Settings::_SP_INSTANCE = nullptr;
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
-E_Return Settings::InitInstance(void) noexcept {
-    /* Create the instance if needed */
-    if (nullptr == Settings::_SP_INSTANCE) {
-        Settings::_SP_INSTANCE = new Settings();
 
-        /* Start the settings preference */
-        if (Settings::_SP_INSTANCE->_stcPrefs.begin(
-            SETTINGS_PREF_NAME,
-            false
-        )) {
-            /* Allocate the lock */
-            Settings::_SP_INSTANCE->_lock = xSemaphoreCreateMutex();
-            if (nullptr == Settings::_SP_INSTANCE->_lock) {
-                delete Settings::_SP_INSTANCE;
-                Settings::_SP_INSTANCE = nullptr;
-
-                LOG_ERROR("Failed to initialize the Preference Instance.\n");
-            }
-        }
-        else {
-            delete Settings::_SP_INSTANCE;
-            Settings::_SP_INSTANCE = nullptr;
-
-            LOG_ERROR("Failed to start the Preference Instance.\n");
+Settings::Settings(void) noexcept {
+    /* Start the settings preference */
+    if (this->_stcPrefs.begin(SETTINGS_PREF_NAME, false)) {
+        /* Allocate the lock */
+        this->_lock = xSemaphoreCreateMutex();
+        if (nullptr == this->_lock) {
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_CREATE, 0);
         }
     }
 
-    return (
-        (nullptr == Settings::_SP_INSTANCE) ?
-            E_Return::ERR_SETTING_INIT :
-            E_Return::NO_ERROR
-    );
-}
-
-Settings* Settings::GetInstance(void) noexcept {
-    return Settings::_SP_INSTANCE;
+    /* Initializes the default settings */
+    InitializeDefault();
 }
 
 E_Return Settings::GetSettings(const std::string& krName,
@@ -164,9 +146,7 @@ E_Return Settings::GetSettings(const std::string& krName,
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_SETTINGS_LOCK
-            );
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
         }
     }
     else {
@@ -257,9 +237,7 @@ E_Return Settings::SetSettings(const std::string& krName,
                 }
 
                 if (pdPASS != xSemaphoreGive(this->_lock)) {
-                    HealthMonitor::GetInstance()->ReportHM(
-                        E_HMEvent::HM_EVENT_SETTINGS_LOCK
-                    );
+                    HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
                 }
             }
             else {
@@ -310,9 +288,7 @@ E_Return Settings::Commit(void) noexcept {
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_SETTINGS_LOCK
-            );
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
         }
     }
     else {
@@ -339,9 +315,7 @@ E_Return Settings::ClearCache(void) noexcept {
         this->_cache.clear();
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_SETTINGS_LOCK
-            );
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
         }
     }
     else {
@@ -411,9 +385,4 @@ E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
     }
 
     return error;
-}
-
-Settings::Settings(void) noexcept {
-    /* Initializes the default settings */
-    InitializeDefault();
 }

@@ -35,7 +35,7 @@
 #define LOGGER_SERIAL_BAUDRATE 115200
 
 /** @brief The log buffer size in bytes. */
-#define LOGGER_BUFFER_SIZE 256
+#define LOGGER_BUFFER_SIZE 512
 
 /*******************************************************************************
  * MACROS

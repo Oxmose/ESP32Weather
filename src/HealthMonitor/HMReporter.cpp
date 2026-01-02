@@ -149,7 +149,7 @@ void HMReporter::HealthCheck(const uint64_t kTime) noexcept {
 
                 /* Add action if necessary */
                 if (this->_hasRunningAction) {
-                    pHM = HealthMonitor::GetInstance();
+                    pHM = SystemState::GetInstance()->GetHealthMonitor();
                     result = pHM->AddHMAction(this);
                     if (E_Return::NO_ERROR != result) {
                         pHM->ReportHM(

@@ -80,12 +80,13 @@ typedef enum {
     /** @brief HM Event: Registered WebServer page handler not found. */
     HM_EVENT_WEB_SERVER_NOT_FOUND,
     /** @brief HM Event: Registered WebServer API handler not found. */
-    HM_EVENT_API_SERVER_NOT_FOUND, 
-    /** @brief HM Event: Failed to initialize the system state. */
-    HM_EVENT_SYSTEM_STATE_INIT,
+    HM_EVENT_API_SERVER_NOT_FOUND,
     /** @brief HM Event: Removing action failed. */
     HM_EVENT_HM_REMOVE_ACTION,
-
+    /** @brief HM Event: WiFi Module stop error. */
+    HM_EVENT_WIFI_STOP,
+    /** @brief HM Event: Settings access error. */
+    HM_EVENT_SETTINGS_COMMIT,
 #ifdef HM_TEST_EVENT
     /** @brief HM Event: Test event */
     HM_EVENT_TEST,

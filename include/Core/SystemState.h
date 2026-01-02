@@ -24,7 +24,12 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string> /* Stardard string */
+#include <string>           /* Stardard string */
+
+/* Forwar class declarations to avoid recursive inclusions */
+class WiFiModule;
+class HealthMonitor;
+class Settings;
 
 /*******************************************************************************
  * CONSTANTS
@@ -92,223 +97,66 @@ class SystemState
         static SystemState* GetInstance(void) noexcept;
 
         /**
-         * @brief Sets the current network SSID.
+         * @brief Sets the current WiFi module instance.
          *
-         * @details Sets the current network SSID.
+         * @details Sets the current WiFi module instance. This stores a pointer
+         * in the system state object.
          *
-         * @param[in] krSSID The current SSID to set.
+         * @param[in] pWiFiModue The WiFi module to store in the system state.
          */
-        void SetNetworkSSID(const std::string& krSSID) noexcept;
+        void SetWiFiModule(WiFiModule* pWiFiModule) noexcept;
 
         /**
-         * @brief Provides the current network SSID.
+         * @brief Sets the current health monitor instance.
          *
-         * @details Provides the current network SSID.
+         * @details Sets the current health monitor instance. This stores a
+         * pointer in the system state object.
          *
-         * @param[out] rSSID The buffer used to provide the current SSID.
+         * @param[in] pHealthMonitor The health monitor to store in the
+         * system state.
          */
-        void GetNetworkSSID(std::string& rSSID) const noexcept;
+        void SetHealthMonitor(HealthMonitor* pHealthMonitor) noexcept;
 
         /**
-         * @brief Sets the current network IP address.
+         * @brief Sets the current health monitor instance.
          *
-         * @details Sets the current network IP address.
+         * @details Sets the current health monitor instance. This stores a
+         * pointer in the system state object.
          *
-         * @param[in] krIpAddress The current IP address to set.
+         * @param[in] pSettings The settings instance to store in the
+         * system state.
          */
-        void SetNetworkIP(const std::string& krIpAddress) noexcept;
+        void SetSettings(Settings* pSettings) noexcept;
 
         /**
-         * @brief Provides the current network IP address.
+         * @brief Returns the current WiFi module instance.
          *
-         * @details Provides the current network IP address.
+         * @details Returns the current WiFi module instance. This instance is
+         * stored in the system state.
          *
-         * @param[out] rIpAddress The buffer used to provide the current IP
-         * address.
+         * @return The WiFi module stored in the system state is returned.
          */
-        void GetNetworkIP(std::string& rIpAddress) const noexcept;
+        WiFiModule* GetWiFiModule(void) const noexcept;
 
         /**
-         * @brief Sets the current network password.
+         * @brief Returns the current Health Monitor instance.
          *
-         * @details Sets the current network password.
+         * @details Returns the current Health Monitor instance. This instance
+         * is stored in the system state.
          *
-         * @param[in] krPassword The current password to set.
+         * @return The Health Monitor stored in the system state is returned.
          */
-        void SetNetworkPassword(const std::string& krPassword) noexcept;
+        HealthMonitor* GetHealthMonitor(void) const noexcept;
 
         /**
-         * @brief Provides the current network password.
+         * @brief Returns the current Settings instance.
          *
-         * @details Provides the current network password.
+         * @details Returns the current Settings instance. This instance
+         * is stored in the system state.
          *
-         * @param[out] rPassword The buffer used to provide the current network
-         * password.
+         * @return The Settings stored in the system state is returned.
          */
-        void GetNetworkPassword(std::string& rPassword) const noexcept;
-
-        /**
-         * @brief Sets the current network AP mode.
-         *
-         * @details Sets the current network AP mode.
-         *
-         * @param[in] kIsAP The current AP mode to set.
-         */
-        void SetNetworkAPMode(const bool kIsAP) noexcept;
-
-        /**
-         * @brief Provides the current network AP mode.
-         *
-         * @details Provides the current network AP mode.
-         *
-         * @param[out] rIsAP The buffer used to provide the current network
-         * AP mode.
-         */
-        void GetNetworkAPMode(bool& rIsAP) const noexcept;
-
-        /**
-         * @brief Provides the current network RSSI.
-         *
-         * @details Provides the current network RSSI.
-         *
-         * @param[out] rRSSI The buffer used to provide the current network
-         * RSSI.
-         */
-        void GetNetworkRSSI(uint8_t& rRSSI) const noexcept;
-
-        /**
-         * @brief Sets the current network configuration mode.
-         *
-         * @details Sets the current network configuration mode.
-         *
-         * @param[in] kIsStatic The current configuration mode to set.
-         */
-        void SetNetworkConfigMode(const bool kIsStatic) noexcept;
-
-        /**
-         * @brief Provides the current network configuration mode.
-         *
-         * @details Provides the current network configuration mode.
-         *
-         * @param[out] rIsStatic The buffer used to provide the current network
-         * configuration mode.
-         */
-        void GetNetworkConfigMode(bool& rIsStatic) const noexcept;
-
-        /**
-         * @brief Sets the current network static gateway IP.
-         *
-         * @details Sets the current network static gateway IP.
-         *
-         * @param[in] krIp The current static gateway IP to set.
-         */
-        void SetNetworkGatewayIP(const std::string& krIp) noexcept;
-
-        /**
-         * @brief Provides the current network static gateway IP.
-         *
-         * @details Provides the current network static gateway IP.
-         *
-         * @param[out] rIp The buffer used to provide the current network
-         * static gateway IP.
-         */
-        void GetNetworkGatewayIP(std::string& rIp) const noexcept;
-
-        /**
-         * @brief Sets the current network static subnet.
-         *
-         * @details Sets the current network static subnet.
-         *
-         * @param[in] krSubnet The current static subnet to set.
-         */
-        void SetNetworkSubnet(const std::string& krSubnet) noexcept;
-
-        /**
-         * @brief Provides the current network static subnet.
-         *
-         * @details Provides the current network static subnet.
-         *
-         * @param[out] rSubnet The buffer used to provide the current network
-         * static subnetP.
-         */
-        void GetNetworkSubnet(std::string& rSubnet) const noexcept;
-
-        /**
-         * @brief Sets the current network static primary DNS IP.
-         *
-         * @details Sets the current network static primary DNS IP.
-         *
-         * @param[in] krDnsIP The current static primary DNS IP to set.
-         */
-        void SetNetworkPrimaryDNS(const std::string& krDnsIp) noexcept;
-
-        /**
-         * @brief Provides the current network static primary DNS IP.
-         *
-         * @details Provides the current network static primary DNS IP.
-         *
-         * @param[out] rDnsIp The buffer used to provide the current network
-         * static primary DNS IP.
-         */
-        void GetNetworkPrimaryDNS(std::string& rDnsIp) const noexcept;
-
-        /**
-         * @brief Sets the current network static secondary DNS IP.
-         *
-         * @details Sets the current network static secondary DNS IP.
-         *
-         * @param[in] krDnsIP The current static secondary DNS IP to set.
-         */
-        void SetNetworkSecondaryDNS(const std::string& krDnsIP) noexcept;
-
-        /**
-         * @brief Provides the current network static secondary DNS IP.
-         *
-         * @details Provides the current network static secondary DNS IP.
-         *
-         * @param[out] rDnsIp The buffer used to provide the current network
-         * static secondary DNS IP.
-         */
-        void GetNetworkSecondaryDNS(std::string& rDnsIp) const noexcept;
-
-        /**
-         * @brief Sets the current web interface port.
-         *
-         * @details Sets the current web interface port.
-         *
-         * @param[in] kPort The current web interface port.
-         */
-        void SetWebInterfacePort(const uint16_t kPort) noexcept;
-
-        /**
-         * @brief Provides the current web interface port.
-         *
-         * @details Provides the current web interface port.
-         *
-         * @param[out] rDnsIp The buffer used to provide the current web
-         * interface port.
-         */
-        void GetWebInterfacePort(uint16_t& rPort) const noexcept;
-
-        /**
-         * @brief Sets the current API interface port.
-         *
-         * @details Sets the current API interface port.
-         *
-         * @param[in] kPort The current API interface port.
-         */
-        void SetAPIInterfacePort(const uint16_t kPort) noexcept;
-
-        /**
-         * @brief Provides the current API interface port.
-         *
-         * @details Provides the current API interface port.
-         *
-         * @param[out] rDnsIp The buffer used to provide the current API
-         * interface port.
-         */
-        void GetAPIInterfacePort(uint16_t& rPort) const noexcept;
-
+        Settings* GetSettings(void) const noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -324,38 +172,14 @@ class SystemState
          */
         SystemState(void) noexcept;
 
-        /** @brief Stores the current network SSID. */
-        std::string _netSSID;
+        /** @brief Stores the current WiFi module instance. */
+        WiFiModule* _pWiFiModule;
 
-        /** @brief Stores the current network IP address. */
-        std::string _netIPAddress;
+        /** @brief Stores the current Health Monitor instance. */
+        HealthMonitor* _pHealthMonitor;
 
-        /** @brief Stores the current network password. */
-        std::string _netPassword;
-
-        /** @brief Stores the current network gateway IP. */
-        std::string _netGatewayIP;
-
-        /** @brief Stores the current network subnet. */
-        std::string _netSubnet;
-
-        /** @brief Stores the current network primary dns. */
-        std::string _netPrimaryDns;
-
-        /** @brief Stores the current network seoncdary dns. */
-        std::string _netSecondaryDns;
-
-        /** @brief Stores the current network configuration mode. */
-        bool _isNetworkStatic;
-
-        /** @brief Stores the current network AP mode. */
-        bool _isAP;
-
-        /** @brief Stores the current web interface port. */
-        uint16_t _webPort;
-
-        /** @brief Stores the current API interface port. */
-        uint16_t _apiPort;
+        /** @brief Stores the current Settings instance. */
+        Settings* _pSettings;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

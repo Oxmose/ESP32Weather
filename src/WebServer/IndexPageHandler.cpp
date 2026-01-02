@@ -103,12 +103,11 @@ void IndexPageHandler::Generate(std::string& rPageTitle,
 }
 
 void IndexPageHandler::GenerateNetwork(std::string& rBuffer) const noexcept {
-    SystemState* pSysState;
-    std::string  buffer;
-    bool         isAp;
-    uint8_t      rssi;
+    WiFiModule*  pWiFiModule;
+    S_WiFiConfig config;
 
-    pSysState = SystemState::GetInstance();
+    pWiFiModule = SystemState::GetInstance()->GetWiFiModule();
+    pWiFiModule->GetConfiguration(&config);
 
     rBuffer += "<div>";
     rBuffer += "<h3>==== Network ====</h3>";
@@ -121,8 +120,7 @@ void IndexPageHandler::GenerateNetwork(std::string& rBuffer) const noexcept {
     rBuffer += "</tr>";
     rBuffer += "<tr>";
     rBuffer += "<td>Mode</td>";
-    pSysState->GetNetworkAPMode(isAp);
-    if (isAp) {
+    if (config.isAP) {
         rBuffer += "<td>Access Point</td>";
     }
     else {
@@ -131,30 +129,21 @@ void IndexPageHandler::GenerateNetwork(std::string& rBuffer) const noexcept {
     rBuffer += "</tr>";
     rBuffer += "<tr>";
 
-    pSysState->GetNetworkSSID(buffer);
-    rBuffer += "<td>SSID</td><td>" +
-                 buffer +
-                 "</td>";
+    rBuffer += "<td>SSID</td><td>" + std::string(config.ssid) + "</td>";
     rBuffer += "</tr>";
-    if (isAp) {
+    if (config.isAP) {
         rBuffer += "<tr>";
-        pSysState->GetNetworkPassword(buffer);
-        rBuffer += "<td>Password</td><td>" +
-                     buffer +
-                     "</td>";
+        rBuffer += "<td>Password</td><td>" + std::string(config.password) +
+            "</td>";
         rBuffer += "</tr>";
     }
     rBuffer += "<tr>";
-    pSysState->GetNetworkIP(buffer);
-    rBuffer += "<td>IP Address</td><td>" +
-                 buffer +
-                 "</td>";
+    rBuffer += "<td>IP Address</td><td>" + std::string(config.ip) + "</td>";
     rBuffer += "</tr>";
-    if (!isAp) {
+    if (!config.isAP) {
         rBuffer += "<tr>";
-        pSysState->GetNetworkRSSI(rssi);
         rBuffer += "<td>RSSI</td><td>" +
-                    std::to_string(rssi) +
+                    std::to_string(WiFi.RSSI()) +
                     "</td>";
         rBuffer += "</tr>";
     }

@@ -1,0 +1,31 @@
+meta {
+  name: SetBaseWiFiSettings
+  type: http
+  seq: 4
+}
+
+post {
+  url: 192.168.4.1:8333/wifi
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  mode: setsettings
+  ap_mode: 1
+  ssid: tte
+  netpass: 12345678
+  static: 0
+  ip: 0.0.0.0
+  gateway: 
+  subnet: 
+  pdns: 
+  sdns: 
+  webp: 14
+  apip: 14
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

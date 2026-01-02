@@ -100,9 +100,7 @@ const char* HWManager::GetHWUID(void) noexcept {
         _SHWUID = "RTHRWS-";
 
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL
-            );
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL, nullptr);
         }
 
         for (i = 0; 6 > i; ++i) {
@@ -122,9 +120,7 @@ const char* HWManager::GetMacAddress(void) noexcept {
     /* Check if the MAC address was already generated */
     if(0 == _SMACADDR.size()) {
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            HealthMonitor::GetInstance()->ReportHM(
-                E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL
-            );
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL, nullptr);
         }
 
         _SMACADDR = "";
