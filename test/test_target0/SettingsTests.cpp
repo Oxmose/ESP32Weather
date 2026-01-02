@@ -1,21 +1,15 @@
 #include <Arduino.h>
 #include <unity.h>
 #include <Settings.h>
+#include <SystemState.h>
 
-void test_init(void) {
-    E_Return result;
-
-    /* Initialize the setting manager */
-    result = Settings::InitInstance();
-    TEST_ASSERT_EQUAL_UINT32(E_Return::NO_ERROR, result);
-}
 
 void test_not_found(void) {
     E_Return  result;
     uint8_t   buffer;
     Settings* pSettings;
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     result = pSettings->GetSettings("unknown_test", &buffer, sizeof(uint8_t));
@@ -27,7 +21,7 @@ void test_valid(void) {
     uint8_t   buffer;
     Settings* pSettings;
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     result = pSettings->SetSettings("uint8_val", &buffer, sizeof(uint8_t));
@@ -43,7 +37,7 @@ void test_invalid(void) {
     uint32_t  bufferu32;
     Settings* pSettings;
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     result = pSettings->GetSettings("unknown_test_too_long", &buffer, sizeof(uint8_t));
@@ -70,7 +64,7 @@ void test_clear(void) {
     uint8_t   buffer;
     Settings* pSettings;
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     buffer = 24;
@@ -92,7 +86,7 @@ void test_commit(void) {
     uint8_t   buffer;
     Settings* pSettings;
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     buffer = 24;
@@ -116,12 +110,13 @@ void test_default(void) {
     E_Return  result;
     uint8_t   buffer;
     Settings* pSettings;
-    char      ssidBuff[SETTING_NODE_SSID_LENGTH];
-    char      passBuff[SETTING_NODE_PASS_LENGTH];
+    char      ssidBuff[32];
+    char      passBuff[32];
+    char      ipBuff[32];
     uint16_t  uint16Buff;
 
 
-    pSettings = Settings::GetInstance();
+    pSettings = SystemState::GetInstance()->GetSettings();
     TEST_ASSERT_NOT_NULL(pSettings);
 
     result = pSettings->GetDefault("unknown_test_too_long", &buffer, sizeof(uint8_t));
@@ -137,10 +132,13 @@ void test_default(void) {
     result = pSettings->GetDefault("is_ap", &buffer, sizeof(bool));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(true, buffer);
-    result = pSettings->GetDefault("node_ssid", (uint8_t*)ssidBuff, SETTING_NODE_SSID_LENGTH);
+    result = pSettings->GetDefault("node_static", &buffer, sizeof(bool));
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL(false, buffer);
+    result = pSettings->GetDefault("node_ssid", (uint8_t*)ssidBuff, 32);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL_STRING("RTHR_NODE", ssidBuff);
-    result = pSettings->GetDefault("node_pass", (uint8_t*)passBuff, SETTING_NODE_PASS_LENGTH);
+    result = pSettings->GetDefault("node_pass", (uint8_t*)passBuff, 32);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL_STRING("RTHR_PASS", passBuff);
     result = pSettings->GetDefault("web_port", (uint8_t*)&uint16Buff, sizeof(uint16_t));
@@ -149,11 +147,24 @@ void test_default(void) {
     result = pSettings->GetDefault("api_port", (uint8_t*)&uint16Buff, sizeof(uint16_t));
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL(8333, uint16Buff);
-
+    result = pSettings->GetDefault("node_st_ip", (uint8_t*)ipBuff, 15);
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING("192.168.1.200", ipBuff);
+    result = pSettings->GetDefault("node_st_gate", (uint8_t*)ipBuff, 15);
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING("192.168.1.100", ipBuff);
+    result = pSettings->GetDefault("node_st_subnet", (uint8_t*)ipBuff, 15);
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING("255.255.255.0", ipBuff);
+    result = pSettings->GetDefault("node_st_pdns", (uint8_t*)ipBuff, 15);
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING("1.1.1.1", ipBuff);
+    result = pSettings->GetDefault("node_st_sdns", (uint8_t*)ipBuff, 15);
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING("4.4.4.4", ipBuff);
 }
 
 void SettingsTests(void) {
-    RUN_TEST(test_init);
     RUN_TEST(test_not_found);
     RUN_TEST(test_valid);
     RUN_TEST(test_invalid);

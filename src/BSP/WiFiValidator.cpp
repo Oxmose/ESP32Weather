@@ -121,8 +121,6 @@ noexcept {
 }
 
 bool WiFiValidator::ValidateIP(const S_WiFiConfigRequest& krConfig) noexcept {
-    size_t size;
-
     /* Check if static, allow empty */
     if (!krConfig.isStatic.first &&
         (!krConfig.ip.second || 0 == krConfig.ip.first.size())) {
@@ -133,21 +131,12 @@ bool WiFiValidator::ValidateIP(const S_WiFiConfigRequest& krConfig) noexcept {
     if (!krConfig.ip.second) {
         return false;
     }
-
-    /* Check size */
-    size = krConfig.ip.first.size();
-    if (1 > size || IP_ADDR_SIZE_BYTES < size) {
-        return false;
-    }
-
     /* Check content */
     return CheckIpFormat(krConfig.ip.first.c_str());
 }
 
 bool WiFiValidator::ValidateGateway(const S_WiFiConfigRequest& krConfig)
 noexcept {
-    size_t size;
-
     /* Check if static, allow empty */
     if (!krConfig.isStatic.first &&
         (!krConfig.gateway.second || 0 == krConfig.gateway.first.size())) {
@@ -159,20 +148,12 @@ noexcept {
         return false;
     }
 
-    /* Check size */
-    size = krConfig.gateway.first.size();
-    if (1 > size || IP_ADDR_SIZE_BYTES < size) {
-        return false;
-    }
-
     /* Check content */
     return CheckIpFormat(krConfig.gateway.first.c_str());
 }
 
 bool WiFiValidator::ValidateSubnet(const S_WiFiConfigRequest& krConfig)
 noexcept {
-    size_t size;
-
     /* Check if static, allow empty */
     if (!krConfig.isStatic.first &&
         (!krConfig.subnet.second || 0 == krConfig.subnet.first.size())) {
@@ -184,40 +165,30 @@ noexcept {
         return false;
     }
 
-    /* Check size */
-    size = krConfig.subnet.first.size();
-    if (1 > size || IP_ADDR_SIZE_BYTES < size) {
-        return false;
-    }
-
     /* Check content */
     return CheckIpFormat(krConfig.subnet.first.c_str());
 }
 
 bool WiFiValidator::ValidateDNS(const S_WiFiConfigRequest& krConfig) noexcept {
-    size_t size;
-
     /* Check if static, allow empty */
-    if (!krConfig.isStatic.first &&
-        (!krConfig.primaryDNS.second ||
-            0 == krConfig.primaryDNS.first.size()) &&
-        (!krConfig.secondaryDNS.second ||
-            0 == krConfig.secondaryDNS.first.size())) {
+    if (!krConfig.isStatic.first) {
+        if (krConfig.primaryDNS.second &&
+            0 != krConfig.primaryDNS.first.size()) {
+            if (!CheckIpFormat(krConfig.primaryDNS.first.c_str())) {
+                return false;
+            }
+        }
+        if (krConfig.secondaryDNS.second &&
+            0 != krConfig.secondaryDNS.first.size()) {
+            if (!CheckIpFormat(krConfig.secondaryDNS.first.c_str())) {
+                return false;
+            }
+        }
         return true;
     }
 
     /* Check if set */
     if (!krConfig.primaryDNS.second || !krConfig.secondaryDNS.second) {
-        return false;
-    }
-
-    /* Check size */
-    size = krConfig.primaryDNS.first.size();
-    if (1 > size || IP_ADDR_SIZE_BYTES < size) {
-        return false;
-    }
-    size = krConfig.secondaryDNS.first.size();
-    if (1 > size || IP_ADDR_SIZE_BYTES < size) {
         return false;
     }
 
