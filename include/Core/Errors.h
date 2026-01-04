@@ -88,6 +88,8 @@ typedef enum {
     ERR_WIFI_INVALID_DNS,
     /** @brief WiFi settings error: invalid ports */
     ERR_WIFI_INVALID_PORTS,
+    /** @brief Error when an action lock timed out. */
+    ERR_BTN_ACTION_TIMEOUT,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

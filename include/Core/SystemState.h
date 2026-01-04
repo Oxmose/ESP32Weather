@@ -24,12 +24,14 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>           /* Stardard string */
+#include <string> /* Stardard string */
 
 /* Forwar class declarations to avoid recursive inclusions */
 class WiFiModule;
 class HealthMonitor;
 class Settings;
+class IOButtonManager;
+class IOLedManager;
 
 /*******************************************************************************
  * CONSTANTS
@@ -129,6 +131,28 @@ class SystemState
         void SetSettings(Settings* pSettings) noexcept;
 
         /**
+         * @brief Sets the current IO button manager instance.
+         *
+         * @details Sets the current IO button manager instance. This stores a
+         * pointer in the system state object.
+         *
+         * @param[in] pSettings The IO button manager instance to store in the
+         * system state.
+         */
+        void SetIOButtonManager(IOButtonManager* pIOButtonManager) noexcept;
+
+        /**
+         * @brief Sets the current IO led manager instance.
+         *
+         * @details Sets the current IO led manager instance. This stores a
+         * pointer in the system state object.
+         *
+         * @param[in] pSettings The IO led manager instance to store in the
+         * system state.
+         */
+        void SetIOLedManager(IOLedManager* pIOLedManager) noexcept;
+
+        /**
          * @brief Returns the current WiFi module instance.
          *
          * @details Returns the current WiFi module instance. This instance is
@@ -158,6 +182,25 @@ class SystemState
          */
         Settings* GetSettings(void) const noexcept;
 
+        /**
+         * @brief Returns the current IO button manager instance.
+         *
+         * @details Returns the current IO button manager instance. This
+         * instance is stored in the system state.
+         *
+         * @return The IO button manager stored in the system state is returned.
+         */
+        IOButtonManager* GetIOButtonManager(void) const noexcept;
+
+        /**
+         * @brief Returns the current IO led manager instance.
+         *
+         * @details Returns the current IO led manager instance. This
+         * instance is stored in the system state.
+         *
+         * @return The IO led manager stored in the system state is returned.
+         */
+        IOLedManager* GetIOLedManager(void) const noexcept;
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -180,6 +223,12 @@ class SystemState
 
         /** @brief Stores the current Settings instance. */
         Settings* _pSettings;
+
+        /** @brief Stores the current IO Button Manager instance. */
+        IOButtonManager* _pIOButtonManager;
+
+        /** @brief Stores the current IO Led Manager instance. */
+        IOLedManager* _pIOLedManager;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

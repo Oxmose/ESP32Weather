@@ -22,14 +22,17 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <BSP.h>           /* Hardware services*/
-#include <Logger.h>        /* Firmware logger */
-#include <Errors.h>        /* Error codes */
-#include <Arduino.h>       /* Arduino library */
-#include <version.h>       /* Versionning info */
-#include <Settings.h>      /* Settings services */
-#include <WiFiModule.h>    /* WiFi Module driver */
-#include <HealthMonitor.h> /* Health Monitoring */
+#include <BSP.h>             /* Hardware services*/
+#include <Logger.h>          /* Firmware logger */
+#include <Errors.h>          /* Error codes */
+#include <Arduino.h>         /* Arduino library */
+#include <version.h>         /* Versionning info */
+#include <Timeout.h>         /* Timeout services */
+#include <Settings.h>        /* Settings services */
+#include <WiFiModule.h>      /* WiFi Module driver */
+#include <IOLedManager.h>    /* IO Led manager */
+#include <HealthMonitor.h>   /* Health Monitoring */
+#include <IOButtonManager.h> /* IO Button manager */
 
 /* Header file */
 #include <Entry.h>
@@ -37,7 +40,14 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/* None */
+/** @brief Main loop period in nanoseconds. */
+#define MAIN_LOOP_PERIOD_NS 25000000ULL
+
+/** @brief Main loop period tolerance in nanoseconds. */
+#define MAIN_LOOP_PERIOD_TOLERANCE_NS 250000ULL
+
+/** @brief Main loop watchdog timeout in nanoseconds. */
+#define MAIN_LOOP_WD_TIMEOUT_NS (2 * MAIN_LOOP_PERIOD_NS)
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -57,7 +67,15 @@
  *
  * @details Starts the WiFi module. On error, Health Monitor is triggered.
  */
-static void StartWiFi(void);
+static void StartWiFi(void) noexcept;
+
+/**
+ * @brief Handles the main loop watchdog trigger.
+ *
+ * @details Handles the main loop watchdog trigger. Health monitor is used to
+ * correct the error.
+ */
+static void MainLoopWatchdogHandler(void) noexcept;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -71,38 +89,33 @@ static void StartWiFi(void);
 
 /************************** Static global variables ***************************/
 /** @brief Stores the Health Monitor instance. */
-static HealthMonitor* spHealthMon;
+static HealthMonitor sHealthMon;
 /** @brief Stores the WiFi module instance. */
-static WiFiModule*    spWifiModule;
+static WiFiModule sWifiModule;
 /** @brief Stores the Settings instance. */
-static Settings*      spSettings;
+static Settings sSettings;
+/** @brief Stores the IO button manager instance. */
+static IOButtonManager sBtnManager;
+/** @brief Stores the IO LED manager instance. */
+//static IOLedManager sLedManager;
 /** @brief Stores the System State instance. */
-static SystemState*   spSystemState;
+static SystemState* spSystemState;
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-static void StartWiFi(void) {
+static void StartWiFi(void) noexcept {
     E_Return result;
 
-    /* Initialize the WiFi module */
-    spWifiModule = new WiFiModule();
-    if (nullptr == spWifiModule) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, 0);
-    }
-
-    /* Set to system state */
-    spSystemState->SetWiFiModule(spWifiModule);
-
     /* Start WiFi */
-    result = spWifiModule->Start();
+    result = sWifiModule.Start();
     if (E_Return::NO_ERROR != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, result);
     }
 
     /* Start the web servers */
-    result = spWifiModule->StartWebServers();
+    result = sWifiModule.StartWebServers();
     if (E_Return::NO_ERROR != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_START, result);
     }
@@ -115,18 +128,6 @@ void setup(void) {
     INIT_LOGGER(LOG_LEVEL_DEBUG);
     HWManager::DelayExecNs(50000000);
 
-    /* Init system state */
-    spSystemState = SystemState::GetInstance();
-
-    /* Initialize the Health Monitor */
-    spHealthMon = new HealthMonitor();
-    if (nullptr == spHealthMon) {
-        LOG_ERROR("Failed to create the Health Monitor instance.\n");
-        HWManager::Reboot();
-    }
-    spSystemState->SetHealthMonitor(spHealthMon);
-    LOG_INFO("Health Monitor Initialized.\n");
-
     /* Welcome output*/
     LOG_INFO("RTHR Weather Station Booting...\n");
     LOG_INFO("#==============================#\n");
@@ -134,22 +135,54 @@ void setup(void) {
     LOG_INFO("| " VERSION "  |\n");
     LOG_INFO("#==============================#\n");
 
-    /* Initialize the setting manager */
-    spSettings = new Settings();
-    if (nullptr == spSettings) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_CREATE, ERR_UNKNOWN);
-    }
-    spSystemState->SetSettings(spSettings);
+    /* Init system state */
+    spSystemState = SystemState::GetInstance();
+    spSystemState->SetHealthMonitor(&sHealthMon);
+    spSystemState->SetSettings(&sSettings);
+    spSystemState->SetWiFiModule(&sWifiModule);
+    spSystemState->SetIOButtonManager(&sBtnManager);
+    //spSystemState->SetIOLedManager(&sLedManager);
 
     /* Initialize the WiFi */
     StartWiFi();
 
     /* Set system as started */
-    spHealthMon->SetSystemState(E_SystemState::EXECUTING);
+    sHealthMon.SetSystemState(E_SystemState::EXECUTING);
 }
 
 void loop(void) {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    /* Main loop timeout manager */
+    static Timeout sMainLoopTimeout(
+        MAIN_LOOP_PERIOD_NS + MAIN_LOOP_PERIOD_TOLERANCE_NS,
+        MAIN_LOOP_WD_TIMEOUT_NS,
+        MainLoopWatchdogHandler
+    );
+
+    uint64_t startTime;
+    uint64_t endTime;
+
+    if (!sMainLoopTimeout.Check()) {
+        HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
+    }
+    sMainLoopTimeout.Tick();
+
+    /* Get iteration start time */
+    startTime = HWManager::GetTime();
+
+    /* Update the IO buttons */
+    sBtnManager.Update();
+
+    /* Update the LED */
+    //sLedManager.Update();
+
+    /* Get iteration end time and sleep time */
+    endTime = HWManager::GetTime();
+    vTaskDelay((MAIN_LOOP_PERIOD_NS - (endTime - startTime)) / 1000000ULL /
+               portTICK_PERIOD_MS);
+}
+
+void MainLoopWatchdogHandler(void) noexcept {
+    HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
 }
 
 #endif /* #ifndef UNIT_TEST */

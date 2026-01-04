@@ -23,13 +23,15 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>  /* Standard string */
-#include <cstdint> /* Standard int types */
+#include <string>    /* Standard string */
+#include <cstdint>   /* Standard int types */
+#include <Arduino.h> /* Arduino Framework */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/* None */
+/** @brief Real-Time Task timer identifier. */
+#define HW_RT_TASK_TIMER 0
 
 /*******************************************************************************
  * MACROS
@@ -39,7 +41,19 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Define the GPIO pinmux behavior */
+typedef enum {
+    /** @brief Reset button GPIO */
+    GPIO_BTN_RESET_MUX = INPUT_PULLDOWN,
+} E_GPIOPull;
+
+/** @brief Defines the GPIO routing */
+typedef enum {
+    /** @brief Reset button GPIO */
+    GPIO_BTN_RESET = GPIO_NUM_4,
+    /** @brief RGB led GPIO */
+    GPIO_LED_INFO = BUILTIN_LED
+} E_GPIORouting;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
