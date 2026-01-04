@@ -25,6 +25,7 @@
 #include <BSP.h>             /* Hardware layer */
 #include <cstdint>           /* Standard Integer Definitions */
 #include <Logger.h>          /* Logging services */
+#include <nvs_flash.h>       /* NVS formating */
 #include <SystemState.h>     /* System state manager */
 #include <IOLedManager.h>    /* LED Manager */
 #include <IOButtonManager.h> /* IO Button Action interface */
@@ -45,7 +46,7 @@
  * @brief Time during which the reset button should be pressed again to perform
  * a reset.
  */
-#define RESET_PERFORM_TIMEOUT_NS 3000000000ULL
+#define RESET_PERFORM_TIMEOUT_NS 5000000000ULL
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -77,28 +78,37 @@
 static const S_LedState sWaitLedState = {
     .enabled = true,
     .red = 0,
-    .green = 255,
-    .blue = 255,
-    .blinkPeriodNs = 1000000000,
-    .isOn = true
+    .green = 0,
+    .blue = 0,
+    .blinkPeriodNs = 0,
+    .isOn = false
 };
 /** @brief Waiting up led state information. */
 static const S_LedState sWaitUpLedState = {
     .enabled = true,
-    .red = 255,
-    .green = 0,
-    .blue = 0,
-    .blinkPeriodNs = 0,
+    .red = 0,
+    .green = 10,
+    .blue = 50,
+    .blinkPeriodNs = 250000000ULL,
     .isOn = true
 };
 /** @brief Waiting down led state information. */
 static const S_LedState sWaitDownLedState = {
     .enabled = true,
     .red = 0,
-    .green = 255,
+    .green = 25,
     .blue = 0,
-    .blinkPeriodNs = 500000000,
+    .blinkPeriodNs = 100000000ULL,
     .isOn = true
+};
+/** @brief Waiting none led state information. */
+static const S_LedState sNoneLedState = {
+    .enabled = true,
+    .red = 0,
+    .green = 0,
+    .blue = 0,
+    .blinkPeriodNs = 0,
+    .isOn = false
 };
 
 /*******************************************************************************
@@ -134,9 +144,11 @@ void ResetManager::Execute(
             if (E_ButtonState::BTN_STATE_KEEP ==
                 kpBtnStates[E_ButtonID::BUTTON_RESET]) {
                 /* Wait for timeout */
-                this->_state = E_ResetState::RESET_WAIT;
                 this->_resetStartTime = HWManager::GetTime();
+                this->_state = E_ResetState::RESET_WAIT;
+                pLed->SetState(E_LedID::LED_INFO, sWaitLedState);
             }
+
             break;
 
         case E_ResetState::RESET_WAIT:
@@ -145,35 +157,30 @@ void ResetManager::Execute(
 
                 /* Wait for timeout */
                 if (RESET_PERFORM_WAIT_NS <=
-                    kpBtnLastPress[BUTTON_RESET] - this->_resetStartTime) {
+                    HWManager::GetTime() - this->_resetStartTime) {
                     /* Perform reset */
-                    this->_state = E_ResetState::RESET_PERFORM_WAIT_UP;
                     this->_resetStartTime = HWManager::GetTime();
+                    this->_state = E_ResetState::RESET_PERFORM_WAIT_UP;
+                    pLed->SetState(E_LedID::LED_INFO, sWaitUpLedState);
                 }
             }
             else {
                 /* Go back to none */
                 this->_state = E_ResetState::RESET_NONE;
+                pLed->SetState(E_LedID::LED_INFO, sNoneLedState);
             }
 
-            pLed->SetState(E_LedID::LED_INFO, sWaitLedState);
             break;
 
         case E_ResetState::RESET_PERFORM_WAIT_UP:
-            /* Wait for confirmation timeout check */
-            if (RESET_PERFORM_TIMEOUT_NS <=
-                HWManager::GetTime() - this->_resetStartTime) {
-                this->_state = E_ResetState::RESET_NONE;
-                break;
-            }
-
             /* Check that the button is up again */
             if (E_ButtonState::BTN_STATE_UP ==
                 kpBtnStates[E_ButtonID::BUTTON_RESET]) {
+                this->_resetStartTime = HWManager::GetTime();
                 this->_state = E_ResetState::RESET_PERFORM_WAIT_DOWN;
+                pLed->SetState(E_LedID::LED_INFO, sWaitDownLedState);
             }
 
-            pLed->SetState(E_LedID::LED_INFO, sWaitUpLedState);
             break;
 
         case E_ResetState::RESET_PERFORM_WAIT_DOWN:
@@ -181,6 +188,7 @@ void ResetManager::Execute(
             if (RESET_PERFORM_TIMEOUT_NS <=
                 HWManager::GetTime() - this->_resetStartTime) {
                 this->_state = E_ResetState::RESET_NONE;
+                pLed->SetState(E_LedID::LED_INFO, sNoneLedState);
                 break;
             }
 
@@ -189,12 +197,12 @@ void ResetManager::Execute(
                 kpBtnStates[E_ButtonID::BUTTON_RESET]) {
                 this->_state = E_ResetState::RESET_PERFORM;
             }
-
-            pLed->SetState(E_LedID::LED_INFO, sWaitDownLedState);
             break;
 
         case E_ResetState::RESET_PERFORM:
             PerformReset();
+            this->_state = E_ResetState::RESET_NONE;
+            pLed->SetState(E_LedID::LED_INFO, sNoneLedState);
             break;
 
         default:
@@ -204,5 +212,7 @@ void ResetManager::Execute(
 }
 
 void ResetManager::PerformReset(void) const noexcept {
-
+    nvs_flash_erase();
+    LOG_INFO("Formated persistent memory.\n");
+    HWManager::Reboot();
 }

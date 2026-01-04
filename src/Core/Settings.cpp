@@ -111,10 +111,7 @@ E_Return Settings::GetSettings(const std::string& krName,
         /* First check, if not exists, try to load from storage */
         if (this->_cache.end() == it &&
             E_Return::NO_ERROR == LoadFromNVS(krName)) {
-                LOG_DEBUG(
-                    "Loaded setting %s from NVS\n",
-                    krName.c_str()
-                );
+                LOG_DEBUG("Loaded setting %s from NVS\n", krName.c_str());
                 it = this->_cache.find(krName);
         }
 

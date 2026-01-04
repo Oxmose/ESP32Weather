@@ -171,6 +171,8 @@ class IOLedManager {
         S_LedDevice _pLedDev[E_LedID::LED_MAX_ID];
         /** @brief Stores the LEDs state */
         S_LedState _pLedStates[E_LedID::LED_MAX_ID];
+        /** @brief Stores the next periods */
+        uint64_t _pNextPeriods[E_LedID::LED_MAX_ID];
 
 };
 

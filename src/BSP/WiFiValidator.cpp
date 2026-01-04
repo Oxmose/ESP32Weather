@@ -226,14 +226,12 @@ bool WiFiValidator::CheckIpFormat(const char* kpIp) noexcept {
 
             /* Out of range */
             if (255 < nible) {
-                LOG_DEBUG("Invalid IP range.\n");
                 return false;
             }
         }
         else if (current == '.') {
             /* Too many dots */
             if (3 == dots) {
-                LOG_DEBUG("Invalid IP, too many dots.\n");
                 return false;
             }
             ++dots;
@@ -241,14 +239,12 @@ bool WiFiValidator::CheckIpFormat(const char* kpIp) noexcept {
         }
         else {
             /* Invalid character */
-            LOG_DEBUG("Invalid IP character: %c.\n", current);
             return false;
         }
     }
 
     /* Incorrect number of dots */
     if (3 != dots) {
-        LOG_DEBUG("Invalid IP dots.\n");
         return false;
     }
 

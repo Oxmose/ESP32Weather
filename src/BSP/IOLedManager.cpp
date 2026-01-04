@@ -23,6 +23,7 @@
 #include <BSP.h>               /* BSP definitions */
 #include <cstdint>             /* Generic Types */
 #include <Errors.h>            /* Errors definitions */
+#include <Logger.h>            /* Logging services */
 
 /* Header File */
 #include <IOLedManager.h>
@@ -76,6 +77,7 @@
 IOLedManager::IOLedManager(void) noexcept {
     /* Init states. */
     memset(this->_pLedStates, 0, sizeof(S_LedState) * E_LedID::LED_MAX_ID);
+    memset(this->_pNextPeriods, 0, sizeof(uint64_t) * E_LedID::LED_MAX_ID);
 
     /* Init the GPIOs */
     this->_pLedDev[E_LedID::LED_INFO].pin = E_GPIORouting::GPIO_LED_INFO;
@@ -88,14 +90,14 @@ void IOLedManager::Update(void) noexcept {
     uint8_t i;
 
     /* Iterate over all leds */
-    for (i = 0; i < E_LedID::LED_MAX_ID; ++i) {
+    for (i = 0; E_LedID::LED_MAX_ID > i; ++i) {
         /* Check if enabled */
         if (this->_pLedStates[i].enabled) {
             /* Check the blink period */
             if (0 != this->_pLedStates[i].blinkPeriodNs) {
-                if (HWManager::GetTime() < this->_pLedStates[i].blinkPeriodNs) {
+                if (HWManager::GetTime() > this->_pNextPeriods[i]) {
                     /* Update time */
-                    this->_pLedStates[i].blinkPeriodNs +=
+                    this->_pNextPeriods[i] = HWManager::GetTime() +
                         this->_pLedStates[i].blinkPeriodNs;
 
                     /* Update state */
@@ -113,24 +115,30 @@ void IOLedManager::Update(void) noexcept {
                 );
             }
             else {
-                digitalWrite(
-                    this->_pLedDev[i].pin,
-                    this->_pLedStates[i].isOn
-                );
+                digitalWrite(this->_pLedDev[i].pin, this->_pLedStates[i].isOn);
+            }
+        }
+        else {
+            /* Set state */
+            if (this->_pLedDev[i].isRgb) {
+                neopixelWrite(this->_pLedDev[i].pin, 0, 0, 0);
+            }
+            else {
+                digitalWrite(this->_pLedDev[i].pin, 0);
             }
         }
     }
 }
 
 void IOLedManager::Enable(const E_LedID kLedId, const bool kEnable) noexcept {
-    if (E_LedID::LED_MAX_ID < kLedId) {
+    if (E_LedID::LED_MAX_ID > kLedId) {
         this->_pLedStates[kLedId].enabled = kEnable;
     }
 }
 
 void IOLedManager::SetState(const E_LedID kLedId,
                              const S_LedState& krState) noexcept {
-    if (E_LedID::LED_MAX_ID < kLedId) {
+    if (E_LedID::LED_MAX_ID > kLedId) {
         this->_pLedStates[kLedId] = krState;
     }
 }
