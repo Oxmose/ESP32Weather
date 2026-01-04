@@ -23,11 +23,13 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <BSP.h>           /* HW layer services */
-#include <WiFi.h>          /* WiFi Services */
-#include <string>          /* Standard strings */
-#include <Logger.h>        /* Logging */
-#include <HealthMonitor.h> /* HM services */
+#include <BSP.h>             /* HW layer services */
+#include <WiFi.h>            /* WiFi Services */
+#include <string>            /* Standard strings */
+#include <Logger.h>          /* Logging */
+#include <IOLedManager.h>    /* IO Led Manager */
+#include <HealthMonitor.h>   /* HM services */
+#include <IOButtonManager.h> /* IO Button Manager */
 
 /* Header file */
 #include <SystemState.h>
@@ -101,6 +103,15 @@ void SystemState::SetSettings(Settings* pSettings) noexcept {
     this->_pSettings = pSettings;
 }
 
+void SystemState::SetIOButtonManager(IOButtonManager* pIOButtonManager)
+noexcept {
+    this->_pIOButtonManager = pIOButtonManager;
+}
+
+void SystemState::SetIOLedManager(IOLedManager* pIOLedManager) noexcept {
+    this->_pIOLedManager = pIOLedManager;
+}
+
 WiFiModule* SystemState::GetWiFiModule(void) const noexcept {
     return this->_pWiFiModule;
 }
@@ -111,6 +122,14 @@ HealthMonitor* SystemState::GetHealthMonitor(void) const noexcept {
 
 Settings* SystemState::GetSettings(void) const noexcept {
     return this->_pSettings;
+}
+
+IOButtonManager* SystemState::GetIOButtonManager(void) const noexcept {
+    return this->_pIOButtonManager;
+}
+
+IOLedManager* SystemState::GetIOLedManager(void) const noexcept {
+    return this->_pIOLedManager;
 }
 
 SystemState::SystemState(void) noexcept {

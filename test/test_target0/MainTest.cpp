@@ -13,8 +13,6 @@ extern void ValidatorTest();
 
 /** @brief Stores the Health Monitor instance. */
 static HealthMonitor* spHealthMon;
-/** @brief Stores the WiFi module instance. */
-static WiFiModule*    spWifiModule;
 /** @brief Stores the Settings instance. */
 static Settings*      spSettings;
 /** @brief Stores the System State instance. */

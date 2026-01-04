@@ -49,9 +49,6 @@
 #define HW_RT_TASK_DEADLINE_MISS_DELAY \
     (HW_RT_TASK_PERIOD_NS + HW_RT_TASK_PERIOD_TOLERANCE_NS)
 
-/** @brief Real-Time Task timer identifier. */
-#define HW_RT_TASK_TIMER 0
-
 /** @brief Real-Time Task timer prescaler. */
 #define HW_RT_TASK_TIMER_PRESCALER 80ULL
 
@@ -322,6 +319,23 @@ static void HMWiFiStopHandler(void* pParam);
  */
 static void HMSettingsAccessCommitHandler(void* pParam);
 
+/**
+ * @brief HM Event hander for HM_EVENT_MAIN_LOOP_DEADLINE_MISS event.
+ *
+ * @details HM Event hander for HM_EVENT_MAIN_LOOP_DEADLINE_MISS event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMMainLoopDeadlineMissHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_IO_BUTTON_LOCK event.
+ *
+ * @details HM Event hander for HM_EVENT_IO_BUTTON_LOCK event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMIOButtonLockHandler(void* pParam);
 
 #ifdef HM_TEST_EVENT
 /**
@@ -373,6 +387,8 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMRemoveActionHandler,              /* HM_EVENT_HM_REMOVE_ACTION */
     HMWiFiStopHandler,                  /* HM_EVENT_WIFI_STOP */
     HMSettingsAccessCommitHandler,      /* HM_EVENT_SETTINGS_COMMIT */
+    HMMainLoopDeadlineMissHandler,      /* HM_EVENT_MAIN_LOOP_DEADLINE_MISS */
+    HMIOButtonLockHandler,              /* HM_EVENT_IO_BUTTON_LOCK */
 #ifdef HM_TEST_EVENT
     test_hm_event_handler,              /* HM_EVENT_TEST */
 #endif
@@ -652,10 +668,27 @@ static void HMRemoveActionHandler(void* pParam) {
 }
 
 static void HMWiFiStopHandler(void* pParam) {
+    (void)pParam;
     LOG_ERROR("Failed to stop the WiFi module.\n");
     HWManager::Reboot();
 }
 
+static void HMMainLoopDeadlineMissHandler(void* pParam) {
+    (void)pParam;
+    LOG_ERROR("Main Loop has missed its deadline.\n");
+    HWManager::Reboot();
+}
+
+static void HMIOButtonLockHandler(void* pParam) {
+    LOG_ERROR("IO Button lock error:\n");
+    if ((bool)pParam) {
+        LOG_ERROR("\tFailed to lock.\n");
+    }
+    else {
+        LOG_ERROR("\tFailed to unlock.\n");
+    }
+    HWManager::Reboot();
+}
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
@@ -715,7 +748,6 @@ E_Return HealthMonitor::AddWatchdog(Timeout* pTimeout, uint32_t& rId) noexcept {
     else {
         error = E_Return::ERR_INVALID_PARAM;
     }
-
 
     return error;
 }
