@@ -31,6 +31,7 @@
 #include <Settings.h>        /* Settings services */
 #include <WiFiModule.h>      /* WiFi Module driver */
 #include <IOLedManager.h>    /* IO Led manager */
+#include <ResetManager.h>    /* Reset manager services */
 #include <HealthMonitor.h>   /* Health Monitoring */
 #include <IOButtonManager.h> /* IO Button manager */
 
@@ -44,7 +45,7 @@
 #define MAIN_LOOP_PERIOD_NS 25000000ULL
 
 /** @brief Main loop period tolerance in nanoseconds. */
-#define MAIN_LOOP_PERIOD_TOLERANCE_NS 250000ULL
+#define MAIN_LOOP_PERIOD_TOLERANCE_NS 2000000ULL
 
 /** @brief Main loop watchdog timeout in nanoseconds. */
 #define MAIN_LOOP_WD_TIMEOUT_NS (2 * MAIN_LOOP_PERIOD_NS)
@@ -89,17 +90,19 @@ static void MainLoopWatchdogHandler(void) noexcept;
 
 /************************** Static global variables ***************************/
 /** @brief Stores the Health Monitor instance. */
-static HealthMonitor sHealthMon;
+static HealthMonitor* spHealthMon;
 /** @brief Stores the WiFi module instance. */
-static WiFiModule sWifiModule;
+static WiFiModule* spWifiModule;
 /** @brief Stores the Settings instance. */
-static Settings sSettings;
+static Settings* spSettings;
 /** @brief Stores the IO button manager instance. */
-static IOButtonManager sBtnManager;
+static IOButtonManager* spBtnManager;
 /** @brief Stores the IO LED manager instance. */
-//static IOLedManager sLedManager;
+static IOLedManager* spLedManager;
 /** @brief Stores the System State instance. */
 static SystemState* spSystemState;
+/** @brief Stores the Rest Manager instance. */
+static ResetManager* spResetManager;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -109,13 +112,13 @@ static void StartWiFi(void) noexcept {
     E_Return result;
 
     /* Start WiFi */
-    result = sWifiModule.Start();
+    result = spWifiModule->Start();
     if (E_Return::NO_ERROR != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, result);
     }
 
     /* Start the web servers */
-    result = sWifiModule.StartWebServers();
+    result = spWifiModule->StartWebServers();
     if (E_Return::NO_ERROR != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_START, result);
     }
@@ -124,6 +127,9 @@ static void StartWiFi(void) noexcept {
 #ifndef UNIT_TEST
 
 void setup(void) {
+    uint32_t resetActionId;
+    E_Return error;
+
     /* Initialize logger and wait */
     INIT_LOGGER(LOG_LEVEL_DEBUG);
     HWManager::DelayExecNs(50000000);
@@ -137,17 +143,36 @@ void setup(void) {
 
     /* Init system state */
     spSystemState = SystemState::GetInstance();
-    spSystemState->SetHealthMonitor(&sHealthMon);
-    spSystemState->SetSettings(&sSettings);
-    spSystemState->SetWiFiModule(&sWifiModule);
-    spSystemState->SetIOButtonManager(&sBtnManager);
-    //spSystemState->SetIOLedManager(&sLedManager);
+
+    /* Init system objects */
+    spHealthMon = new HealthMonitor();
+    spSystemState->SetHealthMonitor(spHealthMon);
+
+    spSettings = new Settings();
+    spSystemState->SetSettings(spSettings);
+
+    spWifiModule = new WiFiModule();
+    spSystemState->SetWiFiModule(spWifiModule);
+
+    spBtnManager = new IOButtonManager();
+    spSystemState->SetIOButtonManager(spBtnManager);
+
+    spLedManager = new IOLedManager();
+    spSystemState->SetIOLedManager(spLedManager);
 
     /* Initialize the WiFi */
     StartWiFi();
 
+    // /* Setup reset */
+    spResetManager = new ResetManager();
+    error = spBtnManager->AddAction(spResetManager, resetActionId);
+    if (E_Return::NO_ERROR != error) {
+        LOG_ERROR("Failed to add reset action. Error %d\n", error);
+        HWManager::Reboot();
+    }
+
     /* Set system as started */
-    sHealthMon.SetSystemState(E_SystemState::EXECUTING);
+    spHealthMon->SetSystemState(E_SystemState::EXECUTING);
 }
 
 void loop(void) {
@@ -161,19 +186,19 @@ void loop(void) {
     uint64_t startTime;
     uint64_t endTime;
 
-    if (!sMainLoopTimeout.Check()) {
-        HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
-    }
+    // if (!sMainLoopTimeout.Check()) {
+    //     HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
+    // }
     sMainLoopTimeout.Tick();
 
     /* Get iteration start time */
     startTime = HWManager::GetTime();
 
     /* Update the IO buttons */
-    sBtnManager.Update();
+    spBtnManager->Update();
 
-    /* Update the LED */
-    //sLedManager.Update();
+    // /* Update the LED */
+    spLedManager->Update();
 
     /* Get iteration end time and sleep time */
     endTime = HWManager::GetTime();
