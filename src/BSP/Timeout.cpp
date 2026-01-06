@@ -85,6 +85,8 @@ Timeout::Timeout(const uint64_t kTimeoutNs,
     this->_nextWatchdogEvent = 0;
     this->_nextTimeEvent = 0;
 
+    Serial.flush();
+
 
     /* First tick */
     Tick();

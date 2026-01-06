@@ -121,7 +121,7 @@ IOButtonManager::IOButtonManager(void) noexcept {
     this->_lock = xSemaphoreCreateMutex();
     if (nullptr == this->_lock) {
         LOG_ERROR("Failed to initialize IO Button Manager actions lock.\n");
-        HM_REPORT_EVENT(HM_EVENT_IO_BUTTON_LOCK, 0);
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_BUTTON_LOCK, 0);
     }
 }
 

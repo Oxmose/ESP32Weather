@@ -323,7 +323,7 @@ E_Return WiFiModule::Start(void) noexcept {
 E_Return WiFiModule::Stop(void) noexcept {
     if (this->_isStarted) {
         if (!WiFi.disconnect()) {
-            HM_REPORT_EVENT(HM_EVENT_WIFI_STOP, nullptr);
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_STOP, nullptr);
         }
 
         this->_isStarted = false;
@@ -520,7 +520,7 @@ noexcept {
         result = pSettings->Commit();
 
         if (E_Return::NO_ERROR != result) {
-            HM_REPORT_EVENT(HM_EVENT_SETTINGS_COMMIT, result);
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_COMMIT, result);
         }
         else {
             HWManager::DelayExecNs(500000000);

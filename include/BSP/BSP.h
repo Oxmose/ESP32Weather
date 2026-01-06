@@ -33,6 +33,9 @@
 /** @brief Real-Time Task timer identifier. */
 #define HW_RT_TASK_TIMER 0
 
+/** @brief IO Task timer identifier. */
+#define HW_IO_TASK_TIMER 1
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/

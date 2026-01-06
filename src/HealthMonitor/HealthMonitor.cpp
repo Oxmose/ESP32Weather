@@ -337,6 +337,24 @@ static void HMMainLoopDeadlineMissHandler(void* pParam);
  */
 static void HMIOButtonLockHandler(void* pParam);
 
+/**
+ * @brief HM Event hander for HM_EVENT_IO_TASK_CREATE event.
+ *
+ * @details HM Event hander for HM_EVENT_IO_TASK_CREATE event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMIOTaskCreateHandler(void* pParam);
+
+/**
+ * @brief HM Event hander for HM_EVENT_IO_TASK_DEADLINE_MISS event.
+ *
+ * @details HM Event hander for HM_EVENT_IO_TASK_DEADLINE_MISS event.
+ *
+ * @param[in] pParam The parameter used when notifying the HM of the event.
+ */
+static void HMIOTaskDeadlineMissHandler(void* pParam);
+
 #ifdef HM_TEST_EVENT
 /**
  * @brief HM Event hander for HM_EVENT_TEST event.
@@ -389,6 +407,8 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
     HMSettingsAccessCommitHandler,      /* HM_EVENT_SETTINGS_COMMIT */
     HMMainLoopDeadlineMissHandler,      /* HM_EVENT_MAIN_LOOP_DEADLINE_MISS */
     HMIOButtonLockHandler,              /* HM_EVENT_IO_BUTTON_LOCK */
+    HMIOTaskCreateHandler,              /* HM_EVENT_IO_TASK_CREATE */
+    HMIOTaskDeadlineMissHandler,        /* HM_EVENT_IO_TASK_DEADLINE_MISS */
 #ifdef HM_TEST_EVENT
     test_hm_event_handler,              /* HM_EVENT_TEST */
 #endif
@@ -689,6 +709,17 @@ static void HMIOButtonLockHandler(void* pParam) {
     }
     HWManager::Reboot();
 }
+
+static void HMIOTaskCreateHandler(void* pParam) {
+    LOG_ERROR("Failed to create the IO task.\n");
+    HWManager::Reboot();
+}
+
+static void HMIOTaskDeadlineMissHandler(void* pParam) {
+    LOG_ERROR("IO Task deadline miss. Error %d\n", (uint32_t)pParam);
+    HWManager::Reboot();
+}
+
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
