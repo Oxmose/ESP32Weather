@@ -25,9 +25,9 @@
 #include <BSP.h>             /* Hardware services*/
 #include <Logger.h>          /* Firmware logger */
 #include <Errors.h>          /* Error codes */
+#include <IOTask.h>          /* IO Task manager */
 #include <Arduino.h>         /* Arduino library */
 #include <version.h>         /* Versionning info */
-#include <Timeout.h>         /* Timeout services */
 #include <Settings.h>        /* Settings services */
 #include <WiFiModule.h>      /* WiFi Module driver */
 #include <IOLedManager.h>    /* IO Led manager */
@@ -41,14 +41,7 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/** @brief Main loop period in nanoseconds. */
-#define MAIN_LOOP_PERIOD_NS 25000000ULL
-
-/** @brief Main loop period tolerance in nanoseconds. */
-#define MAIN_LOOP_PERIOD_TOLERANCE_NS 2000000ULL
-
-/** @brief Main loop watchdog timeout in nanoseconds. */
-#define MAIN_LOOP_WD_TIMEOUT_NS (2 * MAIN_LOOP_PERIOD_NS)
+/* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -69,14 +62,6 @@
  * @details Starts the WiFi module. On error, Health Monitor is triggered.
  */
 static void StartWiFi(void) noexcept;
-
-/**
- * @brief Handles the main loop watchdog trigger.
- *
- * @details Handles the main loop watchdog trigger. Health monitor is used to
- * correct the error.
- */
-static void MainLoopWatchdogHandler(void) noexcept;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -103,6 +88,8 @@ static IOLedManager* spLedManager;
 static SystemState* spSystemState;
 /** @brief Stores the Rest Manager instance. */
 static ResetManager* spResetManager;
+/** @brief Stores the IO task instance. */
+static IOTask* spIOTask;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -163,7 +150,7 @@ void setup(void) {
     /* Initialize the WiFi */
     StartWiFi();
 
-    // /* Setup reset */
+    /* Setup reset */
     spResetManager = new ResetManager();
     error = spBtnManager->AddAction(spResetManager, resetActionId);
     if (E_Return::NO_ERROR != error) {
@@ -171,43 +158,16 @@ void setup(void) {
         HWManager::Reboot();
     }
 
+    /* Create the IO task */
+    spIOTask = new IOTask();
+
     /* Set system as started */
     spHealthMon->SetSystemState(E_SystemState::EXECUTING);
 }
 
 void loop(void) {
-    /* Main loop timeout manager */
-    static Timeout sMainLoopTimeout(
-        MAIN_LOOP_PERIOD_NS + MAIN_LOOP_PERIOD_TOLERANCE_NS,
-        MAIN_LOOP_WD_TIMEOUT_NS,
-        MainLoopWatchdogHandler
-    );
-
-    uint64_t startTime;
-    uint64_t endTime;
-
-    // if (!sMainLoopTimeout.Check()) {
-    //     HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
-    // }
-    sMainLoopTimeout.Tick();
-
-    /* Get iteration start time */
-    startTime = HWManager::GetTime();
-
-    /* Update the IO buttons */
-    spBtnManager->Update();
-
-    // /* Update the LED */
-    spLedManager->Update();
-
-    /* Get iteration end time and sleep time */
-    endTime = HWManager::GetTime();
-    vTaskDelay((MAIN_LOOP_PERIOD_NS - (endTime - startTime)) / 1000000ULL /
-               portTICK_PERIOD_MS);
-}
-
-void MainLoopWatchdogHandler(void) noexcept {
-    HM_REPORT_EVENT(HM_EVENT_MAIN_LOOP_DEADLINE_MISS, nullptr);
+    /* Nothing to do, just wait since we cannot delete this task */
+    vTaskDelay(1000);
 }
 
 #endif /* #ifndef UNIT_TEST */

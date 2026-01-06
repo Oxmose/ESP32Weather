@@ -91,6 +91,10 @@ typedef enum {
     HM_EVENT_MAIN_LOOP_DEADLINE_MISS,
     /** @brief HM Event: IO Button Manager lock error. */
     HM_EVENT_IO_BUTTON_LOCK,
+    /** @brief HM Event: IO task create error. */
+    HM_EVENT_IO_TASK_CREATE,
+    /** @brief HM Event: IO task deadline miss. */
+    HM_EVENT_IO_TASK_DEADLINE_MISS,
 #ifdef HM_TEST_EVENT
     /** @brief HM Event: Test event */
     HM_EVENT_TEST,
