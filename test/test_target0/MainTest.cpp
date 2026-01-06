@@ -45,10 +45,6 @@ void setup(void) {
     }
     spSystemState->SetSettings(spSettings);
 
-
-    /* Set system as started */
-    spHealthMon->SetSystemState(E_SystemState::EXECUTING);
-
     UNITY_BEGIN();
 
     BSPTests();

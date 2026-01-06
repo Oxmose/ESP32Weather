@@ -35,11 +35,8 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-/**
- * @brief Defines the real-time task period in nanoseconds.
- */
-#define HW_RT_TASK_PERIOD_NS 50000000ULL
+/** @brief Defines the real-time task period in nanoseconds. */
+#define HW_RT_TASK_PERIOD_NS 10000000ULL
 
 /*******************************************************************************
  * MACROS
@@ -64,15 +61,7 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/** @brief Defines the system states. */
-typedef enum {
-    /** @brief System is starting */
-    STARTING,
-    /** @brief System is executing */
-    EXECUTING,
-    /** @brief System is faulted */
-    FAULTED
-} E_SystemState;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -146,16 +135,6 @@ class HealthMonitor
          * @return The function returns the success or error status.
          */
         E_Return RemoveWatchdog(const uint32_t kId) noexcept;
-
-        /**
-         * @brief Sets the HM system state.
-         *
-         * @details Sets the HM system state. Based on the system state, the HM
-         * will provide different services.
-         *
-         * @param[in] kState The state to set.
-         */
-        void SetSystemState(const E_SystemState kState) noexcept;
 
         /**
          * @brief Adds a HM reporter.
@@ -268,8 +247,14 @@ class HealthMonitor
          */
         void ActionsTaskInit(void) noexcept;
 
-        /** @brief Real-time task timer. */
-        hw_timer_t* _RTTaskTimer;
+        /**
+         * @brief Handles the HM Real Time task watchdog trigger.
+         *
+         * @details Handles the HM Real Time task watchdog trigger. Health
+         * monitor is used to correct the error.
+         */
+        static void DeadlineMissHandler(void) noexcept;
+
         /** @brief Real-time task handle. */
         TaskHandle_t _RTTaskHandle;
         /** @brief Actions task handle. */
@@ -286,10 +271,10 @@ class HealthMonitor
         SemaphoreHandle_t _wdLock;
         /** @brief Stores the reporters mutex. */
         SemaphoreHandle_t _reportersLock;
-        /** @brief Stores the current system state. */
-        E_SystemState _systemState;
         /** @brief The HM actions queue */
         QueueHandle_t _actionsQueue;
+        /** @brief Deadline miss manager. */
+        Timeout* _pTimeout;
 };
 
 

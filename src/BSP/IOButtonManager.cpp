@@ -123,6 +123,9 @@ IOButtonManager::IOButtonManager(void) noexcept {
         LOG_ERROR("Failed to initialize IO Button Manager actions lock.\n");
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_BUTTON_LOCK, 0);
     }
+
+    /* Add to system state */
+    SystemState::GetInstance()->SetIOButtonManager(this);
 }
 
 void IOButtonManager::Update(void) noexcept {

@@ -113,7 +113,7 @@ void test_add_wd(void) {
 
     result = pHM->AddWatchdog(&timeoutWd, id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    TEST_ASSERT_EQUAL_UINT32(1, id);
+    TEST_ASSERT_EQUAL_UINT32(2, id);
 }
 
 void test_remove_wd(void) {
@@ -129,12 +129,12 @@ void test_remove_wd(void) {
 
     result = pHM->AddWatchdog(&timeoutWd, id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    TEST_ASSERT_EQUAL_UINT32(3, id);
+    TEST_ASSERT_EQUAL_UINT32(4, id);
 
-    result = pHM->RemoveWatchdog(4);
+    result = pHM->RemoveWatchdog(5);
     TEST_ASSERT_EQUAL(E_Return::ERR_NO_SUCH_ID, result);
 
-    result = pHM->RemoveWatchdog(3);
+    result = pHM->RemoveWatchdog(4);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
 }
 
@@ -151,7 +151,7 @@ void test_exec_wd(void) {
 
     result = pHM->AddWatchdog(&timeoutWd, id);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
-    TEST_ASSERT_EQUAL_UINT32(5, id);
+    TEST_ASSERT_EQUAL_UINT32(6, id);
 
     HWManager::DelayExecNs(1000000000 * 2);
     TEST_ASSERT_EQUAL_UINT32(42, valueHandle);
@@ -167,8 +167,8 @@ void test_clean(void) {
 
     for (i = 0; i < 50; ++i) {
         result = pHM->RemoveWatchdog(i);
-        if (i < 6) {
-            if (i == 0 || i == 2 || i == 3 || i == 4) {
+        if (i < 7) {
+            if (i == 1 || i == 3 || i == 4 || i == 5) {
                 TEST_ASSERT_EQUAL(E_Return::ERR_NO_SUCH_ID, result);
             }
             else {

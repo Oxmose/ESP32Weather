@@ -39,7 +39,7 @@
 /** @brief Main loop period in nanoseconds. */
 #define HW_IO_TASK_PERIOD_NS 25000000ULL
 /** @brief Main loop period tolerance in nanoseconds. */
-#define HW_IO_TASK_PERIOD_TOLERANCE_NS (1000000 * portTICK_PERIOD_MS)
+#define HW_IO_TASK_PERIOD_TOLERANCE_NS 1250000ULL
 /** @brief Main loop watchdog timeout in nanoseconds. */
 #define HW_IO_TASK_WD_TIMEOUT_NS (2 * HW_IO_TASK_PERIOD_NS)
 /** @brief Hardware Real-Time Task name. */
@@ -106,7 +106,7 @@ IOTask::IOTask(void) noexcept {
         IOTask::DeadlineMissHandler
     );
     if (nullptr == this->_pTimeout) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 3);
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 2);
     }
 
     /* Create the task */
@@ -120,42 +120,11 @@ IOTask::IOTask(void) noexcept {
         HW_IO_TASK_CORE
     );
     if (pdPASS != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 2);
+        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 3);
     }
 
     /* Set instance and set as started */
     spIOTask = this;
-    this->_started = true;
-}
-
-IOTask::~IOTask(void) noexcept {
-    Stop();
-    spIOTask = nullptr;
-}
-
-void IOTask::Start(void) noexcept {
-    if (!this->_started) {
-        this->_pTimeout = new Timeout(
-            HW_IO_TASK_PERIOD_NS + HW_IO_TASK_PERIOD_TOLERANCE_NS,
-            HW_IO_TASK_WD_TIMEOUT_NS,
-            IOTask::DeadlineMissHandler
-        );
-        if (nullptr == this->_pTimeout) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 3);
-        }
-        vTaskResume(this->_IOTaskHandle);
-
-        this->_started = true;
-    }
-}
-
-void IOTask::Stop(void) noexcept {
-    if (this->_started) {
-        vTaskSuspend(this->_IOTaskHandle);
-        delete this->_pTimeout;
-
-        this->_started = false;
-    }
 }
 
 void IOTask::DeadlineMissHandler(void) noexcept {

@@ -29,7 +29,6 @@
 #include <Arduino.h>         /* Arduino library */
 #include <Settings.h>        /* Firmware settings */
 #include <APIHandler.h>      /* API Handler errors */
-#include <esp32-hal-timer.h> /* ESP32 Timers */
 #include <HMConfiguration.h> /* HM Configuration */
 /* Header file */
 #include <HealthMonitor.h>
@@ -37,30 +36,10 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-/**
- * @brief Defines the real-time task period tolerance in nanoseconds.
- */
-#define HW_RT_TASK_PERIOD_TOLERANCE_NS 2000000ULL
-
-/**
- * @brief Defines the real-time task period deadline in nanoseconds.
- */
-#define HW_RT_TASK_DEADLINE_MISS_DELAY \
-    (HW_RT_TASK_PERIOD_NS + HW_RT_TASK_PERIOD_TOLERANCE_NS)
-
-/** @brief Real-Time Task timer prescaler. */
-#define HW_RT_TASK_TIMER_PRESCALER 80ULL
-
-/** @brief Real-Time Task timer input clock frequency. */
-#define HW_RT_TASK_TIMER_FREQ 80000000ULL
-
-/** @brief Decimator of the Real-Time Task timer interrupt. */
-#define HW_RT_TASK_TIMER_DEC_INT                                \
-    (                                                           \
-        (HW_RT_TASK_TIMER_FREQ / HW_RT_TASK_TIMER_PRESCALER) /  \
-        (1000000000ULL / HW_RT_TASK_PERIOD_NS)                  \
-    )
+/** @brief Defines the real-time task period tolerance in nanoseconds. */
+#define HW_RT_TASK_PERIOD_TOLERANCE_NS 500000ULL
+/** @brief Real-time task watchdog timeout in nanoseconds. */
+#define HW_RT_TASK_WD_TIMEOUT_NS (2 * HW_RT_TASK_PERIOD_NS)
 
 /** @brief Hardware Real-Time Task name. */
 #define HW_RT_TASK_NAME "HW-RT_TASK"
@@ -103,13 +82,6 @@ typedef void(*T_EventHandler)(void*);
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
-/**
- * @brief Real-time task timer handler.
- *
- * @details Real-time task timer handler. This IRQ handler will release the real
- * time task for execution.
- */
-static void IRAM_ATTR RealTimeTaskTimerHandler(void);
 
 /**
  * @brief HM Event hander for HM_EVENT_WEB_SERVER_INIT_ERROR event.
@@ -377,8 +349,6 @@ void test_hm_event_handler(void* pParam);
 /* None */
 
 /************************** Static global variables ***************************/
-/** @brief Static handle for the ISR */
-static TaskHandle_t sRTTaskHandle;
 
 /** @brief Stores the HM event handlers. */
 static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
@@ -417,26 +387,6 @@ static T_EventHandler sHMHandlers[HM_EVENT_MAX] {
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
-static void IRAM_ATTR RealTimeTaskTimerHandler(void) {
-    BaseType_t result;
-    BaseType_t needSchedule;
-
-    /* Notify the real-time task */
-    needSchedule = pdFALSE;
-    result = xTaskNotifyFromISR(
-        sRTTaskHandle,
-        0,
-        eNoAction,
-        &needSchedule
-    );
-
-    if (pdPASS != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_WAIT, 0);
-    }
-
-    /* Check if scheduling is needed */
-    portYIELD_FROM_ISR(needSchedule);
-}
 
 static void HMWebServerInitErrorHandler(void* pParam) {
     LOG_ERROR("Web Server initialization error.\n");
@@ -727,7 +677,6 @@ static void HMIOTaskDeadlineMissHandler(void* pParam) {
 HealthMonitor::HealthMonitor(void) noexcept {
     this->_lastWDId = 0;
     this->_lastReporterId = 0;
-    this->_systemState = E_SystemState::STARTING;
 
     this->_wdLock = xSemaphoreCreateMutex();
     if (nullptr == this->_wdLock) {
@@ -739,6 +688,9 @@ HealthMonitor::HealthMonitor(void) noexcept {
         LOG_ERROR("Failed to initialize Health Monitor Reporters lock.\n");
         HWManager::Reboot();
     }
+
+    /* Add to system state */
+    SystemState::GetInstance()->SetHealthMonitor(this);
 
     /* Initialize the HM tasks */
     RealTimeTaskInit();
@@ -813,11 +765,6 @@ E_Return HealthMonitor::RemoveWatchdog(const uint32_t kId) noexcept {
 
     return error;
 }
-
-void HealthMonitor::SetSystemState(const E_SystemState kState) noexcept {
-    this->_systemState = kState;
-}
-
 
 E_Return HealthMonitor::AddReporter(HMReporter* pReporter,
                                     uint32_t&   rId) noexcept {
@@ -917,31 +864,34 @@ noexcept {
 void HealthMonitor::RealTimeTaskRoutine(void* pHealthMonitor) noexcept {
     BaseType_t     result;
     HealthMonitor* pHM;
-    Timeout        hmDeadlineTimeout(HW_RT_TASK_DEADLINE_MISS_DELAY);
+    TickType_t     lastWakeTime;
 
+    /* Get HM instance */
     pHM = (HealthMonitor*)pHealthMonitor;
 
+    /* First tick */
+    pHM->_pTimeout->Tick();
+    lastWakeTime = xTaskGetTickCount();
 
     while (true) {
-        /* Wait for trigger signal */
-        result = xTaskNotifyWait(0xFFFFFFFFUL, 0x0UL, 0x0UL, portMAX_DELAY);
-        if (pdPASS != result) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_WAIT, 1);
+        /* Manage deadline miss */
+        if (pHM->_pTimeout->Check()) {
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_DEADLINE_MISS, 0);
         }
-
-
-        /* Check for deadline miss */
-        if (E_SystemState::EXECUTING == pHM->_systemState &&
-            hmDeadlineTimeout.Check()) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_DEADLINE_MISS, nullptr);
-        }
-
-        /* Tick the timeout */
-        hmDeadlineTimeout.Tick();
+        pHM->_pTimeout->Tick();
 
         /* Perform HM checks */
         pHM->CheckWatchdogs();
         pHM->CheckReporters();
+
+        /* Wait for period */
+        result = xTaskDelayUntil(
+            &lastWakeTime,
+            HW_RT_TASK_PERIOD_NS / 1000000 / portTICK_PERIOD_MS
+        );
+        if (pdPASS != result) {
+            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_DEADLINE_MISS, 1);
+        }
     }
 }
 
@@ -1019,23 +969,19 @@ void HealthMonitor::CheckReporters(void) const noexcept {
 void HealthMonitor::RealTimeTaskInit(void) noexcept {
     BaseType_t result;
 
-    /* Start the real time task timer */
-    this->_RTTaskTimer = timerBegin(
-        HW_RT_TASK_TIMER,
-        HW_RT_TASK_TIMER_PRESCALER,
-        true
+    /* Create the timeout */
+    this->_pTimeout = new Timeout(
+        HW_RT_TASK_PERIOD_NS + HW_RT_TASK_PERIOD_TOLERANCE_NS,
+        HW_RT_TASK_WD_TIMEOUT_NS,
+        HealthMonitor::DeadlineMissHandler
     );
-    if (nullptr == this->_RTTaskTimer) {
+    if (nullptr == this->_pTimeout) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_CREATE, 0);
     }
-    timerAttachInterrupt(this->_RTTaskTimer, RealTimeTaskTimerHandler, true);
-    timerAlarmWrite(this->_RTTaskTimer, HW_RT_TASK_TIMER_DEC_INT, true);
-    timerAlarmEnable(this->_RTTaskTimer);
-
 
     /* Create the real-time high-priority task */
     result = xTaskCreatePinnedToCore(
-        RealTimeTaskRoutine,
+        HealthMonitor::RealTimeTaskRoutine,
         HW_RT_TASK_NAME,
         HW_RT_TASK_STACK,
         this,
@@ -1046,8 +992,6 @@ void HealthMonitor::RealTimeTaskInit(void) noexcept {
     if (pdPASS != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_CREATE, 1);
     }
-
-    sRTTaskHandle = this->_RTTaskHandle;
 }
 
 void HealthMonitor::ActionsTaskInit(void) noexcept {
@@ -1075,4 +1019,8 @@ void HealthMonitor::ActionsTaskInit(void) noexcept {
     if (pdPASS != result) {
         HM_REPORT_EVENT(E_HMEvent::HM_EVENT_ACTION_TASK_CREATE, 1);
     }
+}
+
+void HealthMonitor::DeadlineMissHandler(void) noexcept {
+    HM_REPORT_EVENT(E_HMEvent::HM_EVENT_RT_TASK_DEADLINE_MISS, 3);
 }

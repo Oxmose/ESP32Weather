@@ -96,6 +96,9 @@ Settings::Settings(void) noexcept {
 
     /* Initializes the default settings */
     InitializeDefault();
+
+    /* Add to system state */
+    SystemState::GetInstance()->SetSettings(this);
 }
 
 E_Return Settings::GetSettings(const std::string& krName,

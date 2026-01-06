@@ -24,6 +24,7 @@
 #include <cstdint>             /* Generic Types */
 #include <Errors.h>            /* Errors definitions */
 #include <Logger.h>            /* Logging services */
+#include <SystemState.h>       /* System state services */
 
 /* Header File */
 #include <IOLedManager.h>
@@ -84,6 +85,9 @@ IOLedManager::IOLedManager(void) noexcept {
     this->_pLedDev[E_LedID::LED_INFO].isRgb = true;
     pinMode(this->_pLedDev[E_LedID::LED_INFO].pin, OUTPUT);
     digitalWrite(this->_pLedDev[E_LedID::LED_INFO].pin, LOW);
+
+    /* Add to system state */
+    SystemState::GetInstance()->SetIOLedManager(this);
 }
 
 void IOLedManager::Update(void) noexcept {
