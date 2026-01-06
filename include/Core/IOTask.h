@@ -89,30 +89,6 @@ class IOTask {
          */
         IOTask(void) noexcept;
 
-        /**
-         * @brief The IO Task destructor.
-         *
-         * @details The IO Task destructor. Releases the resources used
-         * by the IO task.
-         */
-        ~IOTask(void) noexcept;
-
-        /**
-         * @brief Starts the IO task.
-         *
-         * @details Starts the IO task. This will effectively start to run the
-         * IO management.
-         */
-        void Start(void) noexcept;
-
-        /**
-         * @brief Stops the IO task.
-         *
-         * @details Stops the IO task. This will stop the IO task, that can
-         * later be restarted without reinitialization.
-         */
-        void Stop(void) noexcept;
-
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -155,9 +131,6 @@ class IOTask {
 
         /** @brief Stores the IO task handle. */
         TaskHandle_t _IOTaskHandle;
-
-        /** @brief Stores the started status. */
-        bool _started;
 };
 
 #endif /* #ifndef __CORE_IO_TASK_H__ */

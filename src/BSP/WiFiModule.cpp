@@ -221,6 +221,9 @@ WiFiModule::WiFiModule(void) noexcept
 
     /* Disable persistence */
     WiFi.persistent(false);
+
+    /* Add to system state */
+    SystemState::GetInstance()->SetWiFiModule(this);
 }
 
 WiFiModule::~WiFiModule(void) noexcept {

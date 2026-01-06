@@ -133,19 +133,10 @@ void setup(void) {
 
     /* Init system objects */
     spHealthMon = new HealthMonitor();
-    spSystemState->SetHealthMonitor(spHealthMon);
-
     spSettings = new Settings();
-    spSystemState->SetSettings(spSettings);
-
     spWifiModule = new WiFiModule();
-    spSystemState->SetWiFiModule(spWifiModule);
-
     spBtnManager = new IOButtonManager();
-    spSystemState->SetIOButtonManager(spBtnManager);
-
     spLedManager = new IOLedManager();
-    spSystemState->SetIOLedManager(spLedManager);
 
     /* Initialize the WiFi */
     StartWiFi();
@@ -160,9 +151,6 @@ void setup(void) {
 
     /* Create the IO task */
     spIOTask = new IOTask();
-
-    /* Set system as started */
-    spHealthMon->SetSystemState(E_SystemState::EXECUTING);
 }
 
 void loop(void) {
