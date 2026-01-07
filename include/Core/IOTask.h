@@ -89,6 +89,14 @@ class IOTask {
          */
         IOTask(void) noexcept;
 
+        /**
+         * @brief Destroys a IOTask.
+         *
+         * @details Destroys a IOTask. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
+         */
+        ~IOTask(void) noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -114,14 +122,6 @@ class IOTask {
          * routine.
          */
         static void IOTaskRoutine(void* pParam) noexcept;
-
-        /**
-         * @brief IO Task timer handler.
-         *
-         * @brief IO Task timer handler. The handler will notify the IO task to
-         * execute.
-         */
-        static void IRAM_ATTR IOTaskTimerHandler(void) noexcept;
 
         /** @brief Deadline miss manager. */
         Timeout* _pTimeout;

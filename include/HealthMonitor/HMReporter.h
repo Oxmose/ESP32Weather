@@ -186,7 +186,6 @@ class HMReporter
          */
         const std::string& GetName(void) const noexcept;
 
-
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /**
@@ -196,6 +195,7 @@ class HMReporter
          * the inherited class.
          */
         virtual void OnDegraded(void) noexcept = 0;
+
         /**
          * @brief Action executed on unhealthy health.
          *
@@ -203,6 +203,7 @@ class HMReporter
          * the inherited class.
          */
         virtual void OnUnhealthy(void) noexcept = 0;
+
         /**
          * @brief Checks the current health for the report.
          *

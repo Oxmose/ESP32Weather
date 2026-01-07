@@ -25,6 +25,7 @@
 #include <BSP.h>         /* BSP Services */
 #include <string>        /* Standard string */
 #include <Errors.h>      /* Errors definitions */
+#include <Logger.h>      /* Logger services */
 #include <version.h>     /* Versioning */
 #include <WiFiModule.h>  /* WiFi services */
 #include <PageHandler.h> /* Page Handler interface */
@@ -77,7 +78,7 @@
  * CLASS METHODS
  ******************************************************************************/
 IndexPageHandler::~IndexPageHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the Index page handler.\n");
 }
 
 void IndexPageHandler::Generate(std::string& rPageTitle,

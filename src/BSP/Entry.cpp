@@ -101,13 +101,13 @@ static void StartWiFi(void) noexcept {
     /* Start WiFi */
     result = spWifiModule->Start();
     if (E_Return::NO_ERROR != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, result);
+        PANIC("Failed to start the WiFi module. Error: %d\n", result);
     }
 
     /* Start the web servers */
     result = spWifiModule->StartWebServers();
     if (E_Return::NO_ERROR != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_START, result);
+        PANIC("Failed to start the Web Servers. Error: %d\n", result);
     }
 }
 
@@ -130,13 +130,31 @@ void setup(void) {
 
     /* Init system state */
     spSystemState = SystemState::GetInstance();
+    if (nullptr == spSystemState) {
+        PANIC("Failed to instanciate the System State.\n");
+    }
 
     /* Init system objects */
     spHealthMon = new HealthMonitor();
+    if (nullptr == spHealthMon) {
+        PANIC("Failed to instanciate the Health Monitor.\n");
+    }
     spSettings = new Settings();
+    if (nullptr == spSettings) {
+        PANIC("Failed to instanciate the Settings.\n");
+    }
     spWifiModule = new WiFiModule();
+    if (nullptr == spWifiModule) {
+        PANIC("Failed to instanciate the WiFi Module.\n");
+    }
     spBtnManager = new IOButtonManager();
+    if (nullptr == spBtnManager) {
+        PANIC("Failed to instanciate the IO Button Manager.\n");
+    }
     spLedManager = new IOLedManager();
+    if (nullptr == spLedManager) {
+        PANIC("Failed to instanciate the IO Led Manager.\n");
+    }
 
     /* Initialize the WiFi */
     StartWiFi();
@@ -145,12 +163,14 @@ void setup(void) {
     spResetManager = new ResetManager();
     error = spBtnManager->AddAction(spResetManager, resetActionId);
     if (E_Return::NO_ERROR != error) {
-        LOG_ERROR("Failed to add reset action. Error %d\n", error);
-        HWManager::Reboot();
+        PANIC("Failed to add reset action. Error %d\n", error);
     }
 
     /* Create the IO task */
     spIOTask = new IOTask();
+    if (nullptr == spIOTask) {
+        PANIC("Failed to instanciate the IO Task.\n");
+    }
 }
 
 void loop(void) {

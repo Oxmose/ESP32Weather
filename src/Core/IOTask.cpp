@@ -23,7 +23,7 @@
 
 /* Included headers */
 #include <BSP.h>             /* Hardware layer services */
-#include <Logger.h>          /* Logger service */
+#include <Logger.h>          /* Logger services */
 #include <Timeout.h>         /* Timeout manager */
 #include <SystemState.h>     /* System State services. */
 #include <IOLedManager.h>    /* IO Led manager */
@@ -93,7 +93,7 @@ IOTask::IOTask(void) noexcept {
 
     /* Check instance */
     if (nullptr != spIOTask) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 0);
+        PANIC("Error, the IO task already exists.\n");
     }
 
     /* Init system state */
@@ -106,7 +106,7 @@ IOTask::IOTask(void) noexcept {
         IOTask::DeadlineMissHandler
     );
     if (nullptr == this->_pTimeout) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 2);
+        PANIC("Failed to create the IO task deadline manager.\n");
     }
 
     /* Create the task */
@@ -120,15 +120,21 @@ IOTask::IOTask(void) noexcept {
         HW_IO_TASK_CORE
     );
     if (pdPASS != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_CREATE, 3);
+        PANIC("Failed to create the IO task routine task.\n");
     }
 
     /* Set instance and set as started */
     spIOTask = this;
+
+    LOG_DEBUG("IO Task initialized.\n");
+}
+
+IOTask::~IOTask(void) noexcept {
+    PANIC("Tried to destroy the IO Task.\n");
 }
 
 void IOTask::DeadlineMissHandler(void) noexcept {
-    HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_DEADLINE_MISS, 2);
+    PANIC("IO task watchdog triggered.\n");
 }
 
 void IOTask::IOTaskRoutine(void* pParam) noexcept {
@@ -142,15 +148,15 @@ void IOTask::IOTaskRoutine(void* pParam) noexcept {
     pIOTask = (IOTask*)pParam;
 
     /* First tick */
-    pIOTask->_pTimeout->Tick();
+    pIOTask->_pTimeout->Notify();
     lastWakeTime = xTaskGetTickCount();
 
     while (true) {
         /* Manage deadline miss */
-        if (pIOTask->_pTimeout->Check()) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_DEADLINE_MISS, 0);
+        if (pIOTask->_pTimeout->HasTimedOut()) {
+            PANIC("IO task deadline miss.\n");
         }
-        pIOTask->_pTimeout->Tick();
+        pIOTask->_pTimeout->Notify();
 
         /* Get the instances */
         pLed = pIOTask->_pSysState->GetIOLedManager();
@@ -168,7 +174,7 @@ void IOTask::IOTaskRoutine(void* pParam) noexcept {
             HW_IO_TASK_PERIOD_NS / 1000000 / portTICK_PERIOD_MS
         );
         if (pdPASS != result) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_TASK_DEADLINE_MISS, 1);
+            PANIC("IO task periodic wait failed. Error %d\n", result);
         }
     }
 }

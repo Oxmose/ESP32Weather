@@ -24,7 +24,7 @@
 /* Included headers */
 #include <BSP.h>             /* Hardware layer */
 #include <cstdint>           /* Standard Integer Definitions */
-#include <Logger.h>          /* Logging services */
+#include <Logger.h>          /* Logger service */
 #include <nvs_flash.h>       /* NVS formating */
 #include <SystemState.h>     /* System state manager */
 #include <IOLedManager.h>    /* LED Manager */
@@ -122,10 +122,12 @@ static const S_LedState sNoneLedState = {
 ResetManager::ResetManager(void) noexcept {
     this->_state = E_ResetState::RESET_NONE;
     this->_resetStartTime = 0;
+
+    LOG_DEBUG("Reset Manager initialized.\n");
 }
 
 ResetManager::~ResetManager(void) noexcept {
-
+    PANIC("Tried to destroy the Reset Manager.\n");
 }
 
 void ResetManager::Execute(
@@ -147,6 +149,8 @@ void ResetManager::Execute(
                 this->_resetStartTime = HWManager::GetTime();
                 this->_state = E_ResetState::RESET_WAIT;
                 pLed->SetState(E_LedID::LED_INFO, sWaitLedState);
+
+                LOG_DEBUG("Reset manager transitioning: NONE -> WAIT.\n");
             }
 
             break;
@@ -162,6 +166,10 @@ void ResetManager::Execute(
                     this->_resetStartTime = HWManager::GetTime();
                     this->_state = E_ResetState::RESET_PERFORM_WAIT_UP;
                     pLed->SetState(E_LedID::LED_INFO, sWaitUpLedState);
+
+                    LOG_DEBUG(
+                        "Reset manager transitioning: WAIT -> WAIT_UP.\n"
+                    );
                 }
             }
             else {
@@ -179,6 +187,10 @@ void ResetManager::Execute(
                 this->_resetStartTime = HWManager::GetTime();
                 this->_state = E_ResetState::RESET_PERFORM_WAIT_DOWN;
                 pLed->SetState(E_LedID::LED_INFO, sWaitDownLedState);
+
+                LOG_DEBUG(
+                    "Reset manager transitioning: WAIT_UP -> WAIT_DOWN.\n"
+                );
             }
 
             break;
@@ -190,12 +202,20 @@ void ResetManager::Execute(
                 this->_state = E_ResetState::RESET_NONE;
                 pLed->SetState(E_LedID::LED_INFO, sNoneLedState);
                 break;
+
+                LOG_DEBUG(
+                    "Reset manager transitioning: WAIT_UP -> NONE.\n"
+                );
             }
 
             /* Check that the button is down again */
             if (E_ButtonState::BTN_STATE_DOWN ==
                 kpBtnStates[E_ButtonID::BUTTON_RESET]) {
                 this->_state = E_ResetState::RESET_PERFORM;
+
+                LOG_DEBUG(
+                    "Reset manager transitioning: WAIT_UP -> PERFORM.\n"
+                );
             }
             break;
 
@@ -203,6 +223,10 @@ void ResetManager::Execute(
             PerformReset();
             this->_state = E_ResetState::RESET_NONE;
             pLed->SetState(E_LedID::LED_INFO, sNoneLedState);
+
+            LOG_DEBUG(
+                "Reset manager transitioning: PERFORM -> NONE.\n"
+            );
             break;
 
         default:

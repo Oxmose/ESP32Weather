@@ -24,6 +24,7 @@
 /* Included headers */
 #include <BSP.h>         /* BSP Services */
 #include <string>        /* Standard string */
+#include <Logger.h>      /* Logger services */
 #include <Errors.h>      /* Errors definitions */
 #include <version.h>     /* Versioning */
 #include <PageHandler.h> /* Page Handler interface */
@@ -75,7 +76,7 @@
  * CLASS METHODS
  ******************************************************************************/
 AboutPageHandler::~AboutPageHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the About page handler.\n");
 }
 
 void AboutPageHandler::Generate(std::string& rPageTitle,

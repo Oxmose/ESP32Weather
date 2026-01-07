@@ -69,7 +69,7 @@
 #define API_SERVER_TASK_CORE 1
 
 /** @brief Defines the WiFiModule Health Report period in nanoseconds. */
-#define WIFI_MODULE_HM_REPORT_PERIOD_NS 30000000000ULL
+#define WIFI_MODULE_HM_REPORT_PERIOD_NS 1000000000ULL
 /** @brief Defines the WiFiModule Health Report degraded threshold. */
 #define WIFI_MODULE_HM_REPORT_FAIL_TO_DEGRADE 5
 /** @brief Defines the WiFiModule Health Report unhealthy threshold. */
@@ -100,16 +100,21 @@
  * @param[in] SIZE The size of the setting.
  * @param[out] ERROR The error buffer.
  * @param[in] SETTINGS The settings object to use to retrieve the setting.
- * @param[out] HM_PARAM The HM parameters used to retrieve the default value.
  */
-#define GET_SETTING(NAME, BUFFER, SIZE, ERROR, SETTINGS, HM_PARAM) {    \
-    ERROR = SETTINGS->GetSettings(NAME, (uint8_t*)BUFFER, SIZE);        \
-    if (E_Return::NO_ERROR != ERROR) {                                  \
-        HM_PARAM.kpSettingName = NAME;                                  \
-        HM_PARAM.pSettingBuffer = (void*)BUFFER;                        \
-        HM_PARAM.settingBufferSize = SIZE;                              \
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOAD, &HM_PARAM);  \
-    }                                                                   \
+#define GET_SETTING(NAME, BUFFER, SIZE, ERROR, SETTINGS) {                   \
+    ERROR = SETTINGS->GetSettings(NAME, (uint8_t*)BUFFER, SIZE);             \
+    if (E_Return::NO_ERROR != ERROR) {                                       \
+        if (E_Return::ERR_SETTING_NOT_FOUND == ERROR) {                      \
+            LOG_ERROR("Failed to get setting %s. Trying to get default.\n"); \
+            ERROR = SETTINGS->GetDefault(NAME, (uint8_t*)BUFFER, SIZE);      \
+            if (E_Return::NO_ERROR != ERROR) {                               \
+                PANIC("Failed to get setting %s. Error: %d\n", NAME, ERROR); \
+            }                                                                \
+        }                                                                    \
+        else {                                                               \
+            PANIC("Failed to get setting %s. Error: %d\n", NAME, ERROR);     \
+        }                                                                    \
+    }                                                                        \
 }
 
 /**
@@ -123,15 +128,11 @@
  * @param[in] SIZE The size of the setting.
  * @param[out] ERROR The error buffer.
  * @param[in] SETTINGS The settings object to use to retrieve the setting.
- * @param[out] HM_PARAM The HM parameters used to retrieve the default value.
  */
-#define SET_SETTING(NAME, BUFFER, SIZE, ERROR, SETTINGS, HM_PARAM) {    \
+#define SET_SETTING(NAME, BUFFER, SIZE, ERROR, SETTINGS) {              \
     ERROR = SETTINGS->SetSettings(NAME, (uint8_t*)BUFFER, SIZE);        \
     if (E_Return::NO_ERROR != ERROR) {                                  \
-        HM_PARAM.kpSettingName = NAME;                                  \
-        HM_PARAM.pSettingBuffer = (void*)BUFFER;                        \
-        HM_PARAM.settingBufferSize = SIZE;                              \
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_STORE, &HM_PARAM); \
+        PANIC("Failed to set setting %s. Error: %d\n", NAME, ERROR);    \
     }                                                                   \
 }
 
@@ -212,11 +213,11 @@ WiFiModule::WiFiModule(void) noexcept
         this
     );
     if (nullptr == this->_pReporter) {
-        pHM->ReportHM(E_HMEvent::HM_EVENT_WIFI_CREATE, (void*)0);
+        PANIC("Failed to create WiFi module HM reporter.\n");
     }
     result = pHM->AddReporter(this->_pReporter, this->_reporterId);
     if (E_Return::NO_ERROR != result) {
-        pHM->ReportHM(E_HMEvent::HM_EVENT_HM_ADD_ACTION, (void*)result);
+        PANIC("Failed to add WiFi module HM reporter. Error %d\n", result);
     }
 
     /* Disable persistence */
@@ -224,27 +225,19 @@ WiFiModule::WiFiModule(void) noexcept
 
     /* Add to system state */
     SystemState::GetInstance()->SetWiFiModule(this);
+
+    LOG_DEBUG("Initializes WiFi Module.\n");
 }
 
 WiFiModule::~WiFiModule(void) noexcept {
-    HealthMonitor* pHM;
-    E_Return       result;
-
-    if (nullptr != this->_pReporter) {
-        pHM = SystemState::GetInstance()->GetHealthMonitor();
-        result = pHM->RemoveReporter(this->_reporterId);
-        if (E_Return::NO_ERROR != result) {
-            pHM->ReportHM(E_HMEvent::HM_EVENT_HM_REMOVE_ACTION, (void*)result);
-        }
-
-        delete this->_pReporter;
-    }
+    PANIC("Tried to destroy the WiFi module.\n");
 }
 
 E_Return WiFiModule::Start(void) noexcept {
-    E_Return               error;
-    Settings*              pSettings;
-    S_HMParamSettingAccess hmAccessParam;
+    E_Return  error;
+    Settings* pSettings;
+
+    LOG_DEBUG("Starting WiFi module.\n");
 
     if (!this->_isStarted) {
         pSettings = SystemState::GetInstance()->GetSettings();
@@ -254,8 +247,7 @@ E_Return WiFiModule::Start(void) noexcept {
             &this->_config.isAP,
             sizeof(bool),
             error,
-            pSettings,
-            hmAccessParam
+            pSettings
         );
 
         /* Check the AP Type */
@@ -272,26 +264,66 @@ E_Return WiFiModule::Start(void) noexcept {
             memset(this->_config.secondaryDNS, 0, IP_ADDR_SIZE_BYTES + 1);
 
             /* Get the node SSID */
-            GET_SETTING(SETTING_NODE_SSID, this->_config.ssid,
-                SSID_SIZE_BYTES, error, pSettings, hmAccessParam);
+            GET_SETTING(
+                SETTING_NODE_SSID,
+                this->_config.ssid,
+                SSID_SIZE_BYTES,
+                error,
+                pSettings
+            );
 
             /* Get the node password */
-            GET_SETTING(SETTING_NODE_PASS, this->_config.password,
-                PASS_SIZE_BYTES, error, pSettings, hmAccessParam);
+            GET_SETTING(
+                SETTING_NODE_PASS,
+                this->_config.password,
+                PASS_SIZE_BYTES,
+                error,
+                pSettings
+            );
 
             /* Get the static configuration */
-            GET_SETTING(SETTING_NODE_STATIC, &this->_config.isStatic,
-                sizeof(bool), error, pSettings, hmAccessParam);
-            GET_SETTING(SETTING_NODE_ST_IP, this->_config.ip,
-                IP_ADDR_SIZE_BYTES, error, pSettings, hmAccessParam);
-            GET_SETTING(SETTING_NODE_ST_GATE, this->_config.gateway,
-                IP_ADDR_SIZE_BYTES, error, pSettings, hmAccessParam);
-            GET_SETTING(SETTING_NODE_ST_SUBNET, this->_config.subnet,
-                IP_ADDR_SIZE_BYTES, error, pSettings, hmAccessParam);
-            GET_SETTING(SETTING_NODE_ST_PDNS, this->_config.primaryDNS,
-                IP_ADDR_SIZE_BYTES, error, pSettings, hmAccessParam);
-            GET_SETTING(SETTING_NODE_ST_SDNS, this->_config.secondaryDNS,
-                IP_ADDR_SIZE_BYTES, error, pSettings, hmAccessParam);
+            GET_SETTING(
+                SETTING_NODE_STATIC,
+                &this->_config.isStatic,
+                sizeof(bool),
+                error,
+                pSettings
+            );
+            GET_SETTING(
+                SETTING_NODE_ST_IP,
+                this->_config.ip,
+                IP_ADDR_SIZE_BYTES,
+                error,
+                pSettings
+            );
+            GET_SETTING(
+                SETTING_NODE_ST_GATE,
+                this->_config.gateway,
+                IP_ADDR_SIZE_BYTES,
+                error,
+                pSettings
+            );
+            GET_SETTING(
+                SETTING_NODE_ST_SUBNET,
+                this->_config.subnet,
+                IP_ADDR_SIZE_BYTES,
+                error,
+                pSettings
+            );
+            GET_SETTING(
+                SETTING_NODE_ST_PDNS,
+                this->_config.primaryDNS,
+                IP_ADDR_SIZE_BYTES,
+                error,
+                pSettings
+            );
+            GET_SETTING(
+                SETTING_NODE_ST_SDNS,
+                this->_config.secondaryDNS,
+                IP_ADDR_SIZE_BYTES,
+                error,
+                pSettings
+            );
 
             /* Start the node */
             error = StartNode();
@@ -315,6 +347,9 @@ E_Return WiFiModule::Start(void) noexcept {
         if (E_Return::NO_ERROR == error) {
             this->_isStarted = true;
         }
+        else {
+            LOG_ERROR("Failed to initialize WiFi module. Error %d\n", error);
+        }
     }
     else {
         error = E_Return::NO_ERROR;
@@ -323,50 +358,33 @@ E_Return WiFiModule::Start(void) noexcept {
     return error;
 }
 
-E_Return WiFiModule::Stop(void) noexcept {
-    if (this->_isStarted) {
-        if (!WiFi.disconnect()) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_STOP, nullptr);
-        }
-
-        this->_isStarted = false;
-    }
-
-    return E_Return::NO_ERROR;
-}
-
 E_Return WiFiModule::StartWebServers(void) noexcept {
-    Settings*              pSettings;
-    E_Return               result;
-    S_HMParamSettingAccess hmAccessParam;
+    Settings* pSettings;
+    E_Return  result;
+
+    LOG_DEBUG("Starting Web Servers.\n");
 
     /* Get the ports from settings */
     pSettings = SystemState::GetInstance()->GetSettings();
 
-    result = pSettings->GetSettings(
+    GET_SETTING(
         SETTING_WEB_PORT,
-        (uint8_t*)&this->_config.webPort,
-        sizeof(uint16_t)
+        &this->_config.webPort,
+        sizeof(uint16_t),
+        result,
+        pSettings
     );
-    if (E_Return::NO_ERROR != result) {
-        hmAccessParam.kpSettingName = SETTING_WEB_PORT;
-        hmAccessParam.pSettingBuffer = (void*)&this->_config.webPort;
-        hmAccessParam.settingBufferSize = sizeof(uint16_t);
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOAD, &hmAccessParam);
-    }
-    result = pSettings->GetSettings(
+
+    GET_SETTING(
         SETTING_API_PORT,
-        (uint8_t*)&this->_config.apiPort,
-        sizeof(uint16_t)
+        &this->_config.apiPort,
+        sizeof(uint16_t),
+        result,
+        pSettings
     );
-    if (E_Return::NO_ERROR != result) {
-        hmAccessParam.kpSettingName = SETTING_API_PORT;
-        hmAccessParam.pSettingBuffer = (void*)&this->_config.apiPort;
-        hmAccessParam.settingBufferSize = sizeof(uint16_t);
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOAD, &hmAccessParam);
-    }
 
     /* Create the web server */
+    LOG_DEBUG("Creating Web Server with port %d.\n", this->_config.webPort);
     if (nullptr != this->_pWebServer) {
         this->_pWebServer->stop();
         delete this->_pWebServer;
@@ -376,6 +394,7 @@ E_Return WiFiModule::StartWebServers(void) noexcept {
 
     if (nullptr != this->_pWebServer) {
         /* Create the API server */
+        LOG_DEBUG("Creating API Server with port %d.\n", this->_config.apiPort);
         if (nullptr != this->_pAPIServer) {
             this->_pAPIServer->stop();
             delete this->_pAPIServer;
@@ -403,6 +422,7 @@ E_Return WiFiModule::StartWebServers(void) noexcept {
 
     /* If everything went well, start the servers */
     if (E_Return::NO_ERROR == result) {
+        LOG_DEBUG("Starting Web and API servers.\n");
         this->_pWebServer->begin();
         this->_pAPIServer->begin();
 
@@ -417,49 +437,41 @@ E_Return WiFiModule::StartWebServers(void) noexcept {
     return result;
 }
 
-E_Return WiFiModule::StopWebServers(void) noexcept {
-    /* Stops the handlers tasks */
-    vTaskSuspend(this->_pWebServerTask);
-    vTaskDelete(this->_pWebServerTask);
-    vTaskSuspend(this->_pAPIServerTask);
-    vTaskDelete(this->_pAPIServerTask);
-
-    /* Delete the handlers */
-    if (nullptr != this->_pWebServerHandler) {
-        delete this->_pWebServerHandler;
-        this->_pWebServerHandler = nullptr;
-    }
-    if (nullptr != this->_pAPIServerHandler) {
-        delete this->_pAPIServerHandler;
-        this->_pAPIServerHandler = nullptr;
-    }
-
-    /* Stops the web server */
-    if (nullptr != this->_pWebServer) {
-        this->_pWebServer->stop();
-        delete this->_pWebServer;
-        this->_pWebServer = nullptr;
-    }
-
-    /* Stops the web server */
-    if (nullptr != this->_pAPIServer) {
-        this->_pAPIServer->stop();
-        delete this->_pAPIServer;
-        this->_pAPIServer = nullptr;
-    }
-
-    return E_Return::NO_ERROR;
-}
-
 void WiFiModule::GetConfiguration(S_WiFiConfig* pConfig) const noexcept {
     memcpy(pConfig, &this->_config, sizeof(S_WiFiConfig));
 }
 
 E_Return WiFiModule::SetConfiguration(const S_WiFiConfigRequest& krConfig)
 noexcept {
-    E_Return               result;
-    Settings*              pSettings;
-    S_HMParamSettingAccess hmAccessParam;
+    E_Return  result;
+    Settings* pSettings;
+
+    LOG_DEBUG("Setting new WiFi configuration.\n");
+    LOG_DEBUG(
+        "New WiFi Configuration: \n"
+        "\tIs AP: %d\n"
+        "\tSSID: %s\n"
+        "\tPassword: %s\n"
+        "\tIs Static: %d\n"
+        "\tIP: %s\n"
+        "\tGateway: %s\n"
+        "\tSubnet: %s\n"
+        "\tPrimary DNS: %s\n"
+        "\tSecondary DNS: %s\n"
+        "\tWeb Port: %d\n"
+        "\tAPI Port: %d\n",
+        krConfig.isAP.first,
+        krConfig.ssid.first.c_str(),
+        krConfig.password.first.c_str(),
+        krConfig.isStatic.first,
+        krConfig.ip.first.c_str(),
+        krConfig.gateway.first.c_str(),
+        krConfig.subnet.first.c_str(),
+        krConfig.primaryDNS.first.c_str(),
+        krConfig.secondaryDNS.first.c_str(),
+        krConfig.webPort.first,
+        krConfig.apiPort.first
+    );
 
     result = ValidateConfiguration(krConfig);
 
@@ -467,68 +479,94 @@ noexcept {
     if (E_Return::NO_ERROR == result) {
         pSettings = SystemState::GetInstance()->GetSettings();
 
-        LOG_DEBUG(
-            "New WiFi Configuration: \n"
-            "\tIs AP: %d\n"
-            "\tSSID: %s\n"
-            "\tPassword: %s\n"
-            "\tIs Static: %d\n"
-            "\tIP: %s\n"
-            "\tGateway: %s\n"
-            "\tSubnet: %s\n"
-            "\tPrimary DNS: %s\n"
-            "\tSecondary DNS: %s\n"
-            "\tWeb Port: %d\n"
-            "\tAPI Port: %d\n",
-            krConfig.isAP.first,
-            krConfig.ssid.first.c_str(),
-            krConfig.password.first.c_str(),
-            krConfig.isStatic.first,
-            krConfig.ip.first.c_str(),
-            krConfig.gateway.first.c_str(),
-            krConfig.subnet.first.c_str(),
-            krConfig.primaryDNS.first.c_str(),
-            krConfig.secondaryDNS.first.c_str(),
-            krConfig.webPort.first,
-            krConfig.apiPort.first
-        );
+        LOG_DEBUG("Applying new WiFi configuration.\n");
 
         /* Apply the configuration */
-        SET_SETTING(SETTING_IS_AP, &krConfig.isAP.first,
-            sizeof(bool), result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_SSID, krConfig.ssid.first.c_str(),
-            SSID_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_PASS, krConfig.password.first.c_str(),
-            PASS_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_STATIC, &krConfig.isStatic.first,
-            sizeof(bool), result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_ST_IP, krConfig.ip.first.c_str(),
-            IP_ADDR_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_ST_GATE,
+        SET_SETTING(
+            SETTING_IS_AP,
+            &krConfig.isAP.first,
+            sizeof(bool),
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_SSID,
+            krConfig.ssid.first.c_str(),
+            SSID_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_PASS,
+            krConfig.password.first.c_str(),
+            PASS_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_STATIC,
+            &krConfig.isStatic.first,
+            sizeof(bool),
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_ST_IP,
+            krConfig.ip.first.c_str(),
+            IP_ADDR_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_ST_GATE,
             krConfig.gateway.first.c_str(),
-            IP_ADDR_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_ST_SUBNET,
+            IP_ADDR_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_ST_SUBNET,
             krConfig.subnet.first.c_str(),
-            IP_ADDR_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_ST_PDNS,
+            IP_ADDR_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_ST_PDNS,
             krConfig.primaryDNS.first.c_str(),
-            IP_ADDR_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_NODE_ST_SDNS,
+            IP_ADDR_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_NODE_ST_SDNS,
             krConfig.secondaryDNS.first.c_str(),
-            IP_ADDR_SIZE_BYTES, result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_WEB_PORT, &krConfig.webPort.first,
-            sizeof(uint16_t), result, pSettings, hmAccessParam);
-        SET_SETTING(SETTING_API_PORT, &krConfig.apiPort.first,
-            sizeof(uint16_t), result, pSettings, hmAccessParam);
+            IP_ADDR_SIZE_BYTES,
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_WEB_PORT,
+            &krConfig.webPort.first,
+            sizeof(uint16_t),
+            result,
+            pSettings
+        );
+        SET_SETTING(
+            SETTING_API_PORT,
+            &krConfig.apiPort.first,
+            sizeof(uint16_t),
+            result,
+            pSettings
+        );
         result = pSettings->Commit();
 
-        if (E_Return::NO_ERROR != result) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_COMMIT, result);
-        }
-        else {
-            HWManager::DelayExecNs(500000000);
+        if (E_Return::NO_ERROR == result) {
             LOG_INFO("WiFi settings updated, rebooting...\n");
             HWManager::Reboot();
+        }
+        else {
+            PANIC("Error while commiting WiFi settings. Error %d\n", result);
         }
     }
 
@@ -539,6 +577,8 @@ E_Return WiFiModule::StartAP(void) noexcept {
     bool        retVal;
     E_Return    error;
     String      ip;
+
+    LOG_DEBUG("Starting WiFi module as AP.\n");
 
     /* Set AP */
     retVal = WiFi.softAP(
@@ -565,8 +605,7 @@ E_Return WiFiModule::StartAP(void) noexcept {
         error = E_Return::NO_ERROR;
     }
     else {
-        LOG_ERROR("Failed to create the Access Point\n");
-
+        LOG_ERROR("Failed to create the Access Point.\n");
         error = E_Return::ERR_WIFI_CONN;
     }
 
@@ -583,6 +622,8 @@ E_Return WiFiModule::StartNode(void) noexcept {
     IPAddress   primaryDnsIpAddr;
     IPAddress   secondaryDnsIpAddr;
     String      ip;
+
+    LOG_DEBUG("Starting WiFi module as node.\n");
 
     LOG_INFO("Connecting to network: %s.\n", this->_config.ssid);
 
@@ -611,8 +652,8 @@ E_Return WiFiModule::StartNode(void) noexcept {
     if (E_Return::NO_ERROR == error) {
         /* Connect to existing network */
         WiFi.begin(this->_config.ssid, this->_config.password);
-        connTimeout.Tick();
-        while (WL_CONNECTED != WiFi.status() && !connTimeout.Check()) {
+        connTimeout.Notify();
+        while (WL_CONNECTED != WiFi.status() && !connTimeout.HasTimedOut()) {
             HWManager::DelayExecNs(500000000);
         }
 
@@ -639,16 +680,21 @@ E_Return WiFiModule::StartNode(void) noexcept {
 E_Return WiFiModule::ConfigureServers(void) noexcept {
     E_Return result;
 
-    result = E_Return::NO_ERROR;
+    LOG_DEBUG("Creating Web and API server handlers.\n");
 
     this->_pWebServerHandler = new WebServerHandlers(this->_pWebServer);
     if (nullptr != this->_pWebServerHandler) {
         this->_pAPIServerHandler = new APIServerHandlers(this->_pAPIServer);
         if (nullptr == this->_pAPIServerHandler) {
+            LOG_ERROR("Failed to create the API server hander.\n");
             result = E_Return::ERR_MEMORY;
+        }
+        else {
+            result = E_Return::NO_ERROR;
         }
     }
     else {
+        LOG_ERROR("Failed to create the Web server handler.\n");
         result = E_Return::ERR_MEMORY;
     }
 
@@ -658,6 +704,8 @@ E_Return WiFiModule::ConfigureServers(void) noexcept {
 E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
     E_Return  result;
     BaseType_t createRes;
+
+    LOG_DEBUG("Creating Web and API server handlers tasks.\n");
 
     /* Start the web server task */
     createRes = xTaskCreatePinnedToCore(
@@ -684,7 +732,7 @@ E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
             /* Delete the first task */
             vTaskDelete(this->_pWebServerTask);
 
-            LOG_ERROR("Failed to initialize the API handler task.\n");
+            LOG_ERROR("Failed to create the API handler task.\n");
             result = E_Return::ERR_API_SERVER_TASK;
         }
         else {
@@ -692,7 +740,7 @@ E_Return WiFiModule::ConfigureServerTasks(void) noexcept {
         }
     }
     else {
-        LOG_ERROR("Failed to initialize the web handler task.\n");
+        LOG_ERROR("Failed to create the web handler task.\n");
         result = E_Return::ERR_WEB_SERVER_TASK;
     }
 
@@ -703,8 +751,6 @@ E_Return WiFiModule::ValidateConfiguration(const S_WiFiConfigRequest& krConfig)
 const noexcept {
 
     E_Return result;
-
-    result = E_Return::NO_ERROR;
 
     /* Validate the new switches */
     if (!WiFiValidator::ValidateSwitches(krConfig)) {
@@ -738,6 +784,9 @@ const noexcept {
     else if (!WiFiValidator::ValidatePorts(krConfig)) {
         result = E_Return::ERR_WIFI_INVALID_PORTS;
     }
+    else {
+        result = E_Return::NO_ERROR;
+    }
 
     return result;
 }
@@ -763,9 +812,7 @@ void WiFiModuleHealthReporter::OnDegraded(void) noexcept {
 void WiFiModuleHealthReporter::OnUnhealthy(void) noexcept {
     E_Return result;
 
-    LOG_ERROR(
-        "WiFi module is unhealthy, restarting.\n"
-    )
+    LOG_ERROR("WiFi module is unhealthy, restarting.\n")
 
     /* Disable and restart */
     if (this->_pModule->_config.isAP) {
@@ -779,7 +826,7 @@ void WiFiModuleHealthReporter::OnUnhealthy(void) noexcept {
     /* Restart */
     result = this->_pModule->Start();
     if (E_Return::NO_ERROR != result) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WIFI_CREATE, result);
+        PANIC("Failed to restart WiFi module. Error %d\n", result);
     }
 }
 

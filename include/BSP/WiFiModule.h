@@ -156,9 +156,10 @@ class WiFiModule {
         WiFiModule(void) noexcept;
 
         /**
-         * @brief WiFiModule destructor.
+         * @brief Destroys a WiFiModule.
          *
-         * @details WiFiModule destructor. Release the used memory.
+         * @details Destroys a WiFiModule. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
          */
         ~WiFiModule(void) noexcept;
 
@@ -174,16 +175,6 @@ class WiFiModule {
         E_Return Start(void) noexcept;
 
         /**
-         * @brief Stops the WiFiModule.
-         *
-         * @details Stops the WiFiModule. Reeases the resources used by the
-         * servers and the WiFi module and stops it.
-         *
-         * @return The functions returns the success or error status.
-         */
-        E_Return Stop(void) noexcept;
-
-        /**
          * @brief Starts the Web Servers.
          *
          * @details Starts the Web Servers. Two servers are started: the web
@@ -193,16 +184,6 @@ class WiFiModule {
          * @return The functions returns the success or error status.
          */
         E_Return StartWebServers(void) noexcept;
-
-        /**
-         * @brief Stops the Web Servers.
-         *
-         * @details Stops the Web Servers. The API and Web servers are stopped
-         * and the resources are released.
-         *
-         * @return The functions returns the success or error status.
-         */
-        E_Return StopWebServers(void) noexcept;
 
         /**
          * @brief Provides the current WiFi configuration.

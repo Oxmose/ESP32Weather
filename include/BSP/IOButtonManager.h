@@ -25,11 +25,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>       /* std::map */
-#include <BSP.h>     /* BSP definitions */
-#include <cstdint>   /* Generic Types */
-#include <Errors.h>  /* Errors definitions */
-#include <Arduino.h> /* Arduino framework */
+#include <BSP.h>         /* BSP definitions */
+#include <cstdint>       /* Generic Types */
+#include <Errors.h>      /* Errors definitions */
+#include <Arduino.h>     /* Arduino framework */
+#include <unordered_map> /* Standard unordered maps */
 
 /*******************************************************************************
  * CONSTANTS
@@ -158,6 +158,14 @@ class IOButtonManager {
         IOButtonManager(void) noexcept;
 
         /**
+         * @brief Destroys a IOButtonManager.
+         *
+         * @details Destroys a IOButtonManager. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
+         */
+        ~IOButtonManager(void) noexcept;
+
+        /**
          * @brief Updates the button states.
          *
          * @details Updates the button states. This function also calculate the
@@ -226,7 +234,7 @@ class IOButtonManager {
         /** @brief Stores the buttons state. */
         E_ButtonState _pBtnStates[E_ButtonID::BUTTON_MAX_ID];
         /** @brief Stores the button actions. */
-        std::map<uint32_t, IOButtonManagerAction*> _actions;
+        std::unordered_map<uint32_t, IOButtonManagerAction*> _actions;
         /** @brief Stores the last given action identifier. */
         uint32_t _lastActionId;
         /** @brief Stores the actions mutex. */

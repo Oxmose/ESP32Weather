@@ -101,10 +101,10 @@ class ResetManager : public IOButtonManagerAction {
         ResetManager(void) noexcept;
 
         /**
-         * @brief The Reset Manager destructor.
+         * @brief Destroys a ResetManager.
          *
-         * @details The Reset Manager destructor. Releases the resources used
-         * by the reset manager.
+         * @details Destroys a ResetManager. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
          */
         virtual ~ResetManager(void) noexcept;
 

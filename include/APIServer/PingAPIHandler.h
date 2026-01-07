@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @file PinAPIHandler.h
- * 
+ *
  * @see PinAPIHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
@@ -81,10 +81,10 @@ class PingAPIHandler : public APIHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief PingAPIHandler destructor.
+         * @brief Destroys a PingAPIHandler.
          *
-         * @details PingAPIHandler destructor. The API handler should implement
-         * this method.
+         * @details Destroys a PingAPIHandler. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
          */
         virtual ~PingAPIHandler(void) noexcept;
 
@@ -95,7 +95,7 @@ class PingAPIHandler : public APIHandler {
          * and process the API call.
          *
          * @param[out] rResponse The response to the API call.
-         * @param[in] pServer The server that received the call. Used to 
+         * @param[in] pServer The server that received the call. Used to
          * retrieve the call parameters.
          */
         virtual void Handle(std::string& rResponse, WebServer* pServer) noexcept;

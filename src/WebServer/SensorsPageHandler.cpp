@@ -24,6 +24,7 @@
 /* Included headers */
 #include <string>        /* Standard string */
 #include <Errors.h>      /* Errors definitions */
+#include <Logger.h>      /* Logger services */
 #include <PageHandler.h> /* Page Handler interface */
 
 /* Header file */
@@ -73,7 +74,7 @@
  * CLASS METHODS
  ******************************************************************************/
 SensorsPageHandler::~SensorsPageHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the Sensors page handler.\n");
 }
 
 void SensorsPageHandler::Generate(std::string& rPageTitle,

@@ -81,9 +81,11 @@ class SettingsPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief SettingsPageHandler destructor.
+         * @brief Destroys a SettingsPageHandler.
          *
-         * @details SettingsPageHandler destructor. Releases the used resources.
+         * @details Destroys a SettingsPageHandler. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         virtual ~SettingsPageHandler(void) noexcept;
 

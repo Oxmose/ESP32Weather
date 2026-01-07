@@ -112,6 +112,8 @@ HMReporter::HMReporter(const S_HMReporterParam& krParam) noexcept {
     this->_totalFailCount = 0;
     this->_status = E_HMStatus::HM_DISABLED;
     this->_hasRunningAction = false;
+
+    LOG_DEBUG("HM Reporter %s initialized.\n", this->_name.c_str());
 }
 
 HMReporter::~HMReporter(void) noexcept {
@@ -152,9 +154,9 @@ void HMReporter::HealthCheck(const uint64_t kTime) noexcept {
                     pHM = SystemState::GetInstance()->GetHealthMonitor();
                     result = pHM->AddHMAction(this);
                     if (E_Return::NO_ERROR != result) {
-                        pHM->ReportHM(
-                            E_HMEvent::HM_EVENT_HM_ADD_ACTION,
-                            (void*)result
+                        PANIC(
+                            "Failed to add HM reporter action. Error %d\n",
+                            result
                         );
                     }
                 }

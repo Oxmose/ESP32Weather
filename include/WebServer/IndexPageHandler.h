@@ -81,9 +81,11 @@ class IndexPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief IndexPageHandler destructor.
+         * @brief Destroys a IndexPageHandler.
          *
-         * @details IndexPageHandler destructor. Releases the used resources.
+         * @details Destroys a IndexPageHandler. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         virtual ~IndexPageHandler(void) noexcept;
 

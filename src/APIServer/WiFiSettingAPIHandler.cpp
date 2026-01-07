@@ -23,7 +23,7 @@
 
 /* Included headers */
 #include <string>        /* Standard string */
-#include <Logger.h>      /* Logger service */
+#include <Logger.h>      /* Logger services */
 #include <Errors.h>      /* Errors definitions */
 #include <WebServer.h>   /* Web Server services */
 #include <WiFiModule.h>  /* WiFi module configuration */
@@ -161,12 +161,14 @@
  * CLASS METHODS
  ******************************************************************************/
 WiFiSettingAPIHandler::~WiFiSettingAPIHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the WiFi settings API handler.\n");
 }
 
 void WiFiSettingAPIHandler::Handle(std::string& rResponse, WebServer* pServer)
 noexcept {
     uint32_t args;
+
+    LOG_DEBUG("Handling WiFi setting API.\n");
 
     /* Check the number of arguments */
     args = pServer->args();
@@ -182,6 +184,8 @@ noexcept {
         rResponse = "{\"result\": " +
             std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +
             ", \"msg\": \"Unknown parameters.\"}";
+
+        LOG_ERROR("Invalid WiFi setting API parameters. Count: %d\n", args);
     }
 }
 
@@ -189,6 +193,8 @@ void WiFiSettingAPIHandler::GetWiFiSettings(std::string& rResponse)
 const noexcept {
     WiFiModule*  pWiFiModule;
     S_WiFiConfig config;
+
+    LOG_DEBUG("Handling WiFi settings Get API.\n");
 
     pWiFiModule = SystemState::GetInstance()->GetWiFiModule();
     pWiFiModule->GetConfiguration(&config);
@@ -229,6 +235,8 @@ noexcept {
     WiFiModule*         pWiFiModule;
     String              currentArg;
 
+    LOG_DEBUG("Handling WiFi settings Set API.\n");
+
     /* Check the number of arguments and their value */
     rResponse.clear();
     config.isAP.second = false;
@@ -263,6 +271,11 @@ noexcept {
                 pServer->argName(i).c_str() +
                 ".\"}";
 
+            LOG_ERROR(
+                "WiFi Setttings Set API invalid parameter: %s.",
+                pServer->argName(i).c_str()
+            );
+
             break;
         }
         else {
@@ -278,12 +291,16 @@ noexcept {
             rResponse = "{\"result\": " +
                 std::to_string(E_APIResult::API_RES_NO_ERROR) +
                 ", \"msg\": \"Saved WiFi settings.\"}";
+
+            LOG_DEBUG("WiFi Setting API Set success.\n");
         }
         else {
             rResponse = "{\"result\": " +
                 std::to_string(E_APIResult::API_RES_WIFI_SET_ACTION_ERR) +
                 ", \"msg\": \"Error while saving the WiFi settings: error " +
                 std::to_string(result) + "\"}";
+
+            LOG_ERROR("WiFi Setting API Set error. Error %d.", result);
         }
     }
     else if (0 == rResponse.size()) {
@@ -291,5 +308,10 @@ noexcept {
             std::to_string(E_APIResult::API_RES_WIFI_SET_UNKNOWN) +
             ", \"msg\": \"Invalid parameters, expected 11, parsed " +
             std::to_string(argsSet) + ".\"}";
+
+            LOG_ERROR(
+                "WiFi Setting API Set error. Expected 11 arguments, parser %d.",
+                argsSet
+            );
     }
 }

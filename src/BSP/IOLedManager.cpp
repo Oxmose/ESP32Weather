@@ -22,8 +22,8 @@
  ******************************************************************************/
 #include <BSP.h>               /* BSP definitions */
 #include <cstdint>             /* Generic Types */
+#include <Logger.h>            /* Logger services */
 #include <Errors.h>            /* Errors definitions */
-#include <Logger.h>            /* Logging services */
 #include <SystemState.h>       /* System state services */
 
 /* Header File */
@@ -88,6 +88,12 @@ IOLedManager::IOLedManager(void) noexcept {
 
     /* Add to system state */
     SystemState::GetInstance()->SetIOLedManager(this);
+
+    LOG_DEBUG("Initialized IO Led Manager.\n");
+}
+
+IOLedManager::~IOLedManager(void) noexcept {
+    PANIC("Tried to destroy the IO Led Manager.\n");
 }
 
 void IOLedManager::Update(void) noexcept {
