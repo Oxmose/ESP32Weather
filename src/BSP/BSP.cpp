@@ -90,7 +90,7 @@ const char* HWManager::GetHWUID(void) noexcept {
         _SHWUID = "RTHRWS-";
 
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL, nullptr);
+            PANIC("Failed to retrieve the firmware MAC address.\n");
         }
 
         for (i = 0; 6 > i; ++i) {
@@ -110,7 +110,7 @@ const char* HWManager::GetMacAddress(void) noexcept {
     /* Check if the MAC address was already generated */
     if(0 == _SMACADDR.size()) {
         if (ESP_OK != esp_read_mac(value, ESP_MAC_WIFI_SOFTAP)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_HW_MAC_NOT_AVAIL, nullptr);
+            PANIC("Failed to retrieve the firmware MAC address.\n");
         }
 
         _SMACADDR = "";
@@ -154,8 +154,14 @@ void HWManager::DelayExecNs(const uint64_t kDelayNs) noexcept {
 }
 
 void HWManager::Reboot(void) noexcept {
-    /* Wait a bit for all buffer to be flushed */
-    DelayExecNs(500000000ULL);
+    LOG_DEBUG("Rebooting compute.\n");
+
+    /* Flush logger */
+    LOG_FLUSH();
+
+    /* Restart */
     ESP.restart();
-    while (true) {}
+    while (true) {
+        LOG_ERROR("Failed to restart.\n");
+    }
 }

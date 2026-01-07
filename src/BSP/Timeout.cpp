@@ -24,6 +24,7 @@
 /* Included headers */
 #include <BSP.h>           /* Hardware services */
 #include <cstdint>         /* Standard int types */
+#include <Logger.h>        /* Logger services */
 #include <HealthMonitor.h> /* Health monitor watchdogs */
 
 /* Header file */
@@ -87,34 +88,45 @@ Timeout::Timeout(const uint64_t kTimeoutNs,
 
     Serial.flush();
 
-
     /* First tick */
-    Tick();
+    Notify();
 
     /* If a watchdog is needed, add it */
     if (0 != this->_wdTimeout && nullptr != this->_pWDHandler) {
         pHM = SystemState::GetInstance()->GetHealthMonitor();
         error = pHM->AddWatchdog(this, this->_watchdogId);
         if (E_Return::NO_ERROR != error) {
-            pHM->ReportHM(E_HMEvent::HM_EVENT_WD_TIMEOUT, (void*)error);
+            PANIC("Failed to add timeout watchdog to HM. Error: %d\n", error);
         }
     }
+
+    LOG_DEBUG(
+        "Initialized new timeout to %llu, wd %llu and handler 0x%p.\n",
+        kTimeoutNs,
+        kWatchdogNs,
+        pHandler
+    );
 }
 
 Timeout::~Timeout(void) noexcept {
     HealthMonitor* pHM;
     E_Return       error;
 
+    LOG_DEBUG("Destroying timeout.\n");
+
     if (0 != this->_wdTimeout && nullptr != this->_pWDHandler) {
         pHM = SystemState::GetInstance()->GetHealthMonitor();
         error = pHM->RemoveWatchdog(this->_watchdogId);
         if (E_Return::NO_ERROR != error) {
-            pHM->ReportHM(E_HMEvent::HM_EVENT_WD_TIMEOUT, (void*)error);
+            PANIC(
+                "Failed to remove timeout watchdog to HM. Error: %d\n",
+                error
+            );
         }
     }
 }
 
-void Timeout::Tick(void) noexcept{
+void Timeout::Notify(void) noexcept{
     uint64_t currentTime;
 
     currentTime = HWManager::GetTime();
@@ -125,7 +137,7 @@ void Timeout::Tick(void) noexcept{
     }
 }
 
-bool Timeout::Check(void) const noexcept{
+bool Timeout::HasTimedOut(void) const noexcept{
     return (HWManager::GetTime() > this->_nextTimeEvent);
 }
 
@@ -139,6 +151,7 @@ uint64_t Timeout::GetNextWatchdogEvent(void) const noexcept{
 
 void Timeout::ExecuteHandler(void) const noexcept{
     if (nullptr != this->_pWDHandler) {
+        LOG_DEBUG("Executing timeout handler %d.\n", this->_watchdogId);
         this->_pWDHandler();
     }
 }

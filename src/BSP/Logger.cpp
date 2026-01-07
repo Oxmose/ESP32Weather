@@ -64,7 +64,10 @@
 bool Logger::_SISINIT = false;
 
 /** @brief See Logger.h */
-E_LogLevel Logger::_SLOGLEVEL = E_LogLevel::LOG_LEVEL_NONE;
+E_LogLevel Logger::_SLOGLEVEL = E_LogLevel::LOG_LEVEL_CRITICAL;
+
+/** @brief See Logger.h */
+char* Logger::_SPBUFFER = nullptr;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -81,8 +84,13 @@ void Logger::Init(const E_LogLevel kLoglevel) noexcept
     if (!_SISINIT) {
         Serial.begin(LOGGER_SERIAL_BAUDRATE);
 
-        _SISINIT   = true;
+        _SISINIT = true;
         _SLOGLEVEL = kLoglevel;
+        _SPBUFFER = new char[LOGGER_BUFFER_SIZE];
+        if (nullptr == _SPBUFFER) {
+            Serial.printf("Failed to allocate logger buffer.\n");
+            HWManager::Reboot();
+        }
     }
 }
 
@@ -95,18 +103,13 @@ void Logger::LogLevel(const E_LogLevel kLevel,
     va_list argptr;
     size_t  len;
     char    pTag[32];
-    char*   pBuffer;
 
     if (_SISINIT && _SLOGLEVEL >= kLevel) {
-
-        /* Allocate buffer */
-        pBuffer = new char[LOGGER_BUFFER_SIZE];
-        if (nullptr == pBuffer) {
-            return;
-        }
-
         /* Print TAG */
-        if (LOG_LEVEL_ERROR == kLevel) {
+        if (LOG_LEVEL_CRITICAL == kLevel) {
+            memcpy(pTag, "[CRIT - %16llu] %s:%d -\0", 17);
+        }
+        else if (LOG_LEVEL_ERROR == kLevel) {
             memcpy(pTag, "[ERROR - %16llu] %s:%d -\0", 26);
         }
         else if (LOG_LEVEL_INFO == kLevel) {
@@ -121,19 +124,19 @@ void Logger::LogLevel(const E_LogLevel kLevel,
 
         /* Setup message */
         len = snprintf(
-            pBuffer,
+            _SPBUFFER,
             LOGGER_BUFFER_SIZE,
             pTag,
             HWManager::GetTime(),
             pkFile,
             kLine
         );
-        pBuffer[len++] = ' ';
+        _SPBUFFER[len++] = ' ';
 
         /* Add message formating */
         va_start(argptr, pkStr);
         len += vsnprintf(
-            pBuffer + len,
+            _SPBUFFER + len,
             LOGGER_BUFFER_SIZE - len,
             pkStr,
             argptr
@@ -141,12 +144,18 @@ void Logger::LogLevel(const E_LogLevel kLevel,
         va_end(argptr);
 
         /* Terminate and print */
-        pBuffer[len] = 0;
-        Serial.printf("%s", pBuffer);
+        _SPBUFFER[len] = 0;
+        Serial.printf("%s", _SPBUFFER);
 
-        /* Release memory */
-        delete[] pBuffer;
+        /* On critical, reboot */
+        if (LOG_LEVEL_CRITICAL == kLevel) {
+            HWManager::Reboot();
+        }
     }
+}
+
+void Logger::Flush(void) noexcept {
+    Serial.flush();
 }
 
 /*******************************************************************************

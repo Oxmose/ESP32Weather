@@ -42,8 +42,8 @@
 typedef enum {
     /** @brief No error. */
     API_RES_NO_ERROR = 0,
-    /** @brief Health Monitor error. */
-    API_RES_HM_ERROR = 1,
+    /** @brief API not registered. */
+    API_RES_NOT_REGISTERED = 1,
     /** @brief Unknown API. */
     API_RES_UNKNOWN = 2,
     /** @brief Unknown wifi settings parameters */
@@ -104,10 +104,10 @@ class APIHandler {
          * and process the API call.
          *
          * @param[out] rResponse The response to the API call.
-         * @param[in] pServer The server that received the call. Used to 
+         * @param[in] pServer The server that received the call. Used to
          * retrieve the call parameters.
          */
-        virtual void Handle(std::string& rResponse, WebServer* pServer) 
+        virtual void Handle(std::string& rResponse, WebServer* pServer)
             noexcept = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/

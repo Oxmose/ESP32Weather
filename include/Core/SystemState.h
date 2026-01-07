@@ -201,6 +201,7 @@ class SystemState
          * @return The IO led manager stored in the system state is returned.
          */
         IOLedManager* GetIOLedManager(void) const noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */

@@ -22,8 +22,8 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
+#include <Logger.h>        /* Logger services */
 #include <Arduino.h>       /* Arduino Framework */
 #include <Settings.h>      /* Settings services */
 #include <WebServer.h>     /* Web server services */
@@ -64,13 +64,13 @@
  * @param[in] HANDLER_CLASS The class of the object used to handle the URL.
  * @param[out] HANDLER_OBJ The object that gets assigned the new handler.
  */
-#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {           \
-    HANDLER_OBJ = new HANDLER_CLASS();                                  \
-    if (nullptr == HANDLER_OBJ) {                                       \
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_API_SERVER_INIT_ERROR, 2);  \
-    }                                                                   \
-    this->_apiHandlers.emplace(URL, HANDLER_OBJ);                       \
-    this->_pServer->on(URL, HTTP_POST, HandleKnownURL);                 \
+#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {               \
+    HANDLER_OBJ = new HANDLER_CLASS();                                      \
+    if (nullptr == HANDLER_OBJ) {                                           \
+        PANIC("Failed to allocate a new handler for API %s.\n", URL)        \
+    }                                                                       \
+    this->_apiHandlers.emplace(URL, HANDLER_OBJ);                           \
+    this->_pServer->on(URL, HTTP_POST, HandleKnownURL);                     \
 }
 
 /*******************************************************************************
@@ -104,7 +104,9 @@ APIServerHandlers::APIServerHandlers(WebServer* pServer) noexcept {
     APIHandler* pNewHandler;
 
     if (nullptr != spInstance) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_API_SERVER_INIT_ERROR, 0);
+        PANIC(
+            "Tried to re-create a new API Server handlers manager instance.\n"
+        );
     }
 
     this->_pServer = pServer;
@@ -118,47 +120,71 @@ APIServerHandlers::APIServerHandlers(WebServer* pServer) noexcept {
 
     /* Set the instance */
     spInstance = this;
+
+    LOG_DEBUG("Created the API Server handlers manager.\n");
 }
 
 APIServerHandlers::~APIServerHandlers(void) {
-    spInstance = nullptr;
+    PANIC("Tried to destroy the API Server handlers manager.\n");
 }
 
 void APIServerHandlers::HandleNotFound(void) noexcept {
     std::string response;
 
-    response = std::string("{\"result\": ") +
-        std::to_string(E_APIResult::API_RES_UNKNOWN) +
-        std::string(", \"msg\": \"Unknown API\"}");
+    LOG_DEBUG(
+        "Handling API not found: %s\n",
+        spInstance->_pServer->uri().c_str()
+    );
+
+    response = "{\"result\": ";
+    response += std::to_string(E_APIResult::API_RES_UNKNOWN);
+    response += ", \"msg\": \"Unknown API: ";
+    response += spInstance->_pServer->uri().c_str();
+    response += "\"}";
 
     /* Send */
-    spInstance->GenericHandler(response, 200);
+    spInstance->GenericHandler(response, 404);
 }
 
 void APIServerHandlers::HandleKnownURL(void) noexcept {
-    std::map<std::string, APIHandler*>::const_iterator it;
-    S_HMParamAPIServerError                            error;
-    std::string                                        response;
-    const char*                                        pageUrl;
-    String                                             pageURLStr;
+    std::unordered_map<std::string, APIHandler*>::const_iterator it;
+    std::string                                                  response;
+    const char*                                                  pageUrl;
+    String                                                       pageURLStr;
+    int32_t                                                      code;
+
+    LOG_DEBUG(
+        "Handling API: %s\n",
+        spInstance->_pServer->uri().c_str()
+    );
 
     /* Get the handler */
     pageURLStr = spInstance->_pServer->uri();
-    pageUrl    = pageURLStr.c_str();
+    pageUrl = pageURLStr.c_str();
 
     it = spInstance->_apiHandlers.find(pageUrl);
     if (spInstance->_apiHandlers.end() == it) {
-        error.pAPIURL = pageUrl;
-        error.pResponse = &response;
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_API_SERVER_NOT_FOUND, &error);
+        response = "{\"result\": ";
+        response += std::to_string(E_APIResult::API_RES_NOT_REGISTERED);
+        response += ", \"msg\": \"Non-registered API: ";
+        response += spInstance->_pServer->uri().c_str();
+        response += "\"}";
+
+        LOG_ERROR(
+            "API URL not registered: %s\n",
+            spInstance->_pServer->uri().c_str()
+        );
+
+        code = 500;
     }
     else {
         /* Get the potential GET and POST parameters */
         it->second->Handle(response, spInstance->_pServer);
+        code = 200;
     }
 
     /* Send */
-    spInstance->GenericHandler(response, 200);
+    spInstance->GenericHandler(response, code);
 }
 
 void APIServerHandlers::GenericHandler(const std::string& krResponse,

@@ -23,7 +23,6 @@
 
 /* Included headers */
 #include <cstdint>      /* Standard integer definitions */
-#include <Logger.h>     /* Logger services */
 #include <WiFiModule.h> /* WiFi module configuration */
 
 /* Header file */

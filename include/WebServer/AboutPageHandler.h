@@ -81,9 +81,11 @@ class AboutPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief AboutPageHandler destructor.
+         * @brief Destroys a AboutPageHandler.
          *
-         * @details AboutPageHandler destructor. Releases the used resources.
+         * @details Destroys a AboutPageHandler. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         virtual ~AboutPageHandler(void) noexcept;
 

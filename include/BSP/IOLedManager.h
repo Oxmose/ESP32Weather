@@ -129,6 +129,14 @@ class IOLedManager {
         IOLedManager(void) noexcept;
 
         /**
+         * @brief Destroys a IOLedManager.
+         *
+         * @details Destroys a IOLedManager. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
+         */
+        ~IOLedManager(void) noexcept;
+
+        /**
          * @brief Updates the LED states.
          *
          * @details Updates the LED states. This function also calculate the

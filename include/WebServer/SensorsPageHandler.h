@@ -81,9 +81,11 @@ class SensorsPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief SensorsPageHandler destructor.
+         * @brief Destroys a SensorsPageHandler.
          *
-         * @details SensorsPageHandler destructor. Releases the used resources.
+         * @details Destroys a SensorsPageHandler. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         virtual ~SensorsPageHandler(void) noexcept;
 

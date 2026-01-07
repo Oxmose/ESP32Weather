@@ -26,7 +26,7 @@
 #include <BSP.h>             /* HW layer services */
 #include <WiFi.h>            /* WiFi Services */
 #include <string>            /* Standard strings */
-#include <Logger.h>          /* Logging */
+#include <Logger.h>          /* Logger services */
 #include <IOLedManager.h>    /* IO Led Manager */
 #include <HealthMonitor.h>   /* HM services */
 #include <IOButtonManager.h> /* IO Button Manager */
@@ -83,8 +83,7 @@ SystemState* SystemState::GetInstance(void) noexcept {
         SystemState::_SPINSTANCE = new SystemState();
 
         if (nullptr == SystemState::_SPINSTANCE) {
-            LOG_ERROR("Failed to instanciate the System State object.\n");
-            HWManager::Reboot();
+            PANIC("Failed to instanciate the System State object.\n");
         }
     }
 
@@ -133,5 +132,5 @@ IOLedManager* SystemState::GetIOLedManager(void) const noexcept {
 }
 
 SystemState::SystemState(void) noexcept {
-    /* Nothing to do */
+    LOG_DEBUG("System State initialized.\n");
 }

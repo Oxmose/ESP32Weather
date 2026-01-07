@@ -108,7 +108,7 @@ class Timeout
          * @details Notifies the timeout and watchdog of a tick. This reset
          * their next trigger time.
          */
-        void Tick(void) noexcept;
+        void Notify(void) noexcept;
 
         /**
          * @brief Checks if the timeout was reached.
@@ -118,7 +118,7 @@ class Timeout
          *
          * @return Returns true if the timeout occured, false otherwise.
          */
-        bool Check(void) const noexcept;
+        bool HasTimedOut(void) const noexcept;
 
         /**
          * @brief Returns the time in nanoseconds when the timeout will be

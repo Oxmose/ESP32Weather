@@ -24,6 +24,7 @@
 /* Included headers */
 #include <string>        /* Standard string */
 #include <Errors.h>      /* Errors definitions */
+#include <Logger.h>      /* Logger services */
 #include <WiFiModule.h>  /* WiFi module services */
 #include <PageHandler.h> /* Page Handler interface */
 #include <SystemState.h> /* System state provider */
@@ -75,7 +76,7 @@
  * CLASS METHODS
  ******************************************************************************/
 SettingsPageHandler::~SettingsPageHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the Settings page handler.\n");
 }
 
 void SettingsPageHandler::Generate(std::string& rPageTitle,

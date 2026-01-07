@@ -20,12 +20,12 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>             /* std::map */
 #include <BSP.h>           /* BSP definitions */
 #include <cstdint>         /* Generic Types */
-#include <Logger.h>        /* Logger service */
+#include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
 #include <Arduino.h>       /* Arduino framework */
+#include <unordered_map>   /* Unordered maps */
 #include <HealthMonitor.h> /* HM services */
 
 /* Header File */
@@ -39,7 +39,7 @@
 #define BTN_KEEP_WAIT_TIME 1000000
 
 /** @brief Defines the lock timeout in nanoseconds. */
-#define ACTION_LOCK_TIMEOUT_NS 20000000ULL
+#define ACTION_LOCK_TIMEOUT_NS 1000000ULL
 
 /** @brief Defines the lock timeout in ticks. */
 #define ACTION_LOCK_TIMEOUT_TICKS \
@@ -120,12 +120,17 @@ IOButtonManager::IOButtonManager(void) noexcept {
     _lastActionId = 0;
     this->_lock = xSemaphoreCreateMutex();
     if (nullptr == this->_lock) {
-        LOG_ERROR("Failed to initialize IO Button Manager actions lock.\n");
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_BUTTON_LOCK, 0);
+        PANIC("Failed to initialize IO Button Manager actions lock.\n");
     }
 
     /* Add to system state */
     SystemState::GetInstance()->SetIOButtonManager(this);
+
+    LOG_DEBUG("Initialized IO Button Manager.\n");
+}
+
+IOButtonManager::~IOButtonManager(void) noexcept {
+    PANIC("Tried to destroy the IO Button Manager.\n");
 }
 
 void IOButtonManager::Update(void) noexcept {
@@ -133,7 +138,7 @@ void IOButtonManager::Update(void) noexcept {
     uint8_t  btnState;
     uint64_t currTime;
 
-    std::map<uint32_t, IOButtonManagerAction*>::const_iterator it;
+    std::unordered_map<uint32_t, IOButtonManagerAction*>::const_iterator it;
 
     /* Check all pins */
     for (i = 0; E_ButtonID::BUTTON_MAX_ID > i; ++i) {
@@ -184,12 +189,15 @@ const noexcept {
         E_ButtonState::BTN_STATE_KEEP == this->_pBtnStates[kBtnId]) {
         return HWManager::GetTime() - this->_pBtnLastPress[kBtnId];
     }
+
     return 0;
 }
 
 E_Return IOButtonManager::AddAction(IOButtonManagerAction* pAction,
                                     uint32_t&              rActionId) noexcept {
     E_Return error;
+
+    LOG_DEBUG("Adding IO Button Manager action.\n");
 
     if (pdPASS == xSemaphoreTake(this->_lock, ACTION_LOCK_TIMEOUT_TICKS)) {
         if (this->_lastActionId < UINT32_MAX) {
@@ -201,15 +209,23 @@ E_Return IOButtonManager::AddAction(IOButtonManagerAction* pAction,
                 error = E_Return::NO_ERROR;
             }
             catch (std::exception& rExc) {
+                LOG_ERROR(
+                    "Error while adding IO Button Manager action. Error: %s.",
+                    rExc.what()
+                );
                 error = E_Return::ERR_UNKNOWN;
             }
         }
         else {
+            LOG_ERROR(
+                "Error while adding IO Button Manager action. Error: %s.",
+                "Not enough memory"
+            );
             error = E_Return::ERR_MEMORY;
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_BUTTON_LOCK, 1);
+            PANIC("Failed to release the IO Button Manager Action lock.\n");
         }
     }
     else {
@@ -221,8 +237,10 @@ E_Return IOButtonManager::AddAction(IOButtonManagerAction* pAction,
 }
 
 E_Return IOButtonManager::RemoveAction(const uint32_t krActionId) noexcept {
-    E_Return                                             error;
-    std::map<uint32_t, IOButtonManagerAction*>::iterator it;
+    E_Return                                                       error;
+    std::unordered_map<uint32_t, IOButtonManagerAction*>::iterator it;
+
+    LOG_DEBUG("Removing IO Button Manager action.\n");
 
     if (pdPASS == xSemaphoreTake(this->_lock, ACTION_LOCK_TIMEOUT_TICKS)) {
         it = this->_actions.find(krActionId);
@@ -232,15 +250,23 @@ E_Return IOButtonManager::RemoveAction(const uint32_t krActionId) noexcept {
                 error = E_Return::NO_ERROR;
             }
             catch (std::exception& rExc) {
+                LOG_ERROR(
+                    "Error while removing IO Button Manager action. Error: %s.",
+                    rExc.what()
+                );
                 error = E_Return::ERR_UNKNOWN;
             }
         }
         else {
+            LOG_ERROR(
+                "Error while removing IO Button Manager action. Error: %s.",
+                "No such ID"
+            );
             error = E_Return::ERR_NO_SUCH_ID;
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_IO_BUTTON_LOCK, 1);
+            PANIC("Failed to release the IO Button Manager Action lock.\n");
         }
     }
     else {

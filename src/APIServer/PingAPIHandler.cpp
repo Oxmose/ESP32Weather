@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @file PinAPIHandler.cpp
- * 
+ *
  * @see PinAPIHandler.h
  *
  * @author Alexy Torres Aurora Dugo
@@ -23,6 +23,7 @@
 
 /* Included headers */
 #include <string>       /* Standard string */
+#include <Logger.h>     /* Logger services */
 #include <Errors.h>     /* Errors definitions */
 #include <WebServer.h>  /* Web Server services */
 #include <APIHandler.h> /* API Handler interface */
@@ -73,14 +74,16 @@
  * CLASS METHODS
  ******************************************************************************/
 PingAPIHandler::~PingAPIHandler(void) noexcept {
-    /* Nothing to do */
+    PANIC("Tried to destroy the Ping API handler.\n");
 }
 
-void PingAPIHandler::Handle(std::string& rResponse, WebServer* pServer) 
+void PingAPIHandler::Handle(std::string& rResponse, WebServer* pServer)
 noexcept {
     (void)pServer;
 
-    rResponse = "{\"result\": " + 
-        std::to_string(E_APIResult::API_RES_NO_ERROR) + 
+    LOG_DEBUG("Handling Ping API.\n");
+
+    rResponse = "{\"result\": " +
+        std::to_string(E_APIResult::API_RES_NO_ERROR) +
         ", \"msg\": \"Pong\"}";
 }

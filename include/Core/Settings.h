@@ -24,12 +24,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>           /* Settings map */
 #include <string>        /* Standard strings */
-#include <Logger.h>      /* Logging services */
 #include <Errors.h>      /* Errors definitions */
 #include <Arduino.h>     /* Arduino framework */
 #include <Preferences.h> /* Preference storage */
+#include <unordered_map> /* Settings map */
 
 /*******************************************************************************
  * CONSTANTS
@@ -122,6 +121,14 @@ class Settings
          * the preference and create the instance when successfull.
          */
         Settings(void) noexcept;
+
+        /**
+         * @brief Destroys a Settings.
+         *
+         * @details Destroys a Settings. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
+         */
+        ~Settings(void) noexcept;
 
         /**
          * @brief Reads the setting value based on the settings name.
@@ -228,10 +235,10 @@ class Settings
         Preferences _stcPrefs;
 
         /** @brief Stores the settings cache. */
-        std::map<std::string, S_SettingField> _cache;
+        std::unordered_map<std::string, S_SettingField> _cache;
 
         /** @brief Stores the default settings. */
-        std::map<std::string, const S_SettingField> _defaults;
+        std::unordered_map<std::string, const S_SettingField> _defaults;
 };
 
 #endif /* #ifndef __SETTINGS_H__ */

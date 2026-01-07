@@ -82,6 +82,34 @@
     );                                                      \
 }
 
+/**
+ * @brief Logs a critical error to the log buffer.
+ *
+ * @details Logs a critical error to the log buffer. The CRIT tag will be added
+ * to the log and the firmware will go into panic.
+ *
+ * @param[in] FMT The format string used for the log.
+ * @param[in] ... The format arguments.
+ */
+#define PANIC(FMT, ...) {                                   \
+    Logger::LogLevel(                                       \
+        LOG_LEVEL_CRITICAL,                                 \
+        __FILE__,                                           \
+        __LINE__,                                           \
+        FMT,                                                \
+        ##__VA_ARGS__                                       \
+    );                                                      \
+}
+
+/**
+ * @brief Flushes the logs.
+ *
+ * @details Flushes the logs. This ensures the buffers are correctly written.
+ */
+#define LOG_FLUSH() {     \
+    Logger::Flush();      \
+}
+
 #if LOGGER_DEBUG_ENABLED
 
 /**
@@ -116,12 +144,12 @@
 /** @brief Defines the log level. */
 typedef enum
 {
-    /** @brief Logging level: no logging */
-    LOG_LEVEL_NONE  = 0,
+    /** @brief Logging level: log only critical error */
+    LOG_LEVEL_CRITICAL = 0,
     /** @brief Logging level: log only errors */
     LOG_LEVEL_ERROR = 1,
     /** @brief Logging level: log previous levels and information */
-    LOG_LEVEL_INFO  = 2,
+    LOG_LEVEL_INFO = 2,
     /** @brief Logging level: log previous levels and debug output */
     LOG_LEVEL_DEBUG = 3
 } E_LogLevel;
@@ -192,6 +220,13 @@ class Logger
                              const char*      kStr,
                              ...) noexcept;
 
+        /**
+         * @brief Flushes the logs.
+         *
+         * @details Flushes the logs. This ensures the buffers are correctly
+         * written.
+         */
+        static void Flush(void) noexcept;
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -199,9 +234,11 @@ class Logger
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         /** @brief Tells if the logger is initialized. */
-        static bool       _SISINIT;
+        static bool _SISINIT;
         /** @brief The current log level. */
         static E_LogLevel _SLOGLEVEL;
+        /** @brief The logger buffer. */
+        static char* _SPBUFFER;
 };
 
 #endif /* #ifndef __LOGGER_H_ */

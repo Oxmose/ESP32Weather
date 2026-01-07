@@ -1,6 +1,6 @@
 /*******************************************************************************
  * @file WiFiSettingAPIHandler.h
- * 
+ *
  * @see WiFiSettingAPIHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
@@ -11,7 +11,7 @@
  *
  * @brief WiFi Settings API handler.
  *
- * @details WiFi Settings API handler. This file defines the WiFi Settings API 
+ * @details WiFi Settings API handler. This file defines the WiFi Settings API
  * handler used to handle all calls related to WiFi settings.
  *
  * @copyright Alexy Torres Aurora Dugo
@@ -81,10 +81,10 @@ class WiFiSettingAPIHandler : public APIHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief APIHandler destructor.
+         * @brief Destroys a PingAPIHandler.
          *
-         * @details APIHandler destructor. The API handler should implement
-         * this method.
+         * @details Destroys a PingAPIHandler. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
          */
         virtual ~WiFiSettingAPIHandler(void) noexcept;
 
@@ -95,10 +95,11 @@ class WiFiSettingAPIHandler : public APIHandler {
          * and process the API call.
          *
          * @param[out] rResponse The response to the API call.
-         * @param[in] pServer The server that received the call. Used to 
+         * @param[in] pServer The server that received the call. Used to
          * retrieve the call parameters.
          */
-        virtual void Handle(std::string& rResponse, WebServer* pServer) noexcept;
+        virtual void Handle(std::string& rResponse, WebServer* pServer)
+        noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -106,27 +107,27 @@ class WiFiSettingAPIHandler : public APIHandler {
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /** 
+        /**
          * @brief Retrieves the WiFi settings.
-         * 
-         * @details Retrieves the WiFi settings and fills the API response with 
+         *
+         * @details Retrieves the WiFi settings and fills the API response with
          * the registered settings.
-         * 
+         *
          * @param[out] rResponse The JSON buffer to fill with the WiFi settings.
          */
         void GetWiFiSettings(std::string& rResponse) const noexcept;
 
-        /** 
+        /**
          * @brief Updates the WiFi settings.
-         * 
-         * @details Updates the WiFi settings and fills the API response with 
+         *
+         * @details Updates the WiFi settings and fills the API response with
          * the update status settings.
-         * 
-         * @param[in] pServer The server that received the request. Used to 
+         *
+         * @param[in] pServer The server that received the request. Used to
          * retrieve the settings values.
          * @param[out] rResponse The JSON buffer to fill with the WiFi settings.
          */
-        void SetWiFiSettings(WebServer* pServer, std::string& rResponse) const 
+        void SetWiFiSettings(WebServer* pServer, std::string& rResponse) const
         noexcept;
 };
 

@@ -44,8 +44,6 @@ typedef enum {
     NO_ERROR,
     /** @brief WiFi Connection Error */
     ERR_WIFI_CONN,
-    /** @brief Error when initializing the settings. */
-    ERR_SETTING_INIT,
     /** @brief Error when a setting is not found. */
     ERR_SETTING_NOT_FOUND,
     /** @brief Error when a setting lock timed out. */
@@ -66,10 +64,6 @@ typedef enum {
     ERR_WEB_SERVER_TASK,
     /** @brief Error while creating the api server task. */
     ERR_API_SERVER_TASK,
-    /** @brief Error while creating the web server lock. */
-    ERR_WEB_SERVER_LOCK,
-    /** @brief Error while creating the api server lock. */
-    ERR_API_SERVER_LOCK,
     /** @brief HM actions cannot be added. */
     ERR_HM_FULL,
     /** @brief WiFi settings error: invalid switches */

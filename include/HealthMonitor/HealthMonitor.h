@@ -29,8 +29,6 @@
 #include <HMReporter.h>      /* HM Reporters */
 #include <unordered_map>     /* Standard unordered map */
 #include <SystemState.h>     /* System State manager */
-#include <esp32-hal-timer.h> /* ESP32 Timers */
-#include <HMConfiguration.h> /* Health Monitor Configuration */
 
 /*******************************************************************************
  * CONSTANTS
@@ -51,17 +49,22 @@
  * @param[in] EVENT The event to raise to the HM.
  * @param[in] PARAM The parameter used with the event.
  */
-#define HM_REPORT_EVENT(EVENT, PARAM) {                                     \
-    SystemState::GetInstance()->GetHealthMonitor()->ReportHM(               \
-        EVENT,                                                              \
-        (void*)PARAM                                                        \
-    );                                                                      \
+#define HM_REPORT_EVENT(MSG, EVENT) {                                     \
+    SystemState::GetInstance()->GetHealthMonitor()->ReportHM(MSG, EVENT); \
 }
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/* None */
+/** @brief Defines the HM Event criticality. */
+typedef enum {
+    /** @brief HM event is an information. */
+    HM_EVENT_INFO,
+    /** @brief HM event is an error. */
+    HM_EVENT_ERROR,
+    /** @brief HM event is critical */
+    HM_EVENT_CRITICAL
+} E_HMEventCriticality;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -109,6 +112,14 @@ class HealthMonitor
          * initialization and initializes the HM.
          */
         HealthMonitor(void) noexcept;
+
+        /**
+         * @brief Destroys a HealthMonitor.
+         *
+         * @details Destroys a HealthMonitor. Since only one object is allowed
+         * in the firmware, the destructor will generate a critical error.
+         */
+        ~HealthMonitor(void) noexcept;
 
         /**
          * @brief Adds a watchdog to the watchdogs check list.
@@ -173,20 +184,6 @@ class HealthMonitor
          * @return The function returns the success or error status.
          */
         E_Return AddHMAction(HMReporter* pReporter) noexcept;
-
-        /**
-         * @brief Reports an event to the Health Monitor.
-         *
-         * @details Reports an event to the Health Monitor. Based on the
-         * configuration of the HM, the event will be handled and actions
-         * will be taken.
-         *
-         * @param[in] kEvent The event to report.
-         * @param[in] pParam An optional parameter for the eventhandler. Can
-         * be NULL.
-         */
-        void ReportHM(const E_HMEvent kEvent,
-                      void*           pParam = nullptr) const noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

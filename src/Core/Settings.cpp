@@ -25,7 +25,7 @@
 /* Included headers */
 #include <map>             /* Settings map */
 #include <string>          /* Standard strings */
-#include <Logger.h>        /* Logging services */
+#include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
 #include <Arduino.h>       /* Arduino framework */
 #include <Preferences.h>   /* Preference storage */
@@ -90,7 +90,7 @@ Settings::Settings(void) noexcept {
         /* Allocate the lock */
         this->_lock = xSemaphoreCreateMutex();
         if (nullptr == this->_lock) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_CREATE, 0);
+            PANIC("Failed to create the Settings lock.\n");
         }
     }
 
@@ -99,13 +99,21 @@ Settings::Settings(void) noexcept {
 
     /* Add to system state */
     SystemState::GetInstance()->SetSettings(this);
+
+    LOG_DEBUG("Settings initialized.\n");
+}
+
+Settings::~Settings(void) noexcept {
+    PANIC("Tried to destroy the Settings.\n");
 }
 
 E_Return Settings::GetSettings(const std::string& krName,
                                uint8_t*           pData,
                                const size_t       kDataLength) noexcept {
-    std::map<std::string, S_SettingField>::const_iterator it;
-    E_Return                                              error;
+    std::unordered_map<std::string, S_SettingField>::const_iterator it;
+    E_Return                                                        error;
+
+    LOG_DEBUG("Getting setting %s.\n", krName.c_str());
 
     if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
         /* Get the setting */
@@ -146,7 +154,7 @@ E_Return Settings::GetSettings(const std::string& krName,
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
+            PANIC("Failed to release the settings lock.\n");
         }
     }
     else {
@@ -160,8 +168,10 @@ E_Return Settings::GetSettings(const std::string& krName,
 E_Return Settings::GetDefault(const std::string& krName,
                               uint8_t*           pData,
                               const size_t       kDataLength) noexcept {
-    std::map<std::string, const S_SettingField>::const_iterator it;
-    E_Return                                                    error;
+    std::unordered_map<std::string, const S_SettingField>::const_iterator it;
+    E_Return                                                              error;
+
+    LOG_DEBUG("Getting default setting %s.\n", krName.c_str());
 
     /* Get the setting */
     it = this->_defaults.find(krName);
@@ -182,11 +192,11 @@ E_Return Settings::GetDefault(const std::string& krName,
                 kDataLength,
                 it->second.fieldSize
             );
-
             error = E_Return::ERR_SETTING_NOT_FOUND;
         }
     }
     else {
+        LOG_ERROR("Default setting %s not found.\n", krName.c_str());
         error = E_Return::ERR_SETTING_NOT_FOUND;
     }
 
@@ -196,9 +206,11 @@ E_Return Settings::GetDefault(const std::string& krName,
 E_Return Settings::SetSettings(const std::string& krName,
                                const uint8_t*     kpData,
                                const size_t       kDataLength) noexcept {
-    std::map<std::string, S_SettingField>::iterator it;
-    E_Return                                        error;
-    S_SettingField                                  setting;
+    std::unordered_map<std::string, S_SettingField>::iterator it;
+    E_Return                                                  error;
+    S_SettingField                                            setting;
+
+    LOG_DEBUG("Setting setting %s.\n", krName.c_str());
 
     if (15 > krName.size()) {
         setting.pValue = new uint8_t[kDataLength];
@@ -237,7 +249,7 @@ E_Return Settings::SetSettings(const std::string& krName,
                 }
 
                 if (pdPASS != xSemaphoreGive(this->_lock)) {
-                    HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
+                    PANIC("Failed to release the setting lock.\n");
                 }
             }
             else {
@@ -265,9 +277,11 @@ E_Return Settings::SetSettings(const std::string& krName,
 }
 
 E_Return Settings::Commit(void) noexcept {
-    std::map<std::string, S_SettingField>::const_iterator it;
-    E_Return                                              error;
-    size_t                                                saveLen;
+    std::unordered_map<std::string, S_SettingField>::const_iterator it;
+    E_Return                                                        error;
+    size_t                                                          saveLen;
+
+    LOG_DEBUG("Commiting settings.\n");
 
     error = E_Return::NO_ERROR;
     if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
@@ -288,7 +302,7 @@ E_Return Settings::Commit(void) noexcept {
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
+            PANIC("Failed to release the settings lock.\n");
         }
     }
     else {
@@ -301,8 +315,10 @@ E_Return Settings::Commit(void) noexcept {
 }
 
 E_Return Settings::ClearCache(void) noexcept {
-    std::map<std::string, S_SettingField>::const_iterator it;
-    E_Return                                              error;
+    std::unordered_map<std::string, S_SettingField>::const_iterator it;
+    E_Return                                                        error;
+
+    LOG_DEBUG("Clearing settings cache.\n");
 
     error = E_Return::NO_ERROR;
     if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
@@ -315,7 +331,7 @@ E_Return Settings::ClearCache(void) noexcept {
         this->_cache.clear();
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
-            HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_LOCK, nullptr);
+            PANIC("Failed to release the settings lock.\n");
         }
     }
     else {
@@ -328,10 +344,12 @@ E_Return Settings::ClearCache(void) noexcept {
 }
 
 E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
-    E_Return                                        error;
-    S_SettingField                                  setting;
-    size_t                                          fieldSize;
-    std::map<std::string, S_SettingField>::iterator it;
+    E_Return                                                  error;
+    S_SettingField                                            setting;
+    size_t                                                    fieldSize;
+    std::unordered_map<std::string, S_SettingField>::iterator it;
+
+    LOG_DEBUG("Loading setting %s from NVS.\n", krName.c_str());
 
     /* Search for field */
     if (this->_stcPrefs.isKey(krName.c_str())) {

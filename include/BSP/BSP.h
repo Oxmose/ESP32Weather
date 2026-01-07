@@ -30,11 +30,7 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/** @brief Real-Time Task timer identifier. */
-#define HW_RT_TASK_TIMER 0
-
-/** @brief IO Task timer identifier. */
-#define HW_IO_TASK_TIMER 1
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -159,14 +155,6 @@ class HWManager
         static std::string _SHWUID;
         /** @brief Stores the MAC address. */
         static std::string _SMACADDR;
-        /** @brief Stores the CPU cycle in nanoseconds. */
-        static float _SCPUCYCLE;
-        /** @brief Stores the uptime in cpu cycles (low 32 bits). */
-        static uint64_t _STIME_LOW;
-        /** @brief Stores the uptime in cpu cycles (high 32 bits). */
-        static uint64_t _STIME_HIGH;
-        /** @brief Tells if the timer has its first rollback */
-        static bool _TIMERROLL;
 };
 
 

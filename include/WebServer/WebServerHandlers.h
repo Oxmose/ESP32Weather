@@ -23,11 +23,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>           /* Standard maps */
 #include <Errors.h>      /* Errors definitions */
 #include <Arduino.h>     /* Arduino Framework */
 #include <WebServer.h>   /* Web server services */
 #include <PageHandler.h> /* Page Handlers */
+#include <unordered_map> /* Standard maps */
 
 /*******************************************************************************
  * CONSTANTS
@@ -83,12 +83,11 @@ class WebServerHandlers {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief WebServerHandlers constructor.
+         * @brief Destroys a WebServerHandlers.
          *
-         * @details WebServerHandlers constructor. This sets the webserver used
-         * by the handlers to handle requests.
-         *
-         * @param[in] pServer The server to use.
+         * @details Destroys a WebServerHandlers. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         WebServerHandlers(WebServer* pServer) noexcept;
 
@@ -167,7 +166,7 @@ class WebServerHandlers {
         WebServer* _pServer;
 
         /** @brief Stores the registered handlers for the pages. */
-        std::map<std::string, PageHandler*> _pageHandlers;
+        std::unordered_map<std::string, PageHandler*> _pageHandlers;
 };
 
 #endif /* #ifndef __WEB_SERVER_HANDLERS_H__ */

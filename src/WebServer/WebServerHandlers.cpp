@@ -22,8 +22,8 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
+#include <Logger.h>        /* Logger services */
 #include <Arduino.h>       /* Arduino Framework */
 #include <Settings.h>      /* Settings services */
 #include <WebServer.h>     /* Web server services */
@@ -32,10 +32,10 @@
 /* Handlers */
 #include <PageHandler.h>         /* Page handler interface */
 #include <IndexPageHandler.h>    /* Index page handler*/
-#include <MonitorPageHandler.h>  /* Index page handler*/
-#include <SettingsPageHandler.h> /* Index page handler*/
-#include <SensorsPageHandler.h>  /* Index page handler*/
-#include <AboutPageHandler.h>    /* Index page handler*/
+#include <MonitorPageHandler.h>  /* Monitor page handler*/
+#include <SettingsPageHandler.h> /* Settings page handler*/
+#include <SensorsPageHandler.h>  /* Sensors page handler*/
+#include <AboutPageHandler.h>    /* About page handler*/
 
 /* Header file */
 #include <WebServerHandlers.h>
@@ -73,13 +73,13 @@
  * @param[in] HANDLER_CLASS The class of the object used to handle the URL.
  * @param[out] HANDLER_OBJ The object that gets assigned the new handler.
  */
-#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {           \
-    HANDLER_OBJ = new HANDLER_CLASS();                                  \
-    if (nullptr == HANDLER_OBJ) {                                       \
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR, 2);  \
-    }                                                                   \
-    this->_pageHandlers.emplace(URL, HANDLER_OBJ);                      \
-    this->_pServer->on(URL, HandleKnownURL);                            \
+#define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {               \
+    HANDLER_OBJ = new HANDLER_CLASS();                                      \
+    if (nullptr == HANDLER_OBJ) {                                           \
+        PANIC("Failed to allocate a new handler for Web page %s.\n", URL);  \
+    }                                                                       \
+    this->_pageHandlers.emplace(URL, HANDLER_OBJ);                          \
+    this->_pServer->on(URL, HandleKnownURL);                                \
 }
 
 /*******************************************************************************
@@ -113,7 +113,7 @@ WebServerHandlers::WebServerHandlers(WebServer* pServer) noexcept {
     PageHandler* pNewHandler;
 
     if (nullptr != spInstance) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_INIT_ERROR, 0);
+        PANIC("Tried to re-create the Web Server handlers manager.\n");
     }
 
     this->_pServer = pServer;
@@ -130,16 +130,23 @@ WebServerHandlers::WebServerHandlers(WebServer* pServer) noexcept {
 
     /* Set the instance */
     spInstance = this;
+
+    LOG_DEBUG("Web Server Page Handlers manager initialized.\n");
 }
 
 WebServerHandlers::~WebServerHandlers(void) {
-    spInstance = nullptr;
+    PANIC("Tried to destroy the Web Server page handlers manager.\n");
 }
 
 void WebServerHandlers::HandleNotFound(void) noexcept {
     std::string header;
     std::string footer;
     std::string page;
+
+    LOG_DEBUG(
+        "Handling Web page not found: %s\n",
+        spInstance->_pServer->uri().c_str()
+    );
 
     /* Generate the page */
     spInstance->GetPageHeader(header, "Not Found");
@@ -151,14 +158,19 @@ void WebServerHandlers::HandleNotFound(void) noexcept {
 }
 
 void WebServerHandlers::HandleKnownURL(void) noexcept {
-    std::map<std::string, PageHandler*>::const_iterator it;
-    S_HMParamWebServerError                             error;
-    std::string                                         header;
-    std::string                                         footer;
-    std::string                                         page;
-    std::string                                         title;
-    const char*                                         pageUrl;
-    String                                              pageURLStr;
+    std::unordered_map<std::string, PageHandler*>::const_iterator it;
+    std::string                                                   header;
+    std::string                                                   footer;
+    std::string                                                   page;
+    std::string                                                   title;
+    const char*                                                   pageUrl;
+    String                                                        pageURLStr;
+    int32_t                                                       code;
+
+    LOG_DEBUG(
+        "Handling Web page: %s\n",
+        spInstance->_pServer->uri().c_str()
+    );
 
     /* Get the handler */
     pageURLStr = spInstance->_pServer->uri();
@@ -166,13 +178,14 @@ void WebServerHandlers::HandleKnownURL(void) noexcept {
 
     it = spInstance->_pageHandlers.find(pageUrl);
     if (spInstance->_pageHandlers.end() == it) {
-        error.pPageURL = pageUrl;
-        error.pPage = &page;
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_WEB_SERVER_NOT_FOUND, &error);
-        title = "HM Error";
+        spInstance->GetPageHeader(header, "Not Found");
+        spInstance->GetPageFooter(footer);
+        page = "<h1>Not Registered</h1>";
+        code = 500;
     }
     else {
         it->second->Generate(title, page);
+        code = 200;
     }
 
     /* Generate the page */
@@ -180,7 +193,7 @@ void WebServerHandlers::HandleKnownURL(void) noexcept {
     spInstance->GetPageFooter(footer);
 
     /* Send */
-    spInstance->GenericHandler(header + page + footer, 200);
+    spInstance->GenericHandler(header + page + footer, code);
 }
 
 void WebServerHandlers::GetPageHeader(std::string&       rHeaderStr,

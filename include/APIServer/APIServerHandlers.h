@@ -23,11 +23,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>           /* Standard maps */
 #include <Errors.h>      /* Errors definitions */
 #include <Arduino.h>     /* Arduino Framework */
 #include <WebServer.h>   /* Web server services */
 #include <APIHandler.h>  /* API Handlers */
+#include <unordered_map> /* Standard unordered maps */
 
 /*******************************************************************************
  * CONSTANTS
@@ -94,9 +94,11 @@ class APIServerHandlers {
         APIServerHandlers(WebServer* pServer) noexcept;
 
         /**
-         * @brief APIServerHandlers destructor.
+         * @brief Destroys a APIServerHandlers.
          *
-         * @details APIServerHandlers destructor. Releases the used resources.
+         * @details Destroys a APIServerHandlers. Since only one object is
+         * allowed in the firmware, the destructor will generate a critical
+         * error.
          */
         ~APIServerHandlers(void) noexcept;
 
@@ -137,7 +139,7 @@ class APIServerHandlers {
         WebServer* _pServer;
 
         /** @brief Stores the registered handlers for the API. */
-        std::map<std::string, APIHandler*> _apiHandlers;
+        std::unordered_map<std::string, APIHandler*> _apiHandlers;
 };
 
 #endif /* #ifndef __API_SERVER_HANDLERS_H__ */
