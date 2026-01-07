@@ -39,32 +39,12 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-
-/**
- * @brief Reports an event to the health monitor.
- *
- * @details Reports an event to the health monitor. The health monitor instance
- * is retrieved and used to raise the event.
- *
- * @param[in] EVENT The event to raise to the HM.
- * @param[in] PARAM The parameter used with the event.
- */
-#define HM_REPORT_EVENT(MSG, EVENT) {                                     \
-    SystemState::GetInstance()->GetHealthMonitor()->ReportHM(MSG, EVENT); \
-}
+/* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/** @brief Defines the HM Event criticality. */
-typedef enum {
-    /** @brief HM event is an information. */
-    HM_EVENT_INFO,
-    /** @brief HM event is an error. */
-    HM_EVENT_ERROR,
-    /** @brief HM event is critical */
-    HM_EVENT_CRITICAL
-} E_HMEventCriticality;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES

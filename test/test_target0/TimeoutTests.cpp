@@ -18,19 +18,19 @@ void test_timeout_base(void) {
     Timeout timeout(1000000);
     uint32_t i;
 
-    TEST_ASSERT_EQUAL(false, timeout.Check());
+    TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
 
     for (i = 0; i < 1000; ++i) {
         HWManager::DelayExecNs(10000);
-        TEST_ASSERT_EQUAL(false, timeout.Check());
-        timeout.Tick();
+        TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
+        timeout.Notify();
     }
-    TEST_ASSERT_EQUAL(false, timeout.Check());
+    TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
 
     for (i = 0; i < 1000; ++i) {
         HWManager::DelayExecNs(10000);
     }
-    TEST_ASSERT_EQUAL(true, timeout.Check());
+    TEST_ASSERT_EQUAL(true, timeout.HasTimedOut());
 }
 
 void test_timeout_wd(void) {
@@ -40,7 +40,7 @@ void test_timeout_wd(void) {
     valueHandle = 55;
     for (i = 0; i < 500; ++i) {
         HWManager::DelayExecNs(10000000);
-        timeoutWd.Tick();
+        timeoutWd.Notify();
     }
     TEST_ASSERT_EQUAL_UINT32(55, valueHandle);
 

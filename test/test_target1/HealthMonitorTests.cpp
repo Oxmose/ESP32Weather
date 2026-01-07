@@ -83,18 +83,6 @@ static void wdDummy(void) {
 
 }
 
-void test_hm_event_handler(void* pParam) {
-    S_HMParamSettingAccess* pSettingParam;
-
-    pSettingParam = (S_HMParamSettingAccess*)pParam;
-
-    TEST_ASSERT_EQUAL_STRING("TEST_NAME", pSettingParam->kpSettingName);
-    TEST_ASSERT_EQUAL((void*)42, pSettingParam->pSettingBuffer);
-    TEST_ASSERT_EQUAL(555, pSettingParam->settingBufferSize);
-
-    isHmEventTriggered = true;
-}
-
 void test_add_wd(void) {
     HealthMonitor* pHM;
     Timeout timeout(1000000);
@@ -183,25 +171,6 @@ void test_clean(void) {
     valueHandle = 55;
     HWManager::DelayExecNs(1000000000 * 2);
     TEST_ASSERT_EQUAL_UINT32(55, valueHandle);
-}
-
-void test_event(void) {
-    HealthMonitor* pHM;
-    S_HMParamSettingAccess param;
-
-    pHM = SystemState::GetInstance()->GetHealthMonitor();
-    TEST_ASSERT_NOT_NULL(pHM);
-
-    param.kpSettingName = "TEST_NAME";
-    param.pSettingBuffer = (void*)42;
-    param.settingBufferSize = 555;
-
-    pHM->ReportHM(
-        E_HMEvent::HM_EVENT_TEST,
-        (void*)&param
-    );
-
-    TEST_ASSERT_EQUAL(true, isHmEventTriggered);
 }
 
 void test_reporter_standalone(void) {
@@ -621,7 +590,6 @@ void HealthMonitorTests(void) {
     RUN_TEST(test_remove_wd);
     RUN_TEST(test_exec_wd);
     RUN_TEST(test_clean);
-    RUN_TEST(test_event);
     RUN_TEST(test_reporter_standalone);
     RUN_TEST(test_reporter0);
     RUN_TEST(test_reporter1);

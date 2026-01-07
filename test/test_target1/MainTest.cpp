@@ -38,9 +38,6 @@ void setup(void) {
 
     /* Initialize the setting manager */
     spSettings = new Settings();
-    if (nullptr == spSettings) {
-        HM_REPORT_EVENT(E_HMEvent::HM_EVENT_SETTINGS_CREATE, ERR_UNKNOWN);
-    }
     spSystemState->SetSettings(spSettings);
 
     UNITY_BEGIN();
