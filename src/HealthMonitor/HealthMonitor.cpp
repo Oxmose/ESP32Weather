@@ -147,7 +147,7 @@ E_Return HealthMonitor::AddWatchdog(Timeout* pTimeout, uint32_t& rId) noexcept {
                 }
                 catch (std::exception& rExc) {
                     LOG_ERROR(
-                        "Failed to add HM watchdog. Error %s.",
+                        "Failed to add HM watchdog. Error %s.\n",
                         rExc.what()
                     );
                     error = E_Return::ERR_UNKNOWN;
@@ -190,14 +190,14 @@ E_Return HealthMonitor::RemoveWatchdog(const uint32_t kId) noexcept {
             }
             catch (std::exception& rExc) {
                 LOG_ERROR(
-                    "Failed to remove HM watchdog. Error %s.",
+                    "Failed to remove HM watchdog. Error %s.\n",
                     rExc.what()
                 );
                 error = E_Return::ERR_UNKNOWN;
             }
         }
         else {
-            LOG_ERROR("Failed to remove HM watchdog. No such ID");
+            LOG_ERROR("Failed to remove HM watchdog. No such ID.\n");
             error = E_Return::ERR_NO_SUCH_ID;
         }
 
@@ -231,7 +231,7 @@ E_Return HealthMonitor::AddReporter(HMReporter* pReporter,
             }
             catch (std::exception& rExc) {
                 LOG_ERROR(
-                    "Failed to add HM reporter. Error %s.",
+                    "Failed to add HM reporter. Error %s.\n",
                     rExc.what()
                 );
                 error = E_Return::ERR_UNKNOWN;
@@ -269,7 +269,7 @@ E_Return HealthMonitor::RemoveReporter(const uint32_t kId) noexcept {
             }
             catch (std::exception& rExc) {
                 LOG_ERROR(
-                    "Failed to remove HM reporter. Error %s.",
+                    "Failed to remove HM reporter. Error %s.\n",
                     rExc.what()
                 );
                 error = E_Return::ERR_UNKNOWN;

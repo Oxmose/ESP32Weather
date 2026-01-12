@@ -23,12 +23,12 @@
  ******************************************************************************/
 
 /* Included headers */
-#include <map>             /* Settings map */
 #include <string>          /* Standard strings */
 #include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
+#include <Storage.h>       /* Preference storage */
 #include <Arduino.h>       /* Arduino framework */
-#include <Preferences.h>   /* Preference storage */
+#include <unordered_map>   /* Settings map */
 #include <HealthMonitor.h> /* HM services */
 
 /* Header file */
@@ -86,12 +86,12 @@
 
 Settings::Settings(void) noexcept {
     /* Start the settings preference */
-    if (this->_stcPrefs.begin(SETTINGS_PREF_NAME, false)) {
-        /* Allocate the lock */
-        this->_lock = xSemaphoreCreateMutex();
-        if (nullptr == this->_lock) {
-            PANIC("Failed to create the Settings lock.\n");
-        }
+    this->_pStorage = SystemState::GetInstance()->GetStorage();
+
+    /* Create the lock */
+    this->_lock = xSemaphoreCreateMutex();
+    if (nullptr == this->_lock) {
+        PANIC("Failed to create the Settings lock.\n");
     }
 
     /* Initializes the default settings */
@@ -121,7 +121,7 @@ E_Return Settings::GetSettings(const std::string& krName,
 
         /* First check, if not exists, try to load from storage */
         if (this->_cache.end() == it &&
-            E_Return::NO_ERROR == LoadFromNVS(krName)) {
+            E_Return::NO_ERROR == LoadFromStorage()) {
                 LOG_DEBUG("Loaded setting %s from NVS\n", krName.c_str());
                 it = this->_cache.find(krName);
         }
@@ -275,30 +275,60 @@ E_Return Settings::SetSettings(const std::string& krName,
 
     return error;
 }
-
+#include <BSP.h>
 E_Return Settings::Commit(void) noexcept {
     std::unordered_map<std::string, S_SettingField>::const_iterator it;
     E_Return                                                        error;
-    size_t                                                          saveLen;
+    FsFile                                                          file;
 
     LOG_DEBUG("Commiting settings.\n");
 
     error = E_Return::NO_ERROR;
     if (pdPASS == xSemaphoreTake(this->_lock, SETTINGS_LOCK_TIMEOUT_TICKS)) {
 
-        /* For all items in the cache, write to the preference */
-        for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {
-            saveLen = this->_stcPrefs.putBytes(
-                it->first.c_str(),
-                it->second.pValue,
-                it->second.fieldSize
-            );
+        /* Clear the preference file */
+        this->_pStorage->Remove(SETTINGS_PREF_NAME);
 
-            if (saveLen != it->second.fieldSize) {
-                LOG_ERROR("Failed to save setting: %s.\n", it->first.c_str());
+        /* Create the file */
+        file = this->_pStorage->Open(SETTINGS_PREF_NAME, O_RDWR | O_CREAT);
+        if (file.isOpen()) {
+            /* For all items in the cache, write to the preference */
+            for (it = this->_cache.begin(); this->_cache.end() != it; ++it) {
+                /* Write name */
+                if (file.write(it->first.c_str(), it->first.size() + 1) !=
+                    it->first.size() + 1) {
+                    LOG_ERROR("Failed to write setting name.\n");
+                    error = E_Return::ERR_SETTING_COMMIT_FAILURE;
+                    break;
+                }
 
-                error = E_Return::ERR_SETTING_COMMIT_FAILURE;
+                /* Write size */
+                if (file.write(&it->second.fieldSize, sizeof(size_t)) !=
+                    sizeof(size_t)) {
+                    LOG_ERROR("Failed to write setting size.\n");
+                    error = E_Return::ERR_SETTING_COMMIT_FAILURE;
+                    break;
+                }
+
+                /* Write content */
+                if (file.write(it->second.pValue, it->second.fieldSize) !=
+                    it->second.fieldSize) {
+                    LOG_ERROR("Failed to write setting value.\n");
+                    error = E_Return::ERR_SETTING_COMMIT_FAILURE;
+                    break;
+                }
             }
+
+            if (!file.close()) {
+                PANIC("Failed to close settings file.\n");
+            }
+        }
+        else {
+            LOG_ERROR(
+                "Failed to open setting file. Error %d\n",
+                file.getError()
+            );
+            error = E_Return::ERR_SETTING_FILE_ERROR;
         }
 
         if (pdPASS != xSemaphoreGive(this->_lock)) {
@@ -343,64 +373,111 @@ E_Return Settings::ClearCache(void) noexcept {
     return error;
 }
 
-E_Return Settings::LoadFromNVS(const std::string& krName) noexcept {
-    E_Return                                                  error;
-    S_SettingField                                            setting;
-    size_t                                                    fieldSize;
-    std::unordered_map<std::string, S_SettingField>::iterator it;
+E_Return Settings::LoadFromStorage(void) noexcept {
+    E_Return                                                        error;
+    S_SettingField                                                  setting;
+    size_t                                                          fieldSize;
+    int32_t                                                         readSize;
+    FsFile                                                          file;
+    std::unordered_map<std::string, S_SettingField>::const_iterator it;
+    std::string                                                     name;
 
-    LOG_DEBUG("Loading setting %s from NVS.\n", krName.c_str());
+    LOG_DEBUG("Loading setting from storage.\n");
 
-    /* Search for field */
-    if (this->_stcPrefs.isKey(krName.c_str())) {
-        /* Get the field */
-        fieldSize = this->_stcPrefs.getBytesLength(krName.c_str());
-        setting.pValue = new uint8_t[fieldSize];
-        setting.fieldSize = fieldSize;
+    file = this->_pStorage->Open(SETTINGS_PREF_NAME, O_RDONLY);
+    if (file.isOpen()) {
+        error = E_Return::NO_ERROR;
 
-        if (nullptr != setting.pValue) {
-            if (this->_stcPrefs.getBytes(
-                    krName.c_str(),
-                    setting.pValue,
-                    fieldSize) == fieldSize) {
-                try {
-                    /* Get the setting and remove it exists */
-                    it = this->_cache.find(krName);
-                    if (this->_cache.end() != it) {
-                        /* Release memory and clear entry */
-                        delete[] it->second.pValue;
-                        this->_cache.erase(krName);
-                    }
+        while (file.available()) {
+            name = "";
+            /* Read name */
+            name = GetSettingName(file);
+            if (0 == name.size()) {
+                LOG_ERROR("Failed to read setting name from storage.\n");
+                error = E_Return::ERR_SETTING_INVALID;
+                break;
+            }
+            LOG_DEBUG("Loading %s from storage.\n", name.c_str());
 
-                    this->_cache.emplace(
-                        std::make_pair(krName, setting)
-                    );
+            /* Read size */
+            readSize = file.read(&fieldSize, sizeof(size_t));
+            if (sizeof(size_t) != readSize) {
+                LOG_ERROR("Failed to read setting size from storage.\n");
+                error = E_Return::ERR_SETTING_INVALID;
+                break;
+            }
+            setting.fieldSize = fieldSize;
+            LOG_DEBUG("\t Size %u\n", fieldSize);
 
-                    error = E_Return::NO_ERROR;
-                }
-                catch (std::exception& rExc) {
-
-                    LOG_ERROR("Failed to load setting %s.\n",krName.c_str());
+            /* Read value */
+            setting.pValue = new uint8_t[fieldSize];
+            if (nullptr != setting.pValue) {
+                readSize = file.read(setting.pValue, fieldSize);
+                if (fieldSize != readSize) {
+                    LOG_ERROR("Failed to load setting %s.\n",name.c_str());
                     delete[] setting.pValue;
-
-                    error = E_Return::ERR_MEMORY;
+                    error = E_Return::ERR_SETTING_INVALID;
+                    break;
                 }
             }
             else {
-                LOG_ERROR("Failed to load setting %s.\n",krName.c_str());
-                delete[] setting.pValue;
-                error = E_Return::ERR_SETTING_NOT_FOUND;
+                LOG_ERROR("Failed to allocate setting %s.\n", name.c_str());
+                error = E_Return::ERR_MEMORY;
+                break;
             }
-        }
-        else {
-            LOG_ERROR("Failed to allocate setting %s.\n", krName.c_str());
-            error = E_Return::ERR_MEMORY;
+
+            /* Add to cache */
+             try {
+                /* Get the setting and remove it exists */
+                it = this->_cache.find(name);
+                if (this->_cache.end() != it) {
+                    /* Release memory and clear entry */
+                    delete[] it->second.pValue;
+                    this->_cache.erase(it);
+                }
+
+                this->_cache.emplace(std::make_pair(name, setting));
+
+                error = E_Return::NO_ERROR;
+            }
+            catch (std::exception& rExc) {
+
+                LOG_ERROR("Failed to load setting %s.\n",name.c_str());
+                delete[] setting.pValue;
+
+                error = E_Return::ERR_MEMORY;
+                break;
+            }
         }
     }
     else {
-        LOG_ERROR("Failed to find setting %s.\n", krName.c_str());
-        error = E_Return::ERR_SETTING_NOT_FOUND;
+        error = E_Return::ERR_SETTING_FILE_ERROR;
     }
 
     return error;
+}
+
+std::string Settings::GetSettingName(FsFile& rFile) const noexcept {
+    std::string retStr;
+    int32_t     byte;
+    bool        readTerminator;
+
+    readTerminator = false;
+    while(-1 != (byte = rFile.read())) {
+        /* Check if null terminator */
+        if (0 == byte) {
+            readTerminator = true;
+            break;
+        }
+
+        /* Add to string */
+        retStr += (char)byte;
+    }
+
+    /* If no terminator is read error */
+    if (!readTerminator) {
+        retStr.clear();
+    }
+
+    return retStr;
 }

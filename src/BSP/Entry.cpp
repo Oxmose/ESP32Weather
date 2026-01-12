@@ -28,6 +28,7 @@
 #include <IOTask.h>          /* IO Task manager */
 #include <Arduino.h>         /* Arduino library */
 #include <version.h>         /* Versionning info */
+#include <Storage.h>         /* Storage manager */
 #include <Settings.h>        /* Settings services */
 #include <WiFiModule.h>      /* WiFi Module driver */
 #include <IOLedManager.h>    /* IO Led manager */
@@ -84,6 +85,8 @@ static Settings* spSettings;
 static IOButtonManager* spBtnManager;
 /** @brief Stores the IO LED manager instance. */
 static IOLedManager* spLedManager;
+/** @brief Stores the Storage Manager instance.  */
+static Storage* spStorage;
 /** @brief Stores the System State instance. */
 static SystemState* spSystemState;
 /** @brief Stores the Rest Manager instance. */
@@ -135,6 +138,10 @@ void setup(void) {
     }
 
     /* Init system objects */
+    spStorage = new Storage();
+    if (nullptr == spStorage) {
+        PANIC("Failed to instanciate the Storage Manager.\n");
+    }
     spHealthMon = new HealthMonitor();
     if (nullptr == spHealthMon) {
         PANIC("Failed to instanciate the Health Monitor.\n");
@@ -156,9 +163,6 @@ void setup(void) {
         PANIC("Failed to instanciate the IO Led Manager.\n");
     }
 
-    /* Initialize the WiFi */
-    StartWiFi();
-
     /* Setup reset */
     spResetManager = new ResetManager();
     error = spBtnManager->AddAction(spResetManager, resetActionId);
@@ -171,6 +175,9 @@ void setup(void) {
     if (nullptr == spIOTask) {
         PANIC("Failed to instanciate the IO Task.\n");
     }
+
+    /* Initialize the WiFi */
+    StartWiFi();
 }
 
 void loop(void) {

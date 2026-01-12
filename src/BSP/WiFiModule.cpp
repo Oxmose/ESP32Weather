@@ -78,7 +78,7 @@
 #define WIFI_MODULE_HM_REPORT_NAME "HM_WIFIMODULE"
 
 /** @brief Mininal accepted RSSI */
-#define WIFI_MIN_RSSI 10
+#define WIFI_MIN_RSSI -80
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -105,7 +105,10 @@
     ERROR = SETTINGS->GetSettings(NAME, (uint8_t*)BUFFER, SIZE);             \
     if (E_Return::NO_ERROR != ERROR) {                                       \
         if (E_Return::ERR_SETTING_NOT_FOUND == ERROR) {                      \
-            LOG_ERROR("Failed to get setting %s. Trying to get default.\n"); \
+            LOG_ERROR(                                                       \
+                "Failed to get setting %s. Trying to get default.\n",        \
+                NAME                                                         \
+            );                                                               \
             ERROR = SETTINGS->GetDefault(NAME, (uint8_t*)BUFFER, SIZE);      \
             if (E_Return::NO_ERROR != ERROR) {                               \
                 PANIC("Failed to get setting %s. Error: %d\n", NAME, ERROR); \
@@ -445,6 +448,7 @@ E_Return WiFiModule::SetConfiguration(const S_WiFiConfigRequest& krConfig)
 noexcept {
     E_Return  result;
     Settings* pSettings;
+    uint8_t   buffer[64];
 
     LOG_DEBUG("Setting new WiFi configuration.\n");
     LOG_DEBUG(
@@ -489,16 +493,24 @@ noexcept {
             result,
             pSettings
         );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(buffer, krConfig.ssid.first.c_str(), krConfig.ssid.first.size());
         SET_SETTING(
             SETTING_NODE_SSID,
-            krConfig.ssid.first.c_str(),
+            buffer,
             SSID_SIZE_BYTES,
             result,
             pSettings
         );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(
+            buffer,
+            krConfig.password.first.c_str(),
+            krConfig.password.first.size()
+        );
         SET_SETTING(
             SETTING_NODE_PASS,
-            krConfig.password.first.c_str(),
+            buffer,
             PASS_SIZE_BYTES,
             result,
             pSettings
@@ -510,37 +522,63 @@ noexcept {
             result,
             pSettings
         );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(buffer, krConfig.ip.first.c_str(), krConfig.ip.first.size());
         SET_SETTING(
             SETTING_NODE_ST_IP,
-            krConfig.ip.first.c_str(),
+            buffer,
             IP_ADDR_SIZE_BYTES,
             result,
             pSettings
+        );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(
+            buffer,
+            krConfig.gateway.first.c_str(),
+            krConfig.gateway.first.size()
         );
         SET_SETTING(
             SETTING_NODE_ST_GATE,
-            krConfig.gateway.first.c_str(),
+            buffer,
             IP_ADDR_SIZE_BYTES,
             result,
             pSettings
+        );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(
+            buffer,
+            krConfig.subnet.first.c_str(),
+            krConfig.subnet.first.size()
         );
         SET_SETTING(
             SETTING_NODE_ST_SUBNET,
-            krConfig.subnet.first.c_str(),
+            buffer,
             IP_ADDR_SIZE_BYTES,
             result,
             pSettings
+        );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(
+            buffer,
+            krConfig.primaryDNS.first.c_str(),
+            krConfig.primaryDNS.first.size()
         );
         SET_SETTING(
             SETTING_NODE_ST_PDNS,
-            krConfig.primaryDNS.first.c_str(),
+            buffer,
             IP_ADDR_SIZE_BYTES,
             result,
             pSettings
         );
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(
+            buffer,
+            krConfig.secondaryDNS.first.c_str(),
+            krConfig.secondaryDNS.first.size()
+        );
         SET_SETTING(
             SETTING_NODE_ST_SDNS,
-            krConfig.secondaryDNS.first.c_str(),
+            buffer,
             IP_ADDR_SIZE_BYTES,
             result,
             pSettings
@@ -834,7 +872,6 @@ bool WiFiModuleHealthReporter::PerformCheck(void) noexcept {
     bool checkResult;
 
     checkResult = true;
-
     if (this->_pModule->_isStarted && !this->_pModule->_config.isAP) {
 
         /* Check WiFi status */

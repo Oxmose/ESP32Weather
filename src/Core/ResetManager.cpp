@@ -25,14 +25,13 @@
 #include <BSP.h>             /* Hardware layer */
 #include <cstdint>           /* Standard Integer Definitions */
 #include <Logger.h>          /* Logger service */
-#include <nvs_flash.h>       /* NVS formating */
+#include <Storage.h>         /* Storage formating */
 #include <SystemState.h>     /* System state manager */
 #include <IOLedManager.h>    /* LED Manager */
 #include <IOButtonManager.h> /* IO Button Action interface */
 
 /* Header file */
 #include <ResetManager.h>
-
 
 /*******************************************************************************
  * CONSTANTS
@@ -236,7 +235,7 @@ void ResetManager::Execute(
 }
 
 void ResetManager::PerformReset(void) const noexcept {
-    nvs_flash_erase();
+    SystemState::GetInstance()->GetStorage()->Format();
     LOG_INFO("Formated persistent memory.\n");
     HWManager::Reboot();
 }

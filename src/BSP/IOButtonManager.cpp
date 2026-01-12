@@ -210,7 +210,7 @@ E_Return IOButtonManager::AddAction(IOButtonManagerAction* pAction,
             }
             catch (std::exception& rExc) {
                 LOG_ERROR(
-                    "Error while adding IO Button Manager action. Error: %s.",
+                    "Error while adding IO Button action. Error: %s.\n",
                     rExc.what()
                 );
                 error = E_Return::ERR_UNKNOWN;
@@ -218,7 +218,7 @@ E_Return IOButtonManager::AddAction(IOButtonManagerAction* pAction,
         }
         else {
             LOG_ERROR(
-                "Error while adding IO Button Manager action. Error: %s.",
+                "Error while adding IO Button action. Error: %s.\n",
                 "Not enough memory"
             );
             error = E_Return::ERR_MEMORY;
@@ -251,7 +251,7 @@ E_Return IOButtonManager::RemoveAction(const uint32_t krActionId) noexcept {
             }
             catch (std::exception& rExc) {
                 LOG_ERROR(
-                    "Error while removing IO Button Manager action. Error: %s.",
+                    "Error while removing IO Button action. Error: %s.\n",
                     rExc.what()
                 );
                 error = E_Return::ERR_UNKNOWN;
@@ -259,7 +259,7 @@ E_Return IOButtonManager::RemoveAction(const uint32_t krActionId) noexcept {
         }
         else {
             LOG_ERROR(
-                "Error while removing IO Button Manager action. Error: %s.",
+                "Error while removing IO Button action. Error: %s.\n",
                 "No such ID"
             );
             error = E_Return::ERR_NO_SUCH_ID;

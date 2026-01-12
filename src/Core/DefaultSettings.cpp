@@ -20,10 +20,9 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <map>        /* Standard hashmap */
-#include <cstdint>    /* Standard int types */
-#include <Settings.h> /* Settings */
-
+#include <cstdint>       /* Standard int types */
+#include <Settings.h>    /* Settings */
+#include <unordered_map> /* Settings map */
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
