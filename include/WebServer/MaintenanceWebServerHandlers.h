@@ -1,33 +1,31 @@
 /*******************************************************************************
- * @file WebServerHandlers.h
+ * @file MaintenanceWebServerHandlers.h
  *
- * @see WebServerHandlers.cpp
+ * @see MaintenanceWebServerHandlers.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 15/12/2025
+ * @date 12/01/2026
  *
  * @version 1.0
  *
- * @brief Web Server URL handlers.
+ * @brief Maintenance Web Server URL handlers.
  *
- * @details Web Server URL handlers. This file defines all the handlers used
- * for the web server.
+ * @details Maintenance Web Server URL handlers. This file defines all the
+ * handlers used for the maintenance web server.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __WEB_SERVER_HANDLERS_H__
-#define __WEB_SERVER_HANDLERS_H__
+#ifndef __MAINTENANCE_WEB_SERVER_HANDLERS_H__
+#define __MAINTENANCE_WEB_SERVER_HANDLERS_H__
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <Errors.h>      /* Errors definitions */
-#include <Arduino.h>     /* Arduino Framework */
+#include <string>        /* Standard strings */
+#include <cstdint>       /* Standard integer definitions */
 #include <WebServer.h>   /* Web server services */
-#include <PageHandler.h> /* Page Handlers */
-#include <unordered_map> /* Standard maps */
 
 /*******************************************************************************
  * CONSTANTS
@@ -74,71 +72,30 @@
  ******************************************************************************/
 
  /**
- * @brief The WebServerHandlers class.
+ * @brief The MaintenanceWebServerHandlers class.
  *
- * @details The WebServerHandlers class provides the necessary functions to
- * handle URL requests and respond through the web servers.
+ * @details The MaintenanceWebServerHandlers class provides the necessary
+ * functions to handle URL requests and respond through the maintenance web
+ * servers.
  */
-class WebServerHandlers {
+class MaintenanceWebServerHandlers {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Creates a WebServerHandlers.
+         * @brief Destroys a MaintenanceWebServerHandlers.
          *
-         * @details Creates a WebServerHandlers. Alocates the resources used
-         * by the handlers.
+         * @details Destroys a MaintenanceWebServerHandlers. Since only one
+         * object is allowed in the firmware, the destructor will generate a
+         * critical error.
          */
-        WebServerHandlers(WebServer* pServer) noexcept;
+        MaintenanceWebServerHandlers(WebServer* pServer) noexcept;
 
         /**
-         * @brief Destroys a WebServerHandlers.
+         * @brief WebServerHandlers destructor.
          *
-         * @details Destroys a WebServerHandlers. Since only one object is
-         * allowed in the firmware, the destructor will generate a critical
-         * error.
+         * @details WebServerHandlers destructor. Releases the used resources.
          */
-        ~WebServerHandlers(void) noexcept;
-
-        /**
-         * @brief Returns the server used by the handlers.
-         *
-         * @details Returns the server used by the handlers.
-         *
-         * @return The function returns the server used by the handlers.
-         */
-        WebServer* GetServer(void) const noexcept;
-
-        /**
-         * @brief Creates the page header.
-         *
-         * @details Creates the page header. This will fill the string buffer
-         * and use the appropriate page title.
-         *
-         * @param[out] rHeaderStr The string buffer that receives the header.
-         * @param[in] krTitle The page title to set.
-         */
-        void GetPageHeader(std::string&       rHeaderStr,
-                           const std::string& krTitle) const noexcept;
-        /**
-         * @brief Creates the page footer.
-         *
-         * @details Creates the page footer. This will fill the string buffer.
-         *
-         * @param[out] rFooterStr The string buffer that receives the footer.
-         */
-        void GetPageFooter(std::string& rFooterStr) const noexcept;
-
-        /**
-         * @brief Generic page handler.
-         *
-         * @details Generic page handler. The handler will send the page
-         * to the requesting server.
-         *
-         * @param[in] kpPage The page to send.
-         * @param[in] kCode The code to respond.
-         */
-        void GenericHandler(const std::string& krPage,
-                            const int32_t      kCode) noexcept;
+        ~MaintenanceWebServerHandlers(void) noexcept;
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -155,12 +112,41 @@ class WebServerHandlers {
         static void HandleNotFound(void) noexcept;
 
         /**
-         * @brief Handles the registered URLs.
+         * @brief Handles the index URL.
          *
-         * @details Handles the registered URLs. If the URL is not found in the
-         * handlers table, the HM is notified.
+         * @details Handles the index URL. Provides the information in
+         * maintenance mode.
          */
-        static void HandleKnownURL(void) noexcept;
+        static void HandleIndex(void) noexcept;
+
+        /**
+         * @brief Handles the reboot URL.
+         *
+         * @details Handles the reboot URL. Sets the new execution mode and
+         * reboots.
+         */
+        static void HandleReboot(void) noexcept;
+
+        /**
+         * @brief Creates the page header.
+         *
+         * @details Creates the page header. This will fill the string buffer
+         * and use the appropriate page title.
+         *
+         * @param[out] rHeaderStr The string buffer that receives the header.
+         * @param[in] krTitle The page title to set.
+         */
+        void GetPageHeader(std::string&       rHeaderStr,
+                           const std::string& krTitle) const noexcept;
+
+        /**
+         * @brief Creates the page footer.
+         *
+         * @details Creates the page footer. This will fill the string buffer.
+         *
+         * @param[out] rFooterStr The string buffer that receives the footer.
+         */
+        void GetPageFooter(std::string& rFooterStr) const noexcept;
 
         /**
          * @brief Creates the page CSS section.
@@ -172,11 +158,20 @@ class WebServerHandlers {
          */
         void GeneratePageCSS(std::string& rHeaderStr) const noexcept;
 
+        /**
+         * @brief Generic page handler.
+         *
+         * @details Generic page handler. The handler will send the page
+         * to the requesting server.
+         *
+         * @param[in] kpPage The page to send.
+         * @param[in] kCode The code to respond.
+         */
+        void GenericHandler(const std::string& krPage,
+                            const int32_t      kCode) noexcept;
+
         /** @brief Stores the WebServer used by the handlers. */
         WebServer* _pServer;
-
-        /** @brief Stores the registered handlers for the pages. */
-        std::unordered_map<std::string, PageHandler*> _pageHandlers;
 };
 
-#endif /* #ifndef __WEB_SERVER_HANDLERS_H__ */
+#endif /* #ifndef __MAINTENANCE_WEB_SERVER_HANDLERS_H__ */

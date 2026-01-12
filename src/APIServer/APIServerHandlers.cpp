@@ -27,7 +27,6 @@
 #include <Arduino.h>       /* Arduino Framework */
 #include <Settings.h>      /* Settings services */
 #include <WebServer.h>     /* Web server services */
-#include <HealthMonitor.h> /* HM Services */
 
 /* Handlers */
 #include <APIHandler.h>            /* API handler interface */

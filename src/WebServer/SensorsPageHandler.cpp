@@ -73,6 +73,10 @@
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+SensorsPageHandler::SensorsPageHandler(WebServerHandlers* pHandlers) noexcept :
+PageHandler(pHandlers) {
+}
+
 SensorsPageHandler::~SensorsPageHandler(void) noexcept {
     PANIC("Tried to destroy the Sensors page handler.\n");
 }

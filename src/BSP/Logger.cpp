@@ -20,9 +20,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <BSP.h>     /* Hardware services*/
-#include <cstdint>   /* Standard Int Types */
-#include <Arduino.h> /* Serial service */
+#include <BSP.h>         /* Hardware services*/
+#include <cstdint>       /* Standard Int Types */
+#include <Arduino.h>     /* Serial service */
+#include <SystemState.h> /* System state services */
+#include <ModeManager.h> /* Mode management */
 
 /* Header file */
 #include <Logger.h>
@@ -100,26 +102,28 @@ void Logger::LogLevel(const E_LogLevel kLevel,
                       const char*      pkStr,
                       ...) noexcept
 {
-    va_list argptr;
-    size_t  len;
-    char    pTag[32];
+    va_list      argptr;
+    size_t       len;
+    char         pTag[32];
+    SystemState* pSysState;
+    ModeManager* pModeMgr;
 
     if (_SISINIT && _SLOGLEVEL >= kLevel) {
         /* Print TAG */
         if (LOG_LEVEL_CRITICAL == kLevel) {
-            memcpy(pTag, "[CRIT - %16llu] %s:%d -\0", 17);
+            memcpy(pTag, "[CRIT  - %16llu] %s:%d -\0", 26);
         }
         else if (LOG_LEVEL_ERROR == kLevel) {
             memcpy(pTag, "[ERROR - %16llu] %s:%d -\0", 26);
         }
         else if (LOG_LEVEL_INFO == kLevel) {
-            memcpy(pTag, "[INFO - %16llu]\0", 17);
+            memcpy(pTag, "[INFO  - %16llu]\0", 17);
         }
         else if (LOG_LEVEL_DEBUG == kLevel) {
-            memcpy(pTag, "[DBG -  %16llu] %s:%d -\0", 24);
+            memcpy(pTag, "[DBG   -  %16llu] %s:%d -\0", 26);
         }
         else {
-            memcpy(pTag, "[UNKN - %16llu] %s:%d -\0", 25);
+            memcpy(pTag, "[UNKN  - %16llu] %s:%d -\0", 26);
         }
 
         /* Setup message */
@@ -149,6 +153,15 @@ void Logger::LogLevel(const E_LogLevel kLevel,
 
         /* On critical, reboot */
         if (LOG_LEVEL_CRITICAL == kLevel) {
+            /* Get the system state */
+            pSysState = SystemState::GetInstance();
+            if (nullptr != pSysState) {
+                /* Set the maintenance mode */
+                pModeMgr = pSysState->GetModeManager();
+                if (nullptr != pModeMgr) {
+                    pModeMgr->SetMode(E_Mode::MODE_MAINTENANCE);
+                }
+            }
             HWManager::Reboot();
         }
     }

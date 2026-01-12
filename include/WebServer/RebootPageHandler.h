@@ -1,24 +1,24 @@
 /*******************************************************************************
- * @file SettingsPageHandler.h
+ * @file RebootHandler.h
  *
- * @see SettingsPageHandler.cpp
+ * @see RebootHandler.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 19/12/2025
+ * @date 12/01/2026
  *
  * @version 1.0
  *
- * @brief Settings page handler.
+ * @brief Reboot page handler.
  *
- * @details Settings page handler. This file defines the settings page handler
- * used to generate the settings page for the web server.
+ * @details Reboot page handler. This file defines the reboot page handler
+ * used to generate the reboot page for the web server.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __SETTINGS_PAGE_HANDLER_H__
-#define __SETTINGS_PAGE_HANDLER_H__
+#ifndef __REBOOT_PAGE_HANDLER_H__
+#define __REBOOT_PAGE_HANDLER_H__
 
 /*******************************************************************************
  * INCLUDES
@@ -72,39 +72,39 @@
  ******************************************************************************/
 
  /**
- * @brief The SettingsPageHandler class.
+ * @brief The RebootPageHandler class.
  *
- * @details The SettingsPageHandler class provides the necessary functions to
- * handle settings page requests.
+ * @details The RebootPageHandler class provides the necessary functions to
+ * handle reboot page requests.
  */
-class SettingsPageHandler : public PageHandler {
+class RebootPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Creates a SettingsPageHandler.
+         * @brief Creates a RebootPageHandler.
          *
-         * @details Creates a SettingsPageHandler. Allocates the resources for
+         * @details Creates a RebootPageHandler. Allocates the resources for
          * the handler.
          */
-        SettingsPageHandler(WebServerHandlers* pHandlers) noexcept;
+        RebootPageHandler(WebServerHandlers* pHandlers) noexcept;
 
         /**
-         * @brief Destroys a SettingsPageHandler.
+         * @brief Destroys a RebootPageHandler.
          *
-         * @details Destroys a SettingsPageHandler. Since only one object is
+         * @details Destroys a RebootPageHandler. Since only one object is
          * allowed in the firmware, the destructor will generate a critical
          * error.
          */
-        virtual ~SettingsPageHandler(void) noexcept;
+        virtual ~RebootPageHandler(void) noexcept;
 
         /**
-         * @brief Generates the settings page.
+         * @brief Generates the reboot page.
          *
-         * @details Generate the settings page. The function generates the
-         * settings page and title based on the current state of the system.
+         * @details Generate the reboot page. The function generates the
+         * reboot page and title based on the current state of the system.
          *
-         * @param[out] rPageTitle The title to give to the settings page.
-         * @param[out] rPageBody The body to give to the settings page.
+         * @param[out] rPageTitle The title to give to the reboot page.
+         * @param[out] rPageBody The body to give to the reboot page.
          *
          */
         virtual void Generate(std::string& rPageTitle,
@@ -116,15 +116,7 @@ class SettingsPageHandler : public PageHandler {
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /**
-         * @brief Generates the networks settings.
-         *
-         * @details Generates the networks settings. The content is added to the
-         * page buffer given as parameter.
-         *
-         * @param[out] rPageBuffer The page buffer to fill.
-         */
-        void GenerateNetworkSettings(std::string& rPageBuffer) const noexcept;
+        /* None */
 };
 
-#endif /* #ifndef __SETTINGS_PAGE_HANDLER_H__ */
+#endif /* #ifndef __REBOT_PAGE_HANDLER_H__ */

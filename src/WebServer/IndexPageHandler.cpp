@@ -77,6 +77,11 @@
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+IndexPageHandler::IndexPageHandler(WebServerHandlers* pHandlers) noexcept :
+PageHandler(pHandlers) {
+}
+
+
 IndexPageHandler::~IndexPageHandler(void) noexcept {
     PANIC("Tried to destroy the Index page handler.\n");
 }

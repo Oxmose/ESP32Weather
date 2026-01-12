@@ -21,8 +21,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>   /* Standard strings */
-#include <Errors.h> /* Error definitions */
+#include <string>              /* Standard strings */
+#include <Errors.h>            /* Error definitions */
+
+/* Forward declarations */
+class WebServerHandlers;
 
 /*******************************************************************************
  * CONSTANTS
@@ -78,6 +81,16 @@ class PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
+         * @brief PageHandler constructor.
+         *
+         * @details PageHandler constructor. The page handler should implement
+         * this method.
+         */
+        PageHandler(WebServerHandlers* pHandlers) noexcept {
+            this->_pHandlers = pHandlers;
+        }
+
+        /**
          * @brief PageHandler destructor.
          *
          * @details PageHandler destructor. The page handler should implement
@@ -98,13 +111,25 @@ class PageHandler {
         virtual void Generate(std::string& rPageTitle,
                               std::string& rPageBody) noexcept = 0;
 
+        /**
+         * @brief Returns the handlers with wich the page was generated.
+         *
+         * @details Returns the handlers with wich the page was generated.
+         *
+         * @return The function returns the handlers with wich the page was
+         * generated.
+         */
+        virtual WebServerHandlers* GetHandlers(void) const noexcept {
+            return this->_pHandlers;
+        }
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /* None */
+        WebServerHandlers* _pHandlers;
 };
 
 #endif /* #ifndef __PAGE_HANDLER_H__ */

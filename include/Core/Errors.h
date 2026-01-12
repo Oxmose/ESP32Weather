@@ -86,6 +86,10 @@ typedef enum {
     ERR_WIFI_INVALID_PORTS,
     /** @brief Error when an action lock timed out. */
     ERR_BTN_ACTION_TIMEOUT,
+    /** @brief Error when writing the execution mode file. */
+    ERR_MODE_FILE_WRITE,
+    /** @brief Error when opening the execution mode file. */
+    ERR_MODE_FILE_OPEN,
     /** @brief Unknown error. */
     ERR_UNKNOWN
 } E_Return;

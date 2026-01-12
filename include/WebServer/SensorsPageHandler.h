@@ -81,6 +81,14 @@ class SensorsPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
+         * @brief Creates a SensorsPageHandler.
+         *
+         * @details Creates a SensorsPageHandler. Allocates the resources for
+         * the handler.
+         */
+        SensorsPageHandler(WebServerHandlers* pHandlers) noexcept;
+
+        /**
          * @brief Destroys a SensorsPageHandler.
          *
          * @details Destroys a SensorsPageHandler. Since only one object is

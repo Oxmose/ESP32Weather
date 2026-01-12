@@ -116,6 +116,10 @@ void SystemState::SetStorage(Storage* pStorage) noexcept {
     this->_pStorage = pStorage;
 }
 
+void SystemState::SetModeManager(ModeManager* pModeManager) noexcept {
+    this->_pModeManager = pModeManager;
+}
+
 WiFiModule* SystemState::GetWiFiModule(void) const noexcept {
     return this->_pWiFiModule;
 }
@@ -138,6 +142,10 @@ IOLedManager* SystemState::GetIOLedManager(void) const noexcept {
 
 Storage* SystemState::GetStorage(void) const noexcept {
     return this->_pStorage;
+}
+
+ModeManager* SystemState::GetModeManager(void) const noexcept {
+    return this->_pModeManager;
 }
 
 SystemState::SystemState(void) noexcept {
