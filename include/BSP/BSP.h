@@ -23,6 +23,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
+#include <SPI.h>     /* SPI bus */
 #include <string>    /* Standard string */
 #include <cstdint>   /* Standard int types */
 #include <Arduino.h> /* Arduino Framework */
@@ -51,7 +52,15 @@ typedef enum {
     /** @brief Reset button GPIO */
     GPIO_BTN_RESET = GPIO_NUM_4,
     /** @brief RGB led GPIO */
-    GPIO_LED_INFO = BUILTIN_LED
+    GPIO_LED_INFO = BUILTIN_LED,
+    /** @brief SPI SD Card CS Pin */
+    GPIO_SPI_CS_SD = GPIO_NUM_15,
+    /** @brief SPI MOSI Pin */
+    GPIO_SPI_MOSI = GPIO_NUM_16,
+    /** @brief SPI SCK Pin */
+    GPIO_SPI_SCK = GPIO_NUM_17,
+    /** @brief SPI MISO Pin */
+    GPIO_SPI_MISO = GPIO_NUM_18,
 } E_GPIORouting;
 
 /*******************************************************************************
@@ -136,6 +145,15 @@ class HWManager
          */
         static void DelayExecNs(const uint64_t kDelayNs) noexcept;
 
+
+        /**
+         * @brief Returns the configured SPI bus.
+         *
+         * @details Returns the configured SPI bus. Once the SPI bus is returned
+         * it is considered usable.
+         */
+        static SPIClass* GetSPIBus(void) noexcept;
+
         /**
          * @brief Reboots the board.
          *
@@ -155,6 +173,10 @@ class HWManager
         static std::string _SHWUID;
         /** @brief Stores the MAC address. */
         static std::string _SMACADDR;
+        /** @brief Used SPI bus. */
+        static SPIClass _SSPIBUS;
+        /** @brief Tells if the SPI bus is initialized. */
+        static bool _SSPIINIT;
 };
 
 

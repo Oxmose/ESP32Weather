@@ -1,7 +1,7 @@
 meta {
   name: SetWifiSettings
   type: http
-  seq: 2
+  seq: 4
 }
 
 post {
@@ -12,17 +12,17 @@ post {
 
 body:form-urlencoded {
   mode: setsettings
-  ap_mode: 1
-  ssid: tte
-  netpass: 12345678
-  static: 0
-  ip: 0.0.0.0
-  gateway: 
-  subnet: 
-  pdns: 
-  sdns: 
-  webp: 14
-  apip: 14
+  ap_mode: 0
+  ssid: Olson2.4GHz
+  netpass: k6zvxqxvrwqd2ksfqf39rh
+  static: 1
+  ip: 192.168.1.123
+  gateway: 192.168.1.254
+  subnet: 255.255.255.0
+  pdns: 1.1.1.1
+  sdns: 4.4.4.4
+  webp: 8080
+  apip: 8333
 }
 
 settings {

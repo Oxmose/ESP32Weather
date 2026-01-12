@@ -22,6 +22,7 @@
  ******************************************************************************/
 
 /* Included headers */
+#include <SPI.h>           /* SPI bus */
 #include <string>          /* Standard string */
 #include <cstdint>         /* Standard int types */
 #include <Logger.h>        /* Logger services */
@@ -65,6 +66,10 @@
 std::string HWManager::_SHWUID;
 /** @brief See BSP.h */
 std::string HWManager::_SMACADDR;
+/** @brief See BSP.h */
+SPIClass HWManager::_SSPIBUS(HSPI);
+/** @brief See BSP.h */
+bool HWManager::_SSPIINIT = false;
 
 /** @brief Decimal to Hexadecimal convertion table */
 static const char spkHexTable[16] = {
@@ -153,11 +158,31 @@ void HWManager::DelayExecNs(const uint64_t kDelayNs) noexcept {
     }
 }
 
+SPIClass* HWManager::GetSPIBus(void) noexcept {
+    /* Initialize the bus */
+    if (!HWManager::_SSPIINIT) {
+        HWManager::_SSPIBUS.begin(
+            GPIO_SPI_SCK,
+            GPIO_SPI_MISO,
+            GPIO_SPI_MOSI,
+            GPIO_SPI_CS_SD
+        );
+
+        LOG_DEBUG("Initializes the SPI bus.\n");
+
+        HWManager::_SSPIINIT = true;
+    }
+
+    /* Return the bus */
+    return &HWManager::_SSPIBUS;
+}
+
 void HWManager::Reboot(void) noexcept {
     LOG_DEBUG("Rebooting compute.\n");
 
     /* Flush logger */
     LOG_FLUSH();
+    DelayExecNs(500000000);
 
     /* Restart */
     ESP.restart();

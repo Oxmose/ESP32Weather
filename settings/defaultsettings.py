@@ -24,9 +24,9 @@ def BuildFileStart(sourceFile):
         "/*******************************************************************************\n" +
         " * INCLUDES\n" +
         " ******************************************************************************/\n" +
-        "#include <map>        /* Standard hashmap */\n" +
-        "#include <cstdint>    /* Standard int types */\n" +
-        "#include <Settings.h> /* Settings */\n" +
+        "#include <cstdint>       /* Standard int types */\n" +
+        "#include <Settings.h>    /* Settings */\n" +
+        "#include <unordered_map> /* Settings map */" +
         "\n" +
         "/*******************************************************************************\n" +
         " * CONSTANTS\n" +

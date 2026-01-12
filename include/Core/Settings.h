@@ -26,8 +26,8 @@
  ******************************************************************************/
 #include <string>        /* Standard strings */
 #include <Errors.h>      /* Errors definitions */
+#include <Storage.h>     /* Preference storage */
 #include <Arduino.h>     /* Arduino framework */
-#include <Preferences.h> /* Preference storage */
 #include <unordered_map> /* Settings map */
 
 /*******************************************************************************
@@ -211,14 +211,12 @@ class Settings
         /**
          * @brief Loads setting from non-volatile memory.
          *
-         * @details Loads setting from non-volatile memory. This will
+         * @details Loads settings from non-volatile memory. This will
          * automatically cast saved settings.
-         *
-         * @param[in] krName The name of the setting to load.
          *
          * @return The function returns the success or error status.
          */
-        E_Return LoadFromNVS(const std::string& krName) noexcept;
+        E_Return LoadFromStorage(void) noexcept;
 
         /**
          * @brief Initializes the default values for the settings.
@@ -228,11 +226,25 @@ class Settings
          */
         void InitializeDefault(void) noexcept;
 
+        /**
+         * @brief Gets the next setting name string from the file.
+         *
+         * @details Gets the next setting name string from the file. This will
+         * read the file until a null terminator is encountered and return the
+         * read data.
+         *
+         * @param[in] rFile The file to read from.
+         *
+         * @return The name of the next setting is returned. An empty string is
+         * returned on error.
+         */
+        std::string GetSettingName(FsFile& rFile) const noexcept;
+
         /** @brief Stores the settings mutex. */
         SemaphoreHandle_t _lock;
 
         /** @brief Stores the preference instance. */
-        Preferences _stcPrefs;
+        Storage* _pStorage;
 
         /** @brief Stores the settings cache. */
         std::unordered_map<std::string, S_SettingField> _cache;

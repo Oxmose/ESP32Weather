@@ -32,6 +32,7 @@ class HealthMonitor;
 class Settings;
 class IOButtonManager;
 class IOLedManager;
+class Storage;
 
 /*******************************************************************************
  * CONSTANTS
@@ -153,6 +154,17 @@ class SystemState
         void SetIOLedManager(IOLedManager* pIOLedManager) noexcept;
 
         /**
+         * @brief Sets the current Storage manager instance.
+         *
+         * @details Sets the current Storage manager instance. This stores a
+         * pointer in the system state object.
+         *
+         * @param[in] pSettings The Storage manager instance to store in the
+         * system state.
+         */
+        void SetStorage(Storage* pStorage) noexcept;
+
+        /**
          * @brief Returns the current WiFi module instance.
          *
          * @details Returns the current WiFi module instance. This instance is
@@ -202,6 +214,16 @@ class SystemState
          */
         IOLedManager* GetIOLedManager(void) const noexcept;
 
+        /**
+         * @brief Returns the current Storage manager instance.
+         *
+         * @details Returns the current Storage manager instance. This
+         * instance is stored in the system state.
+         *
+         * @return The Storage manager stored in the system state is returned.
+         */
+        Storage* GetStorage(void) const noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -230,6 +252,9 @@ class SystemState
 
         /** @brief Stores the current IO Led Manager instance. */
         IOLedManager* _pIOLedManager;
+
+        /** @brief Stores the current Storage Manager instance. */
+        Storage* _pStorage;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

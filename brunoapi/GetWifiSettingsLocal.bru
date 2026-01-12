@@ -1,11 +1,11 @@
 meta {
-  name: GetWifiSettings
+  name: GetWifiSettingsLocal
   type: http
-  seq: 2
+  seq: 5
 }
 
 post {
-  url: 192.168.4.1:8333/wifi
+  url: 192.168.1.123:8333/wifi
   body: formUrlEncoded
   auth: none
 }

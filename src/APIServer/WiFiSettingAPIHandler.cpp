@@ -272,7 +272,7 @@ noexcept {
                 ".\"}";
 
             LOG_ERROR(
-                "WiFi Setttings Set API invalid parameter: %s.",
+                "WiFi Setttings Set API invalid parameter: %s.\n",
                 pServer->argName(i).c_str()
             );
 
@@ -300,7 +300,7 @@ noexcept {
                 ", \"msg\": \"Error while saving the WiFi settings: error " +
                 std::to_string(result) + "\"}";
 
-            LOG_ERROR("WiFi Setting API Set error. Error %d.", result);
+            LOG_ERROR("WiFi Setting API Set error. Error %d.\n", result);
         }
     }
     else if (0 == rResponse.size()) {

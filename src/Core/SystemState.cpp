@@ -24,16 +24,17 @@
 
 /* Included headers */
 #include <BSP.h>             /* HW layer services */
-#include <WiFi.h>            /* WiFi Services */
 #include <string>            /* Standard strings */
 #include <Logger.h>          /* Logger services */
+#include <Storage.h>         /* Storage manager */
+#include <Settings.h>        /* Settings service */
+#include <WiFiModule.h>      /* WiFi module */
 #include <IOLedManager.h>    /* IO Led Manager */
 #include <HealthMonitor.h>   /* HM services */
 #include <IOButtonManager.h> /* IO Button Manager */
 
 /* Header file */
 #include <SystemState.h>
-
 
 /*******************************************************************************
  * CONSTANTS
@@ -111,6 +112,10 @@ void SystemState::SetIOLedManager(IOLedManager* pIOLedManager) noexcept {
     this->_pIOLedManager = pIOLedManager;
 }
 
+void SystemState::SetStorage(Storage* pStorage) noexcept {
+    this->_pStorage = pStorage;
+}
+
 WiFiModule* SystemState::GetWiFiModule(void) const noexcept {
     return this->_pWiFiModule;
 }
@@ -129,6 +134,10 @@ IOButtonManager* SystemState::GetIOButtonManager(void) const noexcept {
 
 IOLedManager* SystemState::GetIOLedManager(void) const noexcept {
     return this->_pIOLedManager;
+}
+
+Storage* SystemState::GetStorage(void) const noexcept {
+    return this->_pStorage;
 }
 
 SystemState::SystemState(void) noexcept {

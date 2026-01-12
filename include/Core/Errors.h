@@ -52,6 +52,8 @@ typedef enum {
     ERR_SETTING_INVALID,
     /** @brief Failed to save settings. */
     ERR_SETTING_COMMIT_FAILURE,
+    /** @brief Failed to load settings file. */
+    ERR_SETTING_FILE_ERROR,
     /** @brief A memory related error occured. */
     ERR_MEMORY,
     /** @brief A specified ID was or item was not found. */
