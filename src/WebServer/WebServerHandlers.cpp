@@ -27,7 +27,6 @@
 #include <Arduino.h>       /* Arduino Framework */
 #include <Settings.h>      /* Settings services */
 #include <WebServer.h>     /* Web server services */
-#include <HealthMonitor.h> /* HM Services */
 
 /* Handlers */
 #include <PageHandler.h>         /* Page handler interface */
@@ -36,6 +35,7 @@
 #include <SettingsPageHandler.h> /* Settings page handler*/
 #include <SensorsPageHandler.h>  /* Sensors page handler*/
 #include <AboutPageHandler.h>    /* About page handler*/
+#include <RebootPageHandler.h>   /* Reboot page handler */
 
 /* Header file */
 #include <WebServerHandlers.h>
@@ -54,6 +54,8 @@
 #define PAGE_URL_SENSORS "/sensors"
 /** @brief Defines the about URL */
 #define PAGE_URL_ABOUT "/about"
+/** @brief Defines the reboot URL */
+#define PAGE_URL_REBOOT "/reboot"
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -74,7 +76,7 @@
  * @param[out] HANDLER_OBJ The object that gets assigned the new handler.
  */
 #define CREATE_NEW_HANDLER(URL, HANDLER_CLASS, HANDLER_OBJ) {               \
-    HANDLER_OBJ = new HANDLER_CLASS();                                      \
+    HANDLER_OBJ = new HANDLER_CLASS(this);                                  \
     if (nullptr == HANDLER_OBJ) {                                           \
         PANIC("Failed to allocate a new handler for Web page %s.\n", URL);  \
     }                                                                       \
@@ -124,6 +126,7 @@ WebServerHandlers::WebServerHandlers(WebServer* pServer) noexcept {
     CREATE_NEW_HANDLER(PAGE_URL_SETTINGS, SettingsPageHandler, pNewHandler);
     CREATE_NEW_HANDLER(PAGE_URL_SENSORS, SensorsPageHandler, pNewHandler);
     CREATE_NEW_HANDLER(PAGE_URL_ABOUT, AboutPageHandler, pNewHandler);
+    CREATE_NEW_HANDLER(PAGE_URL_REBOOT, RebootPageHandler, pNewHandler);
 
     /* Configure the not found handler */
     this->_pServer->onNotFound(HandleNotFound);
@@ -136,6 +139,10 @@ WebServerHandlers::WebServerHandlers(WebServer* pServer) noexcept {
 
 WebServerHandlers::~WebServerHandlers(void) {
     PANIC("Tried to destroy the Web Server page handlers manager.\n");
+}
+
+WebServer* WebServerHandlers::GetServer(void) const noexcept {
+    return this->_pServer;
 }
 
 void WebServerHandlers::HandleNotFound(void) noexcept {

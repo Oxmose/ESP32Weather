@@ -75,6 +75,10 @@
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+AboutPageHandler::AboutPageHandler(WebServerHandlers* pHandlers) noexcept :
+PageHandler(pHandlers) {
+}
+
 AboutPageHandler::~AboutPageHandler(void) noexcept {
     PANIC("Tried to destroy the About page handler.\n");
 }

@@ -25,9 +25,8 @@
 #include <Logger.h>        /* Logger services */
 #include <Errors.h>        /* Errors definitions */
 #include <Arduino.h>       /* Arduino framework */
+#include <SystemState.h>   /* System state services */
 #include <unordered_map>   /* Unordered maps */
-#include <HealthMonitor.h> /* HM services */
-
 /* Header File */
 #include <IOButtonManager.h>
 

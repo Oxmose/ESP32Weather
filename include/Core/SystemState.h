@@ -24,15 +24,16 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string> /* Stardard string */
+/* None */
 
-/* Forwar class declarations to avoid recursive inclusions */
+/* Forward class declarations to avoid recursive inclusions */
 class WiFiModule;
 class HealthMonitor;
 class Settings;
 class IOButtonManager;
 class IOLedManager;
 class Storage;
+class ModeManager;
 
 /*******************************************************************************
  * CONSTANTS
@@ -165,6 +166,17 @@ class SystemState
         void SetStorage(Storage* pStorage) noexcept;
 
         /**
+         * @brief Sets the current Mode manager instance.
+         *
+         * @details Sets the current Mode manager instance. This stores a
+         * pointer in the system state object.
+         *
+         * @param[in] pModeManager The Mode manager instance to store in the
+         * system state.
+         */
+        void SetModeManager(ModeManager* pModeManager) noexcept;
+
+        /**
          * @brief Returns the current WiFi module instance.
          *
          * @details Returns the current WiFi module instance. This instance is
@@ -224,6 +236,16 @@ class SystemState
          */
         Storage* GetStorage(void) const noexcept;
 
+        /**
+         * @brief Returns the current Mode manager instance.
+         *
+         * @details Returns the current Mode manager instance. This
+         * instance is stored in the system state.
+         *
+         * @return The Mode manager stored in the system state is returned.
+         */
+        ModeManager* GetModeManager(void) const noexcept;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -255,6 +277,9 @@ class SystemState
 
         /** @brief Stores the current Storage Manager instance. */
         Storage* _pStorage;
+
+        /** @brief Stores the current Mode Manager instance. */
+        ModeManager* _pModeManager;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

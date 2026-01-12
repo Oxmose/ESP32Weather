@@ -73,6 +73,10 @@
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+MonitorPageHandler::MonitorPageHandler(WebServerHandlers* pHandlers) noexcept :
+PageHandler(pHandlers) {
+}
+
 MonitorPageHandler::~MonitorPageHandler(void) noexcept {
     PANIC("Tried to destroy the Monitor page handler.\n");
 }

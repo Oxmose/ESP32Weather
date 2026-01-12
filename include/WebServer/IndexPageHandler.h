@@ -81,6 +81,14 @@ class IndexPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
+         * @brief Creates a IndexPageHandler.
+         *
+         * @details Creates a IndexPageHandler. Allocates the resources for
+         * the handler.
+         */
+        IndexPageHandler(WebServerHandlers* pHandlers) noexcept;
+
+        /**
          * @brief Destroys a IndexPageHandler.
          *
          * @details Destroys a IndexPageHandler. Since only one object is

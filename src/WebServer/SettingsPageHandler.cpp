@@ -75,6 +75,10 @@
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
+SettingsPageHandler::SettingsPageHandler(WebServerHandlers* pHandlers) noexcept :
+PageHandler(pHandlers) {
+}
+
 SettingsPageHandler::~SettingsPageHandler(void) noexcept {
     PANIC("Tried to destroy the Settings page handler.\n");
 }
@@ -179,5 +183,16 @@ const noexcept {
     rPageBuffer += "</td></tr>";
 
     rPageBuffer += "</table></div>";
+
+    /* Execution modes */
+    rPageBuffer += "<div>";
+    rPageBuffer += "<h2>==== Maintenance Mode ====</h2>";
+    rPageBuffer += "<table>";
+    rPageBuffer += "<tr>";
+    rPageBuffer += "<td><a href=\"/reboot?mode=0\">Reboot in nominal mode</a></td>";
+    rPageBuffer += "<td><a href=\"/reboot?mode=1\">Reboot in maintenance mode</a></td>";
+    rPageBuffer += "</tr>";
+    rPageBuffer += "</table>";
+    rPageBuffer += "</div>";
 }
 

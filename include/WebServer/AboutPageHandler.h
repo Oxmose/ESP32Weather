@@ -81,6 +81,14 @@ class AboutPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
+         * @brief Creates a AboutPageHandler.
+         *
+         * @details Creates a AboutPageHandler. Allocates the resources for
+         * the handler.
+         */
+        AboutPageHandler(WebServerHandlers* pHandlers) noexcept;
+
+        /**
          * @brief Destroys a AboutPageHandler.
          *
          * @details Destroys a AboutPageHandler. Since only one object is

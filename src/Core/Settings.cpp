@@ -28,9 +28,8 @@
 #include <Errors.h>        /* Errors definitions */
 #include <Storage.h>       /* Preference storage */
 #include <Arduino.h>       /* Arduino framework */
+#include <SystemState.h>   /* System state services */
 #include <unordered_map>   /* Settings map */
-#include <HealthMonitor.h> /* HM services */
-
 /* Header file */
 #include <Settings.h>
 

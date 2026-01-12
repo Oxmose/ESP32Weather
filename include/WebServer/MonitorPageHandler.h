@@ -81,6 +81,14 @@ class MonitorPageHandler : public PageHandler {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
+         * @brief Creates a MonitorPageHandler.
+         *
+         * @details Creates a MonitorPageHandler. Allocates the resources for
+         * the handler.
+         */
+        MonitorPageHandler(WebServerHandlers* pHandlers) noexcept;
+
+        /**
          * @brief Destroys a MonitorPageHandler.
          *
          * @details Destroys a MonitorPageHandler. Since only one object is

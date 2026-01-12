@@ -27,7 +27,6 @@
 #include <Timeout.h>         /* Timeout manager */
 #include <SystemState.h>     /* System State services. */
 #include <IOLedManager.h>    /* IO Led manager */
-#include <HealthMonitor.h>   /* HM Services */
 #include <IOButtonManager.h> /* IO Button manager */
 
 /* Header file */
