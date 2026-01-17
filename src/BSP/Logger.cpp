@@ -173,7 +173,7 @@ void Logger::LogLevel(const E_LogLevel kLevel,
                     pModeMgr->SetMode(E_Mode::MODE_MAINTENANCE);
                 }
             }
-            HWManager::Reboot();
+            HWManager::Reboot(true);
         }
     }
 }
@@ -382,7 +382,7 @@ Logger::Logger() noexcept
     this->_logBuffer = new char[LOGGER_BUFFER_SIZE];
     if (nullptr == this->_logBuffer) {
         Serial.printf("Failed to allocate logger buffer.\n");
-        HWManager::Reboot();
+        HWManager::Reboot(true);
     }
 
     /* Init RAM journal */
@@ -392,7 +392,7 @@ Logger::Logger() noexcept
     );
     if (nullptr == this->_logJournalRam.pStartAddress) {
         Serial.printf("Failed to allocate logger journal buffer.\n");
-        HWManager::Reboot();
+        HWManager::Reboot(true);
     }
     this->_logJournalRam.pEndAddress = this->_logJournalRam.pStartAddress +
                                        LOG_RAM_BUFFER_SIZE - 1;

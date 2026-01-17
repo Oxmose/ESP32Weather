@@ -237,5 +237,5 @@ void ResetManager::Execute(
 void ResetManager::PerformReset(void) const noexcept {
     SystemState::GetInstance()->GetStorage()->Format();
     LOG_INFO("Formated persistent memory.\n");
-    HWManager::Reboot();
+    HWManager::Reboot(false);
 }

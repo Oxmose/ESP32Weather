@@ -141,7 +141,7 @@ E_Return ModeManager::SetMode(const E_Mode kMode) noexcept {
     }
 
     if (E_Return::NO_ERROR == retVal) {
-        HWManager::Reboot();
+        HWManager::Reboot(false);
     }
 
     return retVal;
@@ -185,6 +185,12 @@ void ModeManager::StartFirmware(void) noexcept {
         }
         else {
             LOG_ERROR("Failed to instanciate the Storage Manager.\n");
+            this->_currentMode = E_Mode::MODE_MAINTENANCE;
+        }
+
+        /* Check force maintenance */
+        if (this->_forceMaintenance) {
+            LOG_INFO("Maintenance mode is forced.\n");
             this->_currentMode = E_Mode::MODE_MAINTENANCE;
         }
     }
@@ -337,13 +343,27 @@ void ModeManager::PeriodicUpdate(void) noexcept {
 }
 
 void ModeManager::GetLastReset(void) noexcept {
-    int32_t cpu0Reset;
-    int32_t cpu1Reset;
-
+    esp_reset_reason_t cpuReset;
     /* Get the CPUs resets */
-    cpu0Reset = rtc_get_reset_reason(0);
-    cpu1Reset = rtc_get_reset_reason(1);
+    cpuReset = esp_reset_reason();
+    LOG_INFO("Reset reason: %d.\n", cpuReset);
 
-    LOG_INFO("CPU0 reset reason: %d.\n", cpu0Reset);
-    LOG_INFO("CPU1 reset reason: %d.\n", cpu1Reset);
+    switch (cpuReset) {
+        case ESP_RST_UNKNOWN:
+        case ESP_RST_POWERON:
+        case ESP_RST_EXT:
+        case ESP_RST_SW:
+        case ESP_RST_DEEPSLEEP:
+        case ESP_RST_SDIO:
+            this->_forceMaintenance = false;
+            break;
+
+        case ESP_RST_PANIC:
+        case ESP_RST_INT_WDT:
+        case ESP_RST_TASK_WDT:
+        case ESP_RST_WDT:
+        case ESP_RST_BROWNOUT:
+        default:
+            this->_forceMaintenance = true;
+    }
 }
