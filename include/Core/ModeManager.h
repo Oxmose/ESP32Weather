@@ -175,6 +175,16 @@ class ModeManager {
          */
         void StartMaintenanceServer(void) noexcept;
 
+        /**
+         * @brief Retrieves the last reset reason and perform actions
+         * accordingly.
+         *
+         * @brief Retrieves the last reset reason and perform actions
+         * accordingly. Actions are based on the type of reset. The maintenance
+         * mode might be forced.
+         */
+        void GetLastReset(void) noexcept;
+
         /** @brief Stores the current mode of execution. */
         E_Mode _currentMode;
 

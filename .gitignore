@@ -44,3 +44,5 @@
 .pio
 .pio/
 .vscode/
+
+__pycache__/
