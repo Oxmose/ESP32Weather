@@ -159,7 +159,7 @@ void ModeManager::StartFirmware(void) noexcept {
         pSystemState->SetModeManager(this);
 
         /* Init storage */
-        pStorage = new Storage();
+        pStorage = pSystemState->GetStorage();
         if (nullptr != pStorage) {
             /* Read the current mode */
             file = pStorage->Open(FIRMWARE_MODE_PATH, O_RDONLY);

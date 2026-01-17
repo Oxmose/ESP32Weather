@@ -25,7 +25,9 @@
 #include <BSP.h>         /* Hardware services*/
 #include <Logger.h>      /* Firmware logger */
 #include <version.h>     /* Versionning information */
+#include <Storage.h>     /* Storage manager */
 #include <ModeManager.h> /* Mode manager */
+#include <SystemState.h> /* System state services */
 
 /* Header file */
 #include <Entry.h>
@@ -71,17 +73,26 @@ static ModeManager* spModeManager;
 #ifndef UNIT_TEST
 
 void setup(void) {
+    SystemState* pSystemState;
+    Storage*     pStorage;
 
+    /* Create the system state */
+    pSystemState = SystemState::GetInstance();
+    if (nullptr == pSystemState) {
+        PANIC("Failed to initialize system state manager.\n");
+    }
 
-    /* Initialize logger and wait */
-    INIT_LOGGER(LOG_LEVEL_DEBUG);
-    HWManager::DelayExecNs(50000000);
+    /* Create the storage manager */
+    pStorage = new Storage();
+    if (nullptr == pStorage) {
+        PANIC("Failed to initialize system storage manager.\n");
+    }
 
     /* Welcome output*/
     LOG_INFO("RTHR Weather Station Booting...\n");
     LOG_INFO("#==============================#\n");
     LOG_INFO("| HWUID: %s   |\n", HWManager::GetHWUID());
-    LOG_INFO("| " VERSION "  |\n");
+    LOG_INFO("| " VERSION " |\n");
     LOG_INFO("#==============================#\n");
 
     /* Create the mode manager */

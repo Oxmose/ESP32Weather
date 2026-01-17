@@ -128,6 +128,30 @@ class MaintenanceWebServerHandlers {
         static void HandleReboot(void) noexcept;
 
         /**
+         * @brief Handles the RAM logs loading request URL.
+         *
+         * @details Handles the RAM logs loading request URL. Respond with new
+         * logs when available.
+         */
+        static void HandleRamLoad(void) noexcept;
+
+        /**
+         * @brief Handles the Journal logs loading request URL.
+         *
+         * @details Handles the Journal logs loading request URL. Respond with
+         * new logs when available.
+         */
+        static void HandleJournalLoad(void) noexcept;
+
+        /**
+         * @brief Handles the log clear request URL.
+         *
+         * @details Handles the log clear request URL. Respond with an empty
+         * response.
+         */
+        static void HandleClearLogs(void) noexcept;
+
+        /**
          * @brief Creates the page header.
          *
          * @details Creates the page header. This will fill the string buffer
@@ -159,6 +183,17 @@ class MaintenanceWebServerHandlers {
         void GeneratePageCSS(std::string& rHeaderStr) const noexcept;
 
         /**
+         * @brief Creates the page Script section.
+         *
+         * @details Creates the page Script section. This will fill the string
+         * buffer.
+         *
+         * @param[out] rHeaderStr The string buffer that receives the Script.
+         */
+        void GeneratePageScripts(std::string& rHeaderStr) const noexcept;
+
+
+        /**
          * @brief Generic page handler.
          *
          * @details Generic page handler. The handler will send the page
@@ -169,6 +204,16 @@ class MaintenanceWebServerHandlers {
          */
         void GenericHandler(const std::string& krPage,
                             const int32_t      kCode) noexcept;
+
+
+        /**
+         * @brief Formats the firmware logs.
+         *
+         * @details Formats the firmware logs to be displayed in an HLTM page.
+         *
+         * @param[out] rPage The page buffer to fill with the logs.
+         */
+        void GetFormatedLogs(std::string& rPage) const noexcept;
 
         /** @brief Stores the WebServer used by the handlers. */
         WebServer* _pServer;

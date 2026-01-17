@@ -149,5 +149,4 @@ ModeManager* SystemState::GetModeManager(void) const noexcept {
 }
 
 SystemState::SystemState(void) noexcept {
-    LOG_DEBUG("System State initialized.\n");
 }
