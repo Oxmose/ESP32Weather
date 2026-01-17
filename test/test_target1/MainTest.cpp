@@ -22,10 +22,6 @@ static SystemState*   spSystemState;
 extern void HealthMonitorTests();
 
 void setup(void) {
-    /* Initialize logger and wait */
-    INIT_LOGGER(LOG_LEVEL_DEBUG);
-    HWManager::DelayExecNs(50000000);
-
     /* Init system state */
     spSystemState = SystemState::GetInstance();
 

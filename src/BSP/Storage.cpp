@@ -80,7 +80,7 @@ Storage::Storage(void) noexcept {
     SdSpiConfig config = SdSpiConfig(
         GPIO_SPI_CS_SD,
         SHARED_SPI,
-        SD_SCK_MHZ(16),
+        SD_SCK_MHZ(40),
         HWManager::GetSPIBus()
     );
 
@@ -88,7 +88,7 @@ Storage::Storage(void) noexcept {
     if (!this->_sdCard.begin(config)) {
         PANIC(
             "Failed to initialize the SD card (%d).\n",
-            _sdCard.sdErrorCode()
+            this->_sdCard.sdErrorCode()
         );
     }
 
