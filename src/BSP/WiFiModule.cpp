@@ -601,7 +601,7 @@ noexcept {
 
         if (E_Return::NO_ERROR == result) {
             LOG_INFO("WiFi settings updated, rebooting...\n");
-            HWManager::Reboot();
+            HWManager::Reboot(false);
         }
         else {
             PANIC("Error while commiting WiFi settings. Error %d\n", result);

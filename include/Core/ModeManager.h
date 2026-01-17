@@ -190,6 +190,9 @@ class ModeManager {
 
         /** @brief Stores the maintenance web server. */
         WebServer* _pMaintServer;
+
+        /** @brief Force maintenance mode. */
+        bool _forceMaintenance;
 };
 
 #endif /* #ifndef __CORE_MODE_MANAGER_H__ */

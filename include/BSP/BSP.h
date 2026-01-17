@@ -160,8 +160,11 @@ class HWManager
          * @details Reboots the board. The reboot is effective immediatelly and
          * all pending operations should be completed before calling this
          * function.
+         *
+         * @param[in] kSetMaintenance Tells if the maintenance mode should be
+         * set upon rebooting.
          */
-        static void Reboot(void) noexcept;
+        static void Reboot(const bool kSetMaintenance) noexcept;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

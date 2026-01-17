@@ -176,7 +176,7 @@ SPIClass* HWManager::GetSPIBus(void) noexcept {
     return &HWManager::_SSPIBUS;
 }
 
-void HWManager::Reboot(void) noexcept {
+void HWManager::Reboot(const bool kSetMaintenance) noexcept {
     LOG_DEBUG("Rebooting compute.\n");
 
     /* Flush logger */
@@ -184,8 +184,14 @@ void HWManager::Reboot(void) noexcept {
     DelayExecNs(500000000);
 
     /* Restart */
-    ESP.restart();
-    while (true) {
-        LOG_ERROR("Failed to restart.\n");
+    if (!kSetMaintenance) {
+        ESP.restart();
+        while (true) {
+            LOG_ERROR("Failed to restart.\n");
+        }
+    }
+    else {
+        /* For maintenance reboot, trigger error */
+        *((uint32_t*)0) = 5;
     }
 }

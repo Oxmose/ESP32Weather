@@ -28,7 +28,7 @@ void setup(void) {
     /* Initialize the Health Monitor */
     spHealthMon = new HealthMonitor();
     if (nullptr == spHealthMon) {
-        HWManager::Reboot();
+        HWManager::Reboot(false);
     }
     spSystemState->SetHealthMonitor(spHealthMon);
 
