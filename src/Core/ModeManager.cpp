@@ -27,6 +27,7 @@
 #include <Logger.h>                       /* Firmware logger */
 #include <Errors.h>                       /* Error codes */
 #include <IOTask.h>                       /* IO Task manager */
+#include <rom/rtc.h>                      /* RTC services */
 #include <Arduino.h>                      /* Arduino library */
 #include <version.h>                      /* Versionning info */
 #include <Storage.h>                      /* Storage manager */
@@ -92,6 +93,9 @@
 ModeManager::ModeManager(void) noexcept {
     /* Init the mode */
     this->_currentMode = E_Mode::MODE_MAINTENANCE;
+
+    /* Get the last reset reason */
+    GetLastReset();
 }
 
 ModeManager::~ModeManager(void) noexcept {
@@ -330,4 +334,16 @@ void ModeManager::PeriodicUpdate(void) noexcept {
         /* Nothing to do, just wait */
         vTaskDelay(1000);
     }
+}
+
+void ModeManager::GetLastReset(void) noexcept {
+    int32_t cpu0Reset;
+    int32_t cpu1Reset;
+
+    /* Get the CPUs resets */
+    cpu0Reset = rtc_get_reset_reason(0);
+    cpu1Reset = rtc_get_reset_reason(1);
+
+    LOG_INFO("CPU0 reset reason: %d.\n", cpu0Reset);
+    LOG_INFO("CPU1 reset reason: %d.\n", cpu1Reset);
 }
