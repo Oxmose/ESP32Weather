@@ -15,20 +15,20 @@ static void wdHandlingDestroy(void) {
 }
 
 void test_timeout_base(void) {
-    Timeout timeout(1000000);
+    Timeout timeout(100000000);
     uint32_t i;
 
     TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
 
     for (i = 0; i < 1000; ++i) {
-        HWManager::DelayExecNs(10000);
+        HWManager::DelayExecNs(1000000);
         TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
         timeout.Notify();
     }
     TEST_ASSERT_EQUAL(false, timeout.HasTimedOut());
 
     for (i = 0; i < 1000; ++i) {
-        HWManager::DelayExecNs(10000);
+        HWManager::DelayExecNs(1000000);
     }
     TEST_ASSERT_EQUAL(true, timeout.HasTimedOut());
 }

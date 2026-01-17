@@ -34,7 +34,7 @@
  * CONSTANTS
  ******************************************************************************/
 /** @brief Defines the real-time task period in nanoseconds. */
-#define HW_RT_TASK_PERIOD_NS 10000000ULL
+#define HW_RT_TASK_PERIOD_NS 100000000ULL
 
 /*******************************************************************************
  * MACROS

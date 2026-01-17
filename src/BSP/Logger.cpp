@@ -339,7 +339,6 @@ noexcept {
 
     if (this->_logfile.isOpen()) {
         this->_logfile.write(kpStr, len);
-        this->_logfile.sync();
     }
 }
 
