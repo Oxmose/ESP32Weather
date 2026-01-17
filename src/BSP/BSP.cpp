@@ -154,8 +154,7 @@ void HWManager::DelayExecNs(const uint64_t kDelayNs) noexcept {
     }
 
     /* Spend the rest for active time */
-    while ((uint64_t)esp_timer_get_time() < startTime + delaysUs) {
-    }
+    while ((uint64_t)esp_timer_get_time() < startTime + delaysUs) {}
 }
 
 SPIClass* HWManager::GetSPIBus(void) noexcept {
@@ -168,7 +167,7 @@ SPIClass* HWManager::GetSPIBus(void) noexcept {
             GPIO_SPI_CS_SD
         );
 
-        LOG_DEBUG("Initializes the SPI bus.\n");
+        LOG_DEBUG("Initialized the SPI bus.\n");
 
         HWManager::_SSPIINIT = true;
     }

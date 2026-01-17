@@ -23,26 +23,20 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstdint> /* Standard Int Types */
+#include <cstdint>   /* Standard Int Types */
+#include <stddef.h>  /* Standard definitions */
+#include <Storage.h> /* File */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+/** @brief Defines the current logger level. */
+#define LOG_LEVEL LOG_LEVEL_DEBUG
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-
-/**
- * @brief Initializes the logger.
- *
- * @details Initializes the logger with the requested log level.
- *
- * @param[in] LEVEL The level at which the logger shall be initialized.
- */
-#define INIT_LOGGER(LEVEL) Logger::Init(LEVEL)
 
 /**
  * @brief Logs an information to the log buffer.
@@ -54,7 +48,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_INFO(FMT, ...) {                                \
-    Logger::LogLevel(                                       \
+        Logger::GetInstance()->LogLevel(                    \
         LOG_LEVEL_INFO,                                     \
         __FILE__,                                           \
         __LINE__,                                           \
@@ -73,7 +67,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_ERROR(FMT, ...) {                               \
-    Logger::LogLevel(                                       \
+    Logger::GetInstance()->LogLevel(                        \
         LOG_LEVEL_ERROR,                                    \
         __FILE__,                                           \
         __LINE__,                                           \
@@ -92,7 +86,7 @@
  * @param[in] ... The format arguments.
  */
 #define PANIC(FMT, ...) {                                   \
-    Logger::LogLevel(                                       \
+    Logger::GetInstance()->LogLevel(                        \
         LOG_LEVEL_CRITICAL,                                 \
         __FILE__,                                           \
         __LINE__,                                           \
@@ -106,8 +100,8 @@
  *
  * @details Flushes the logs. This ensures the buffers are correctly written.
  */
-#define LOG_FLUSH() {     \
-    Logger::Flush();      \
+#define LOG_FLUSH() {                       \
+    Logger::GetInstance()->Flush();         \
 }
 
 #if LOGGER_DEBUG_ENABLED
@@ -122,7 +116,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_DEBUG(FMT, ...) {                               \
-    Logger::LogLevel(                                       \
+    Logger::GetInstance()->LogLevel(                        \
         LOG_LEVEL_DEBUG,                                    \
         __FILE__,                                           \
         __LINE__,                                           \
@@ -153,6 +147,24 @@ typedef enum
     /** @brief Logging level: log previous levels and debug output */
     LOG_LEVEL_DEBUG = 3
 } E_LogLevel;
+
+/** @brief RAM journal definition. */
+typedef struct {
+    /** @brief Start address of the journal in memory. */
+    uint8_t* pStartAddress;
+    /** @brief End address of the journal in memory. */
+    uint8_t* pEndAddress;
+    /** @brief Current cursor in the memory. */
+    uint8_t* pCursor;
+    /** @brief Tells if the journal buffer as already circled. */
+    bool hasCircled;
+} S_RamJournal;
+
+/** @brief RAM journal descriptor. */
+typedef struct {
+    /** @brief Current offset of the cursor. */
+    uint32_t pCursor;
+} S_RamJournalDescriptor;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -194,13 +206,13 @@ class Logger
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         /**
-         * @brief Initializes the logger.
+         * @brief Returns the Logger instance singleton.
          *
-         * @details Initializes the logger with the requested log level.
+         * @details Returns the Logger instance singleton.
          *
-         * @param[in] kLoglevel The log level to use.
+         * @return Returns the Logger instance singleton.
          */
-        static void Init(const E_LogLevel kLoglevel) noexcept;
+        static Logger* GetInstance(void) noexcept;
 
         /**
          * @brief Logs a message to the logger.
@@ -214,11 +226,11 @@ class Logger
          * @param[in] pkStr The format string used for the log
          * @param[in] ... The format arguments.
          */
-        static void LogLevel(const E_LogLevel kLevel,
-                             const char*      pkFile,
-                             const uint32_t   kLine,
-                             const char*      kStr,
-                             ...) noexcept;
+        void LogLevel(const E_LogLevel kLevel,
+                      const char*      pkFile,
+                      const uint32_t   kLine,
+                      const char*      kStr,
+                      ...) noexcept;
 
         /**
          * @brief Flushes the logs.
@@ -226,19 +238,118 @@ class Logger
          * @details Flushes the logs. This ensures the buffers are correctly
          * written.
          */
-        static void Flush(void) noexcept;
+        void Flush(void) noexcept;
+
+        /**
+         * @brief Opens the logger persistent journal.
+         *
+         * @details Opens the logger persistent journal. This provides a file
+         * that can be read to get the current logs.
+         */
+        FsFile OpenPersistenJournal(void) const noexcept;
+
+        /**
+         * @brief Clears the persistent journal.
+         *
+         * @details Clears the persistent journal. This effectively removes the
+         * log file.
+         */
+        void ClearPersistentJournal(void) const noexcept;
+
+        /**
+         * @brief Opens the logger RAM journal.
+         *
+         * @details Opens the logger RAM journal. This provides a descriptor
+         * that can be read to get the current logs.
+         *
+         * @param[out] pDesc The RAM journal descriptor used to open.
+         */
+        void OpenRamJournal(S_RamJournalDescriptor* pDesc) const noexcept;
+
+        /**
+         * @brief Read from the RAM journal.
+         *
+         * @details Read from the RAM journal. This function will return up to
+         * length bytes and update the descriptor. Ram journal is read from
+         * the last log to the first log upward.
+         *
+         * @param[out] pBuffer The buffer used to receive the journal data.
+         * @param[in] length The maximum number of bytes to fill in the buffer.
+         * @param[out] pDesc The RAM journal descriptor used to open.
+         */
+        size_t ReadRamJournal(uint8_t*                pBuffer,
+                              size_t                  length,
+                              S_RamJournalDescriptor* pDesc) const noexcept;
+
+        /**
+         * @brief Sets the RAM journal descriptor cursor.
+         *
+         * @details Sets the RAM journal descriptor cursor. If the provided
+         * offset is out of bound, the cursor is set to the end of the RAM
+         * journal. Ram journal is seek from the last log to the first log
+         * upward.
+         *
+         * @param[out] pDesc The RAM journal descriptor used to seek.
+         * @param[in] kOffset The offset to set to the descriptor.
+         */
+        void SeekRamJournal(S_RamJournalDescriptor* pDesc,
+                            const size_t            kOffset) const noexcept;
+
+        /**
+         * @brief Clears the RAM journal.
+         *
+         * @details Clears the RAM journal. This effectively resets the RAM
+         * logs.
+         */
+        void ClearRamJournal(void) noexcept;
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        /** @brief Tells if the logger is initialized. */
-        static bool _SISINIT;
-        /** @brief The current log level. */
-        static E_LogLevel _SLOGLEVEL;
+        /**
+         * @brief Construct the logger instance.
+         *
+         * @details Construct the logger instance. Initializes the serial output
+         * and allocates the required resources for the logger.
+         */
+        Logger(void) noexcept;
+
+        /**
+         * @brief Writes the log to the log file in persisten storage.
+         *
+         * @details brief Writes the log to the log file in persisten storage.
+         * On error, this function failes silently as the log woud be recursive.
+         *
+         * @param[in] kpStr The string log to write to the file.
+         * @param[in] kLen The length of the string to write.
+         */
+        void WritePersistentJournal(const char* kpStr, size_t len)
+        noexcept;
+
+        /**
+         * @brief Writes the log to the log RAM journal in persistent storage.
+         *
+         * @details Writes the log to the log RAM journal in persistent storage.
+         * This function will always succeed.
+         *
+         * @param[in] kpStr The string log to write to the RAM journal.
+         * @param[in] kLen The length of the string to write.
+         */
+        void WriteRamJournal(const char* kpStr, size_t len) noexcept;
+
         /** @brief The logger buffer. */
-        static char* _SPBUFFER;
+        char* _logBuffer;
+        /** @brief The logger journal in RAM. */
+        S_RamJournal _logJournalRam;
+
+        /** @brief Stores the log file. */
+        FsFile _logfile;
+
+        /** @brief Stores the singleton instance. */
+        static Logger* _SPINSTANCE;
+
 };
 
 #endif /* #ifndef __LOGGER_H_ */
