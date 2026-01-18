@@ -34,6 +34,7 @@ class IOButtonManager;
 class IOLedManager;
 class Storage;
 class ModeManager;
+class NTPManager;
 
 /*******************************************************************************
  * CONSTANTS
@@ -176,6 +177,18 @@ class SystemState
          */
         void SetModeManager(ModeManager* pModeManager) noexcept;
 
+
+        /**
+         * @brief Sets the current NTP manager instance.
+         *
+         * @details Sets the current NTP manager instance. This stores a
+         * pointer in the system state object.
+         *
+         * @param[in] pModeManager The NTP manager instance to store in the
+         * system state.
+         */
+        void SetNTPManager(NTPManager* pNTPManager) noexcept;
+
         /**
          * @brief Returns the current WiFi module instance.
          *
@@ -246,6 +259,15 @@ class SystemState
          */
         ModeManager* GetModeManager(void) const noexcept;
 
+        /**
+         * @brief Returns the current NTP manager instance.
+         *
+         * @details Returns the current NTP manager instance. This
+         * instance is stored in the system state.
+         *
+         * @return The NTP manager stored in the system state is returned.
+         */
+        NTPManager* GetNTPManager(void) const noexcept;
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -280,6 +302,9 @@ class SystemState
 
         /** @brief Stores the current Mode Manager instance. */
         ModeManager* _pModeManager;
+
+        /** @brief Stores the current NTP manager instance. */
+        NTPManager* _pNTPManager;
 
         /** @brief The singleton instance. */
         static SystemState* _SPINSTANCE;

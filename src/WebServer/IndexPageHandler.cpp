@@ -28,6 +28,7 @@
 #include <Logger.h>      /* Logger services */
 #include <version.h>     /* Versioning */
 #include <WiFiModule.h>  /* WiFi services */
+#include <NTPManager.h>  /* NTP manager */
 #include <PageHandler.h> /* Page Handler interface */
 #include <SystemState.h> /* System state provider */
 
@@ -196,5 +197,10 @@ void IndexPageHandler::GenerateSystem(std::string& rBuffer) const noexcept {
     rBuffer += "</td>";
     rBuffer += "</tr>";
     rBuffer += "</table>";
-    rBuffer += "</div>";
+
+    rBuffer += "<p>Timestamp: ";
+    rBuffer += std::to_string(
+        SystemState::GetInstance()->GetNTPManager()->GetTimestamp()
+    );
+    rBuffer += "</p></div>";
 }

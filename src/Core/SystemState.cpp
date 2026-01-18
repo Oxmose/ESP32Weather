@@ -29,6 +29,7 @@
 #include <Storage.h>         /* Storage manager */
 #include <Settings.h>        /* Settings service */
 #include <WiFiModule.h>      /* WiFi module */
+#include <NTPManager.h>      /* NTP manager */
 #include <IOLedManager.h>    /* IO Led Manager */
 #include <HealthMonitor.h>   /* HM services */
 #include <IOButtonManager.h> /* IO Button Manager */
@@ -120,6 +121,10 @@ void SystemState::SetModeManager(ModeManager* pModeManager) noexcept {
     this->_pModeManager = pModeManager;
 }
 
+void SystemState::SetNTPManager(NTPManager* pNTPManager) noexcept {
+    this->_pNTPManager = pNTPManager;
+}
+
 WiFiModule* SystemState::GetWiFiModule(void) const noexcept {
     return this->_pWiFiModule;
 }
@@ -148,5 +153,17 @@ ModeManager* SystemState::GetModeManager(void) const noexcept {
     return this->_pModeManager;
 }
 
+NTPManager* SystemState::GetNTPManager(void) const noexcept {
+    return this->_pNTPManager;
+}
+
 SystemState::SystemState(void) noexcept {
+    this->_pWiFiModule = nullptr;
+    this->_pHealthMonitor = nullptr;
+    this->_pSettings = nullptr;
+    this->_pIOButtonManager = nullptr;
+    this->_pIOLedManager = nullptr;
+    this->_pStorage = nullptr;
+    this->_pModeManager = nullptr;
+    this->_pNTPManager = nullptr;
 }

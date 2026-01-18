@@ -162,10 +162,14 @@ void IOTask::IOTaskRoutine(void* pParam) noexcept {
         pBtn = pIOTask->_pSysState->GetIOButtonManager();
 
         /* Update the IO buttons */
-        pBtn->Update();
+        if (nullptr != pBtn) {
+            pBtn->Update();
+        }
 
         /* Update the LED */
-        pLed->Update();
+        if (nullptr != pLed) {
+            pLed->Update();
+        }
 
         /* Wait for period */
         result = xTaskDelayUntil(

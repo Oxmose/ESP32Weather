@@ -34,6 +34,7 @@
 #include <Settings.h>                     /* Settings services */
 #include <WebServer.h>                    /* Web server services */
 #include <WiFiModule.h>                   /* WiFi Module driver */
+#include <NTPManager.h>                   /* NTP manager */
 #include <SystemState.h>                  /* System state */
 #include <IOLedManager.h>                 /* IO Led manager */
 #include <ResetManager.h>                 /* Reset manager services */
@@ -105,21 +106,25 @@ ModeManager::~ModeManager(void) noexcept {
 E_Return ModeManager::SetMode(const E_Mode kMode) noexcept {
     E_Return     retVal;
     FsFile       file;
-    Settings*    pSettings;
+    Storage*     pStorage;
     SystemState* pSysState;
 
-    pSettings = nullptr;
+    pStorage = nullptr;
 
     pSysState = SystemState::GetInstance();
     if (nullptr != pSysState) {
-        pSettings = pSysState->GetSettings();
+        pStorage = pSysState->GetStorage();
+    }
+    else {
+        LOG_DEBUG("SYSstate is NULL\n");
     }
 
-    if (nullptr != pSettings) {
-        file = SystemState::GetInstance()->GetStorage()->Open(
-            FIRMWARE_MODE_PATH,
-            O_RDWR | O_CREAT
-        );
+    if (nullptr != pStorage) {
+        file = pStorage->Open(FIRMWARE_MODE_PATH, O_RDWR | O_CREAT);
+        LOG_DEBUG("Opening mode file.\n");
+    }
+    else {
+        LOG_DEBUG("Settings is null\n");
     }
 
     if (file.isOpen()) {
@@ -222,6 +227,7 @@ void ModeManager::StartNominal(void) const noexcept {
     IOLedManager*    pLedManager;
     ResetManager*    pResetManager;
     IOTask*          pIOTask;
+    NTPManager*      pNTPManager;
     E_Return         result;
     uint32_t         resetActionId;
 
@@ -263,6 +269,12 @@ void ModeManager::StartNominal(void) const noexcept {
     result = pWifiModule->Start();
     if (E_Return::NO_ERROR != result) {
         PANIC("Failed to start the WiFi module. Error: %d\n", result);
+    }
+
+    /* Create the NTP client */
+    pNTPManager = new NTPManager();
+    if (nullptr == pNTPManager) {
+        PANIC("Failed to instanciate the NTP Manager.\n");
     }
 
     /* Start the web servers */

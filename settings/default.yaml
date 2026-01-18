@@ -43,3 +43,7 @@ node_st_sdns:
   type: char*
   value: '"4.4.4.4\0\0\0\0\0\0\0\0"'
   size: 15
+time_offset:
+  type: int32_t
+  value: 3600
+  size: 4

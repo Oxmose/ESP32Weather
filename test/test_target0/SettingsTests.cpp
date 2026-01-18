@@ -114,6 +114,7 @@ void test_default(void) {
     char      passBuff[32];
     char      ipBuff[32];
     uint16_t  uint16Buff;
+    int64_t   buff32;
 
 
     pSettings = SystemState::GetInstance()->GetSettings();
@@ -162,6 +163,9 @@ void test_default(void) {
     result = pSettings->GetDefault("node_st_sdns", (uint8_t*)ipBuff, 15);
     TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
     TEST_ASSERT_EQUAL_STRING("4.4.4.4", ipBuff);
+    result = pSettings->GetDefault("time_off", (uint8_t*)buff32, sizeof(int32_t));
+    TEST_ASSERT_EQUAL(E_Return::NO_ERROR, result);
+    TEST_ASSERT_EQUAL_STRING(3600, ipBuff);
 }
 
 void SettingsTests(void) {
