@@ -55,6 +55,8 @@
 #define SETTING_NODE_ST_PDNS "node_st_pdns"
 /** @brief Defines the static secondary DNS configuration. */
 #define SETTING_NODE_ST_SDNS "node_st_sdns"
+/** @brief Defines the time offset configuration. */
+#define SETTING_TIME_OFFSET "time_offset"
 
 /*******************************************************************************
  * MACROS

@@ -75,6 +75,8 @@ static const char* sknode_st_subnet = "255.255.255.0\0\0";
 static const char* sknode_st_pdns = "1.1.1.1\0\0\0\0\0\0\0\0";
 /** @brief Default setting for node_st_sdns item. */
 static const char* sknode_st_sdns = "4.4.4.4\0\0\0\0\0\0\0\0";
+/** @brief Default setting for time_offset item. */
+static const int32_t sktime_offset = 3600;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -160,6 +162,13 @@ void Settings::InitializeDefault(void) noexcept {
 		S_SettingField {
 			.pValue = (uint8_t*)sknode_st_sdns,
 			.fieldSize = 15
+		}
+	);
+	this->_defaults.emplace(
+		SETTING_TIME_OFFSET,
+		S_SettingField {
+			.pValue = (uint8_t*)&sktime_offset,
+			.fieldSize = 4
 		}
 	);
 }
